@@ -1,0 +1,298 @@
+
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史研究数据库</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        #authContainer { max-width: 400px; margin: 50px auto; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .auth-form { display: flex; flex-direction: column; gap: 15px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        button { padding: 12px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.3s; }
+        button:hover { background: #0056b3; }
+        .hidden { display: none; }
+        #userBar { position: fixed; top: 0; right: 20px; background: white; padding: 10px 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 0 0 5px 5px; }
+        #contentContainer { max-width: 1200px; margin: 60px auto 20px; }
+        .project-table { width: 100%; border-collapse: collapse; background: white; }
+        .project-table th, .project-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .pagination { margin-top: 20px; display: flex; gap: 10px; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <!-- 用户状态栏 -->
+    <div id="userBar" class="hidden">
+        <span id="userEmail" style="margin-right:15px"></span>
+        <button onclick="signOut()" style="background:#dc3545">退出系统</button>
+    </div>
+
+    <!-- 认证模块 -->
+    <div id="authContainer">
+        <h2 style="text-align:center; margin-bottom:25px; color:#333">研究数据库登录</h2>
+        <div class="auth-form">
+            <input type="email" id="emailInput" placeholder="电子邮箱" required>
+            <input type="password" id="passwordInput" placeholder="密码" required>
+            <button onclick="handleLogin()">立即登录</button>
+            <button onclick="handleSignUp()" style="background:#28a745">注册新账户</button>
+            <div style="text-align:center; margin-top:15px;">
+                <a href="#" onclick="sendPasswordReset()" style="color:#666; font-size:13px">忘记密码？</a>
+            </div>
+        </div>
+           </div>
+
+    <!-- 主内容容器 -->
+    <div id="contentContainer" class="hidden">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
+            <h1 style="margin:0">研究项目管理</h1>
+            <button onclick="createProject()" style="background:#17a2b8">+ 新建项目</button>
+        </div>
+        <div style="margin-bottom:20px; display:flex; gap:10px">
+            <input type="text" id="searchInput" placeholder="搜索项目名称" style="flex:1; max-width:300px">
+            <button onclick="applyFilter()">筛选</button>
+            <button onclick="resetFilter()" style="background:#6c757d">重置</button>
+        </div>
+        <div id="projectList"></div>
+    </div>
+
+    <script>
+        // 初始化Firebase配置
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
+            authDomain: "slsj-54760.firebaseapp.com",
+            databaseURL: "https://slsj-54760-default-rtdb.firebaseio.com",
+            projectId: "slsj-54760",
+            storageBucket: "slsj-54760.firebasestorage.app",
+            messagingSenderId: "890890573955",
+            appId: "1:890890573955:web:328c0ed09af23d634b23b6"
+        };
+
+        // 初始化Firebase服务
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // 全局变量
+        let projects = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let currentFilter = '';
+
+        /*********************
+         * 用户认证管理系统
+         *********************/
+        auth.onAuthStateChanged(user => {
+            const contentContainer = document.getElementById('contentContainer');
+            const authContainer = document.getElementById('authContainer');
+            const userBar = document.getElementById('userBar');
+
+            if (user) {
+                userBar.classList.remove('hidden');
+                contentContainer.classList.remove('hidden');
+                authContainer.classList.add('hidden');
+                document.getElementById('userEmail').textContent = user.email;
+                loadProjects();
+                db.ref(`users/${user.uid}/profile/lastLogin`).set(firebase.database.ServerValue.TIMESTAMP);
+            } else {
+                userBar.classList.add('hidden');
+                contentContainer.classList.add('hidden');
+                authContainer.classList.remove('hidden');
+            }
+        });
+
+        async function handleLogin() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                handleAuthError(error);
+            }
+        }
+
+        async function handleSignUp() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await db.ref(`users/${userCredential.user.uid}/profile`).set({
+                    email: email,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    lastLogin: firebase.database.ServerValue.TIMESTAMP
+                });
+                alert('注册成功！已自动登录');
+            } catch (error) {
+                handleAuthError(error);
+            }
+        }
+
+       
+        function signOut() {
+            auth.signOut();
+            alert('已安全退出系统');
+        }
+
+        function handleAuthError(error) {
+            const errorMap = {
+                'auth/invalid-email': '邮箱格式不正确',
+                'auth/user-disabled': '账户已被禁用',
+                'auth/user-not-found': '该邮箱未注册',
+                'auth/wrong-password': '密码错误',
+                'auth/email-already-in-use': '邮箱已被注册',
+                'auth/operation-not-allowed': '操作不被允许',
+                'auth/weak-password': '密码需至少6位'
+            };
+            alert(errorMap[error.code] || `登录失败: ${error.message}`);
+        }
+
+        /*********************
+         * 项目管理系统
+         *********************/
+        function getUserPath(path = '') {
+            const user = auth.currentUser;
+            if (!user) throw new Error('用户未登录');
+            return `users/${user.uid}/${path}`;
+        }
+
+        function loadProjects() {
+            db.ref(getUserPath('projects')).on('value', (snapshot) => {
+                projects = snapshot.val() ? Object.values(snapshot.val()) : [];
+                renderProjects();
+            });
+        }
+
+        async function createProject() {
+            const projectName = prompt('请输入新项目名称：');
+            if (!projectName) return;
+            try {
+                const newProject = {
+                    id: db.ref().push().key,
+                    name: projectName,
+                    createdAt: firebase.database.ServerValue.TIMESTAMP,
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+                    createdBy: auth.currentUser.uid
+                };
+                await db.ref(getUserPath(`projects/${newProject.id}`)).set(newProject);
+                alert('项目创建成功！');
+            } catch (error) {
+                alert('创建失败: ' + error.message);
+            }
+        }
+
+        function renderProjects() {
+            const projectList = document.getElementById('projectList');
+            projectList.innerHTML = '';
+            
+            const filteredProjects = projects.filter(p => 
+                p.name.toLowerCase().includes(currentFilter.toLowerCase())
+            );
+            
+            const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+            const paginatedProjects = filteredProjects.slice(
+                (currentPage - 1) * itemsPerPage,
+                currentPage * itemsPerPage
+            );
+
+            const table = document.createElement('table');
+            table.className = 'project-table';
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>项目名称</th>
+                        <th style="width:180px">创建时间</th>
+                        <th style="width:150px">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${paginatedProjects.map(project => `
+                        <tr>
+<td>
+  <a href="javascript:void(0)" 
+     onclick="navigateToDatabase('${project.id}')" 
+     style="color: var(--primary-color); text-decoration: underline; cursor: pointer">
+    ${project.name}
+  </a>
+</td>
+                            <td>${new Date(project.createdAt).toLocaleString()}</td>
+                            <td>
+                                <button onclick="editProject('${project.id}')">编辑</button>
+                                <button onclick="deleteProject('${project.id}')" style="background:#dc3545">删除</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+
+            const pagination = document.createElement('div');
+            pagination.className = 'pagination';
+            pagination.innerHTML = `
+                <button ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(-1)">上一页</button>
+                <span>第 ${currentPage} 页 / 共 ${totalPages} 页</span>
+                <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(1)">下一页</button>
+            `;
+
+            projectList.append(table, pagination);
+        }
+
+        async function editProject(projectId) {
+            try {
+                const projectRef = db.ref(getUserPath(`projects/${projectId}`));
+                const snapshot = await projectRef.once('value');
+                const project = snapshot.val();
+                const newName = prompt('请输入新名称：', project.name);
+                if (newName && newName !== project.name) {
+                    await projectRef.update({
+                        name: newName,
+                        updatedAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    alert('项目更新成功！');
+                }
+            } catch (error) {
+                alert('编辑失败: ' + error.message);
+            }
+        }
+
+        async function deleteProject(projectId) {
+            if (!confirm('确定要永久删除这个项目吗？')) return;
+            try {
+                await db.ref(getUserPath(`projects/${projectId}`)).remove();
+                alert('项目已删除');
+            } catch (error) {
+                alert('删除失败: ' + error.message);
+            }
+        }
+
+        /*********************
+         * 辅助功能
+         *********************/
+        function applyFilter() {
+            currentFilter = document.getElementById('searchInput').value;
+            currentPage = 1;
+            renderProjects();
+        }
+
+        function resetFilter() {
+            document.getElementById('searchInput').value = '';
+            currentFilter = '';
+            currentPage = 1;
+            renderProjects();
+        }
+
+        function changePage(step) {
+            currentPage = Math.max(1, currentPage + step);
+            renderProjects();
+        }
+// ======== 新增导航函数 ======== //
+function navigateToDatabase(projectId) {
+  window.location.href = `database.html?project=${projectId}`;
+}
+// ============================ //
+    </script>
+</body>
+</html>

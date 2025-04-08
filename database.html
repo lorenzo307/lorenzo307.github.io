@@ -1,0 +1,771 @@
+
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>史料数据库</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #c62828;
+            --secondary-color: #1565c0;
+            --background: #fff8e1;
+            --text-primary: #3e2723;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            margin: 0;
+            padding: 40px 20px;
+            background: var(--background);
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .entry-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .entry-table th, 
+        .entry-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            vertical-align: top;
+        }
+
+        .entry-table th {
+            background: var(--primary-color);
+            color: white;
+            width: 100px;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+
+        .keyword-tag {
+            display: inline-block;
+            background: #e3f2fd;
+            color: var(--secondary-color);
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .keyword-tag:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .keyword-tag.active {
+            background: var(--primary-color);
+            color: white !important;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 5px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .page-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .form-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            width: 700px;
+            max-width: 90%;
+            display: none;
+            z-index: 1000;
+        }
+
+        .category-manager {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            width: 80%;
+            max-width: 500px;
+            display: none;
+        }
+
+        .back-btn {
+            background: #8d6e63;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .primary-btn {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .danger-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .entry-table td:first-child {
+            width: 30px;
+            padding: 12px 4px !important;
+        }
+
+        .select-all-checkbox {
+            margin-left: 8px;
+        }
+    </style>
+
+    <!-- 在style部分添加以下样式 -->
+    <style>
+        /* 新增编辑器容器样式 */
+        #editor-container {
+            height: 300px;  /* 固定高度 */
+            overflow-y: auto;  /* 启用垂直滚动 */
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* 增强工具栏样式 */
+        .ql-toolbar {
+            background: #f8f9fa;
+            border-radius: 4px 4px 0 0;
+            border: 1px solid #ddd !important;
+            border-bottom: none !important;
+        }
+
+        .ql-container {
+            border-radius: 0 0 4px 4px;
+            border: 1px solid #ddd !important;
+            border-top: none !important;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="location.href='index.html'">
+                <span class="material-icons">arrow_back</span>
+                返回课题列表
+            </button>
+            <h1 id="projectTitle">加载中...</h1>
+        </div>
+
+        <div class="main-content">
+            <div class="action-buttons">
+                <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="flex:1">
+                <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
+                <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
+                <div style="display:inline-block;margin-left:10px">
+                    <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
+                </div>
+            </div>
+            <div id="entries-container"></div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <div class="sidebar">
+            <h3>关键词索引</h3>
+            <div id="keyword-cloud"></div>
+        </div>
+
+        <!-- 史料表单弹窗 -->
+        <div id="entry-form" class="form-popup">
+            <h2>史料条目编辑</h2>
+            <form onsubmit="saveEntry(event)">
+                <div class="form-row">
+                    <label>日期：</label>
+                    <input type="date" name="date" required>
+                </div>
+
+                <div class="form-row">
+                    <label>主类：</label>
+                    <select name="main-cat" onchange="updateSubCats()" required>
+                        <!-- 动态加载选项 -->
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label>子类：</label>
+                    <select name="sub-cat" id="sub-cat" required></select>
+                </div>
+
+                <div class="form-row">
+                    <label>标题：</label>
+                    <input type="text" name="title" required>
+                </div>
+
+                <div class="form-row">
+                    <label>原文摘抄：</label>
+                    <div id="editor-container"></div>
+                </div>
+
+                <div class="form-row">
+                    <label>分析：</label>
+                    <textarea name="analysis" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <label>相关链接（逗号分隔）：</label>
+                    <input type="text" name="links">
+                </div>
+
+                <div class="form-row">
+                    <label>关键词（逗号分隔）：</label>
+                    <input type="text" name="keywords" required>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="primary-btn">保存</button>
+                    <button type="button" class="danger-btn" onclick="hideForm()">取消</button>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- 分类管理弹窗 -->
+        <div id="category-manager" class="category-manager">
+            <h3>分类管理</h3>
+            <div class="category-section">
+                <h4>主类管理</h4>
+                <div id="main-categories"></div>
+                <button class="primary-btn" onclick="addMainCategory()">＋ 添加主类</button>
+            </div>
+
+            <div class="category-section">
+                <h4>子类管理</h4>
+                <div id="sub-categories"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="primary-btn" onclick="saveCategories()">保存</button>
+                <button class="danger-btn" onclick="hideCategoryManager()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <script>
+        // Firebase初始化
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
+            authDomain: "slsj-54760.firebaseapp.com",
+            databaseURL: "https://slsj-54760-default-rtdb.firebaseio.com",
+            projectId: "slsj-54760",
+            storageBucket: "slsj-54760.firebasestorage.app",
+            messagingSenderId: "890890573955",
+            appId: "1:890890573955:web:328c0ed09af23d634b23b6"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // 全局数据监听器
+        let unsubscribeEntries = null;
+        let unsubscribeCategories = null;
+
+        // 获取项目路径
+        function getProjectPath(subPath = "") {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("用户未登录，即将跳转");
+                window.location.href = "index.html";
+                return;
+            }
+            const projectId = new URLSearchParams(window.location.search).get('project');
+            return `users/${user.uid}/projects/${projectId}/${subPath}`;
+        }
+
+        // 初始化数据监听
+        function initDataListeners() {
+            unsubscribeEntries = db.ref(getProjectPath('entries')).on('value', (snapshot) => {
+                entries = snapshot.val() ? Object.values(snapshot.val()) : [];
+                renderEntries();
+            });
+
+            unsubscribeCategories = db.ref(getProjectPath('categories')).on('value', (snapshot) => {
+                categories = snapshot.val() || { main: {} };
+                updateCategorySelectors();
+                renderEntries();
+            });
+        }
+
+        // 认证状态监听
+      auth.onAuthStateChanged(async user => {
+    if (user) {
+        const projectId = new URLSearchParams(window.location.search).get('project');
+        
+        // 从Firebase实时数据库获取项目名称
+        const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
+        const snapshot = await projectRef.once('value');
+        const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
+        
+        document.title = `${projectName} - 史料数据库`;
+        document.getElementById('projectTitle').textContent = projectName;
+        
+        initDataListeners();
+    } else {
+        window.location.href = 'index.html';
+    }
+});
+
+
+        // 全局变量
+        let quill = null;
+        let currentPage = 1;
+        const ENTRIES_PER_PAGE = 10;
+        let searchQuery = '';
+        let editingId = null;
+        let currentFilterKeyword = null;
+
+        // 编辑器初始化
+        function initQuill() {
+            if (!quill) {
+                quill = new Quill('#editor-container', {
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['link', 'image'],
+                            ['clean']
+                        ]
+                    },
+                    theme: 'snow'
+                });
+            }
+        }
+
+        // 表单操作
+        function showForm() {
+            document.getElementById('entry-form').style.display = 'block';
+            initQuill();
+            updateSubCats();
+        }
+
+        function hideForm() {
+            document.getElementById('entry-form').style.display = 'none';
+            document.querySelector('form').reset();
+            if (quill) quill.root.innerHTML = '';
+            editingId = null;
+        }
+
+        // 分类管理
+        function showCategoryManager() {
+            document.getElementById('category-manager').style.display = 'block';
+            renderCategoryManager();
+        }
+
+        function hideCategoryManager() {
+            document.getElementById('category-manager').style.display = 'none';
+        }
+
+        function renderCategoryManager() {
+            const container = document.getElementById('main-categories');
+            container.innerHTML = Object.entries(categories.main)
+                .map(([code, data]) => `
+                    <div class="category-item">
+                        <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
+                        <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
+                        <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
+                    </div>
+                    ${data.sub.map(sub => `
+                        <div class="category-item" style="margin-left:20px">
+                            <input value="${sub.split('-')[1]}" 
+                                   onchange="updateSubCategory('${code}', '${sub}', this.value)">
+                            <button class="danger-btn" 
+                                    onclick="removeSubCategory('${code}', '${sub}')">删除</button>
+                        </div>
+                    `).join('')}
+                `).join('');
+        }
+
+        // 分类操作
+        function addMainCategory() {
+            const code = prompt("请输入主类代码（2位字母）：");
+            if (code && code.length === 2) {
+                categories.main[code] = { name: '新分类', sub: [] };
+                renderCategoryManager();
+            }
+        }
+
+        function removeMainCategory(code) {
+            if (confirm("确定要删除这个主类及其所有子类吗？")) {
+                delete categories.main[code];
+                renderCategoryManager();
+            }
+        }
+
+        function addSubCategory(mainCode) {
+            const subCode = prompt("请输入子类代码（1位字母）：");
+            if (subCode && subCode.length === 1) {
+                const subName = prompt("请输入子类名称：");
+                categories.main[mainCode].sub.push(`${subCode}-${subName}`);
+                renderCategoryManager();
+            }
+        }
+
+        function removeSubCategory(mainCode, subCode) {
+            categories.main[mainCode].sub = categories.main[mainCode].sub.filter(
+                sc => sc !== subCode
+            );
+            renderCategoryManager();
+        }
+
+        function updateMainCategory(code, newName) {
+            categories.main[code].name = newName;
+        }
+
+        function updateSubCategory(mainCode, oldSub, newName) {
+            const index = categories.main[mainCode].sub.indexOf(oldSub);
+            const [code] = oldSub.split('-');
+            categories.main[mainCode].sub[index] = `${code}-${newName}`;
+        }
+
+        async function saveCategories() {
+            try {
+                await db.ref(getProjectPath('categories')).set(categories);
+                alert('分类保存成功！');
+                hideCategoryManager();
+            } catch (error) {
+                alert('保存失败: ' + error.message);
+            }
+        }
+
+        // 核心功能
+        function generateID(entry) {
+            const year = entry.date?.slice(2, 4) || '00';
+            const mainCat = entry.mainCat || 'DF';
+            const subCat = entry.subCat?.split('-')[0] || 'S';
+            const seq = entries.filter(e => 
+                e.mainCat === mainCat && 
+                e.subCat === entry.subCat &&
+                e.date?.startsWith(entry.date?.slice(0,4))
+            ).length + 1;
+            return `${mainCat}-${subCat}-${year}-${seq.toString().padStart(2,'0')}`;
+        }
+
+        function renderEntries() {
+            let filteredEntries = entries.filter(entry => {
+                const matchKeyword = !currentFilterKeyword || 
+                    entry.keywords.includes(currentFilterKeyword);
+                const matchSearch = !searchQuery || 
+                    [entry.title, entry.content, entry.analysis, entry.keywords.join(' ')]
+                    .join(' ').toLowerCase().includes(searchQuery.toLowerCase());
+                return matchKeyword && matchSearch;
+            });
+
+            // ======== 新增排序逻辑 ========
+            filteredEntries.sort((a, b) => {
+                // 处理空日期情况（将空日期排到最后）
+                if (!a.date && !b.date) return 0;
+                if (!a.date) return 1;
+                if (!b.date) return -1;
+                // 按日期升序排列（从早到晚）
+                return a.date.localeCompare(b.date);
+            });
+
+            const totalPages = Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
+            const start = (currentPage - 1) * ENTRIES_PER_PAGE;
+            const end = start + ENTRIES_PER_PAGE;
+            const currentEntries = filteredEntries.slice(start, end);
+
+            // 渲染表格
+            document.getElementById('entries-container').innerHTML = `
+                <table class="entry-table">
+                    <tr>
+                        <th><input type="checkbox" id="select-all" class="select-all-checkbox"></th>
+                        <th>编号</th>
+                        <th>日期</th>
+                        <th>主题</th>
+                        <th>标题</th>
+                        <th>关键词</th>
+                        <th>操作</th>
+                    </tr>
+                    ${currentEntries.map(entry => `
+                        <tr>
+                            <td><input type="checkbox" class="select-entry" data-id="${entry.id}"></td>
+                            <td>${entry.id}</td>
+                            <td>${entry.date}</td>
+                            <td>${getCategoryName(entry.mainCat)} - ${entry.subCat.split('-')[1]}</td>
+                            <td>${entry.title}</td>
+                            <td>${entry.keywords.map(k => `<span class="keyword-tag" onclick="filterByKeyword('${k}')">${k}</span>`).join(' ')}</td>
+                            <td>
+                                <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
+                                <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </table>
+            `;
+
+            // 全选功能
+            document.getElementById('select-all')?.addEventListener('change', function(e) {
+                document.querySelectorAll('.select-entry').forEach(checkbox => {
+                    checkbox.checked = e.target.checked;
+                });
+            });
+
+            updatePagination(totalPages);
+            updateKeywords();
+        }
+
+        function exportEntries(format) {
+            const checkboxes = document.querySelectorAll('.select-entry:checked');
+            if (checkboxes.length === 0) {
+                alert('请至少选择一个条目进行导出！');
+                return;
+            }
+
+            const selectedEntries = [];
+            checkboxes.forEach(checkbox => {
+                const entry = entries.find(e => e.id === checkbox.dataset.id);
+                if (entry) selectedEntries.push(entry);
+            });
+
+            if (format === 'excel') {
+                exportExcel(selectedEntries);
+            }
+        }
+
+        function exportExcel(entries) {
+            const data = entries.map(entry => ({
+                日期: entry.date,
+                主分类: entry.mainCat,
+                子分类: entry.subCat,
+                标题: entry.title,
+                原文内容: entry.content,
+                分析: entry.analysis,
+                相关链接: entry.links.join('; '),
+                关键词: entry.keywords.join('; ')
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "史料数据");
+            XLSX.writeFile(wb, `史料导出_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function updateCategorySelectors() {
+            const mainSelect = document.querySelector('[name="main-cat"]');
+            mainSelect.innerHTML = Object.entries(categories.main)
+                .map(([code, data]) => `<option value="${code}">${data.name}</option>`)
+                .join('');
+            updateSubCats();
+        }
+
+        function updateSubCats() {
+            const mainCat = document.querySelector('[name="main-cat"]').value;
+            const subSelect = document.getElementById('sub-cat');
+            subSelect.innerHTML = categories.main[mainCat]?.sub
+                .map(sc => `<option value="${sc}">${sc.split('-')[1]}</option>`)
+                .join('') || '';
+        }
+
+        function getCategoryName(code) {
+            return categories.main[code]?.name || '未知分类';
+        }
+
+        function updatePagination(totalPages) {
+            const container = document.getElementById('pagination');
+            container.innerHTML = Array.from({length: totalPages}, (_,i) => 
+                `<button class="page-btn ${i+1 === currentPage ? 'active' : ''}" 
+                 onclick="currentPage=${i+1};renderEntries()">${i+1}</button>`).join('');
+        }
+
+        function updateKeywords() {
+            const keywords = [...new Set(entries.flatMap(e => e.keywords))];
+            document.getElementById('keyword-cloud').innerHTML = `
+                <span class="keyword-tag ${!currentFilterKeyword ? 'active' : ''}" 
+                      onclick="resetFilter()">
+                    全部 (${entries.length})
+                </span>
+                ${keywords.map(k => `
+                    <span class="keyword-tag ${currentFilterKeyword === k ? 'active' : ''}" 
+                          onclick="filterByKeyword('${k}')">
+                        ${k} (${countKeyword(k)})
+                    </span>
+                `).join('')}
+            `;
+        }
+
+        function countKeyword(keyword) {
+            return entries.filter(e => e.keywords.includes(keyword)).length;
+        }
+
+        async function saveEntry(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const newEntry = {
+                date: formData.get('date'),
+                mainCat: formData.get('main-cat'),
+                subCat: formData.get('sub-cat'),
+                title: formData.get('title'),
+                content: quill.root.innerHTML,
+                analysis: formData.get('analysis'),
+                links: formData.get('links').split(',').map(l => l.trim()).filter(Boolean),
+                keywords: formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean)
+            };
+
+            try {
+                const entryRef = db.ref(getProjectPath('entries'));
+                if (editingId) {
+                    await entryRef.child(editingId).update({
+                        ...newEntry,
+                        updatedAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                } else {
+                    const newKey = entryRef.push().key;
+                    await entryRef.child(newKey).set({
+                        ...newEntry,
+                        id: newKey,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+                hideForm();
+            } catch (error) {
+                alert('保存失败: ' + error.message);
+            }
+        }
+
+        function editEntry(id) {
+            const entry = entries.find(e => e.id === id);
+            document.querySelector('[name="date"]').value = entry.date;
+            document.querySelector('[name="main-cat"]').value = entry.mainCat;
+            updateSubCats();
+            setTimeout(() => {
+                document.querySelector('[name="sub-cat"]').value = entry.subCat;
+            }, 100);
+            document.querySelector('[name="title"]').value = entry.title;
+            quill.root.innerHTML = entry.content;
+            document.querySelector('[name="analysis"]').value = entry.analysis;
+            document.querySelector('[name="links"]').value = entry.links?.join(', ') || '';
+            document.querySelector('[name="keywords"]').value = entry.keywords.join(', ');
+            editingId = id;
+            showForm();
+        }
+
+        async function deleteEntry(id) {
+            if (confirm('确定要删除该条目吗？')) {
+                try {
+                    await db.ref(getProjectPath(`entries/${id}`)).remove();
+                } catch (error) {
+                    alert('删除失败: ' + error.message);
+                }
+            }
+        }
+
+        // 事件监听
+        document.getElementById('search-input').addEventListener('input', () => {
+            searchQuery = document.getElementById('search-input').value;
+            currentPage = 1;
+            renderEntries();
+        });
+
+        function filterByKeyword(keyword) {
+            currentFilterKeyword = keyword === currentFilterKeyword ? null : keyword;
+            currentPage = 1;
+            renderEntries();
+        }
+
+        function resetFilter() {
+            currentFilterKeyword = null;
+            currentPage = 1;
+            renderEntries();
+        }
+
+        // 初始化
+        updateCategorySelectors();
+        renderEntries();
+
+        // 页面卸载时清理监听器
+        window.addEventListener('beforeunload', () => {
+            if (unsubscribeEntries) unsubscribeEntries();
+            if (unsubscribeCategories) unsubscribeCategories();
+        });
+    </script>
+</body>
+</html>
