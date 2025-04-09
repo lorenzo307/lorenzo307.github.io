@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -111,6 +109,15 @@
             gap: 5px;
             margin-top: 20px;
             justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            flex: 100%;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #666;
         }
 
         .page-btn {
@@ -194,6 +201,55 @@
         .select-all-checkbox {
             margin-left: 8px;
         }
+
+        .select-options {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .select-all-buttons {
+            display: flex;
+            gap: 4px;
+            flex-direction: column;
+        }
+
+        .select-all-btn {
+            padding: 2px 6px;
+            font-size: 12px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        /* 添加页面条数选择器样式 */
+        #pageSize {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            height: 36px;
+        }
+
+        /* 优化全选按钮组 */
+        .select-all-buttons {
+            display: flex;
+            gap: 4px;
+            flex-direction: column;
+            margin-top: 4px;
+        }
+
+        .select-all-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s;
+        }
+
+        .select-all-btn:hover {
+            background: #e9ecef;
+        }
     </style>
 
     <!-- 在style部分添加以下样式 -->
@@ -241,9 +297,24 @@
                 <div style="display:inline-block;margin-left:10px">
                     <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
                 </div>
+                <div style="display:inline-block;margin-left:10px">
+                    <select id="pageSize" onchange="changePageSize(this.value)" style="padding:6px 12px">
+                        <option value="5">每页5条</option>
+                        <option value="10" selected>每页10条</option>
+                        <option value="15">每页15条</option>
+                        <option value="20">每页20条</option>
+                        <option value="30">每页30条</option>
+                        <option value="50">每页50条</option>
+                    </select>
+                </div>
             </div>
             <div id="entries-container"></div>
-            <div class="pagination" id="pagination"></div>
+            <div class="pagination">
+                <div class="pagination-info">
+                    第<span id="currentPage">1</span>页，共<span id="totalPages">1</span>页，每页<span id="entriesPerPage"></span>条
+                </div>
+                <div id="pagination-buttons"></div>
+            </div>
         </div>
 
         <div class="sidebar">
@@ -396,10 +467,19 @@
         // 全局变量
         let quill = null;
         let currentPage = 1;
-        const ENTRIES_PER_PAGE = 10;
+        let ENTRIES_PER_PAGE = 10;
         let searchQuery = '';
         let editingId = null;
         let currentFilterKeyword = null;
+        let selectedAll = false;
+
+        // 新增页面条数改变函数
+        function changePageSize(size) {
+            ENTRIES_PER_PAGE = parseInt(size);
+            currentPage = 1;
+            renderEntries();
+            document.getElementById('entriesPerPage').textContent = size;
+        }
 
         // 编辑器初始化
         function initQuill() {
@@ -446,22 +526,21 @@
 
         function renderCategoryManager() {
             const container = document.getElementById('main-categories');
-            container.innerHTML = Object.entries(categories.main)
-                .map(([code, data]) => `
-                    <div class="category-item">
-                        <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
-                        <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
-                        <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
+            container.innerHTML = Object.entries(categories.main).map(([code, data]) => `
+                <div class="category-item">
+                    <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
+                    <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
+                    <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
+                </div>
+                ${data.sub.map(sub => `
+                    <div class="category-item" style="margin-left:20px">
+                        <input value="${sub.split('-')[1]}" 
+                               onchange="updateSubCategory('${code}', '${sub}', this.value)">
+                        <button class="danger-btn" 
+                                onclick="removeSubCategory('${code}', '${sub}')">删除</button>
                     </div>
-                    ${data.sub.map(sub => `
-                        <div class="category-item" style="margin-left:20px">
-                            <input value="${sub.split('-')[1]}" 
-                                   onchange="updateSubCategory('${code}', '${sub}', this.value)">
-                            <button class="danger-btn" 
-                                    onclick="removeSubCategory('${code}', '${sub}')">删除</button>
-                        </div>
-                    `).join('')}
-                `).join('');
+                `).join('')}
+            `).join('');
         }
 
         // 分类操作
@@ -496,37 +575,156 @@
             renderCategoryManager();
         }
 
-        function updateMainCategory(code, newName) {
-            categories.main[code].name = newName;
+        async function updateMainCategory(code, newName) {
+            const oldCode = code; // 保存旧代码用于查找条目
+            
+            // 查询可能影响的条目数量
+            const entriesRef = db.ref(getProjectPath('entries'));
+            const snapshot = await entriesRef.once('value');
+            const entriesData = snapshot.val() || {};
+            const affectedEntries = Object.values(entriesData).filter(entry => entry.mainCat === oldCode).length;
+            
+            // 提示用户
+            const newCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的主类代码（2位字母）：`, code);
+            
+            if (newCode && newCode.length === 2 && newCode !== oldCode) {
+                if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
+                    return;
+                }
+                
+                // 更新分类数据
+                categories.main[newCode] = {...categories.main[oldCode]};
+                categories.main[newCode].name = newName;
+                delete categories.main[oldCode];
+                
+                // 更新所有相关条目
+                const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
+                    if (entry.mainCat === oldCode) {
+                        // 删除旧条目
+                        await entriesRef.child(id).remove();
+                        // 创建新条目
+                        entry.mainCat = newCode;
+                        entry.id = await generateID(entry); // 重新生成ID
+                        await entriesRef.child(entry.id).set(entry);
+                    }
+                });
+                
+                await Promise.all(updatePromises);
+                renderCategoryManager();
+                
+                // 提示更新成功
+                if (affectedEntries > 0) {
+                    alert(`主类代码已从 ${oldCode} 更新为 ${newCode}，共更新了 ${affectedEntries} 个条目的编号。`);
+                } else {
+                    alert(`主类代码已从 ${oldCode} 更新为 ${newCode}。`);
+                }
+            } else if (newCode === oldCode) {
+                // 仅修改名称
+                categories.main[oldCode].name = newName;
+                renderCategoryManager();
+            }
         }
 
-        function updateSubCategory(mainCode, oldSub, newName) {
-            const index = categories.main[mainCode].sub.indexOf(oldSub);
-            const [code] = oldSub.split('-');
-            categories.main[mainCode].sub[index] = `${code}-${newName}`;
+        async function updateSubCategory(mainCode, oldSub, newName) {
+            const [oldSubCode] = oldSub.split('-');
+            
+            // 查询可能影响的条目数量
+            const entriesRef = db.ref(getProjectPath('entries'));
+            const snapshot = await entriesRef.once('value');
+            const entriesData = snapshot.val() || {};
+            const affectedEntries = Object.values(entriesData).filter(entry => 
+                entry.mainCat === mainCode && entry.subCat === oldSub
+            ).length;
+            
+            // 提示用户
+            const newSubCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的子类代码（1位字母）：`, oldSubCode);
+            
+            if (newSubCode && newSubCode.length === 1) {
+                const index = categories.main[mainCode].sub.indexOf(oldSub);
+                const newSub = `${newSubCode}-${newName}`;
+                
+                // 检查代码是否真的变更
+                if (oldSubCode !== newSubCode) {
+                    if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
+                        return;
+                    }
+                    
+                    // 更新分类数据
+                    categories.main[mainCode].sub[index] = newSub;
+                    
+                    // 更新所有相关条目
+                    const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
+                        if (entry.mainCat === mainCode && entry.subCat === oldSub) {
+                            // 删除旧条目
+                            await entriesRef.child(id).remove();
+                            // 创建新条目
+                            entry.subCat = newSub;
+                            entry.id = await generateID(entry); // 重新生成ID
+                            await entriesRef.child(entry.id).set(entry);
+                        }
+                    });
+                    
+                    await Promise.all(updatePromises);
+                    
+                    // 提示更新成功
+                    if (affectedEntries > 0) {
+                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}，共更新了 ${affectedEntries} 个条目的编号。`);
+                    } else {
+                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}。`);
+                    }
+                } else {
+                    // 仅修改名称，不更改代码
+                    categories.main[mainCode].sub[index] = `${oldSubCode}-${newName}`;
+                }
+                
+                renderCategoryManager();
+            }
         }
 
-        async function saveCategories() {
+        function saveCategories() {
             try {
-                await db.ref(getProjectPath('categories')).set(categories);
-                alert('分类保存成功！');
+                db.ref(getProjectPath('categories')).set(categories);
+                updateCategorySelectors();
                 hideCategoryManager();
+                alert('分类保存成功！');
             } catch (error) {
                 alert('保存失败: ' + error.message);
             }
         }
 
         // 核心功能
-        function generateID(entry) {
-            const year = entry.date?.slice(2, 4) || '00';
-            const mainCat = entry.mainCat || 'DF';
-            const subCat = entry.subCat?.split('-')[0] || 'S';
-            const seq = entries.filter(e => 
-                e.mainCat === mainCat && 
-                e.subCat === entry.subCat &&
-                e.date?.startsWith(entry.date?.slice(0,4))
-            ).length + 1;
-            return `${mainCat}-${subCat}-${year}-${seq.toString().padStart(2,'0')}`;
+        async function generateID(entry) {
+            // 强制校验
+            if (!entry.date) throw new Error('日期为必填项');
+            if (!entry.mainCat || !categories.main[entry.mainCat]) throw new Error('无效主分类');
+
+            // 获取分类代码
+            const mainCode = entry.mainCat;
+            const subCode = entry.subCat.split('-')[0];
+            
+            // 日期格式化为YYYYMMDD（使用用户输入的日期）
+            const dateObj = new Date(entry.date);
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const datePart = `${year}${month}${day}`;
+
+            // 生成基础编号前缀
+            const baseID = `${mainCode}-${subCode}-${datePart}`;
+            
+            // 使用事务确保序号唯一性
+            const counterRef = db.ref(getProjectPath(`counters/${baseID}`));
+            let seq = 1;
+            
+            await counterRef.transaction(currentValue => {
+                if (currentValue === null) return 1; // 初始化计数器
+                return currentValue + 1; // 递增序号
+            }).then(({ committed, snapshot }) => {
+                if (committed) seq = snapshot.val();
+            });
+
+            // 返回完整编号（示例：DF-S-20231015-01）
+            return `${baseID}-${seq.toString().padStart(2, '0')}`;
         }
 
         function renderEntries() {
@@ -558,7 +756,15 @@
             document.getElementById('entries-container').innerHTML = `
                 <table class="entry-table">
                     <tr>
-                        <th><input type="checkbox" id="select-all" class="select-all-checkbox"></th>
+                        <th>
+                            <div class="select-options">
+                                <input type="checkbox" id="select-page" class="select-all-checkbox">
+                                <div class="select-all-buttons">
+                                    <button class="select-all-btn" onclick="toggleSelectAll(true)">本页全选</button>
+                                    <button class="select-all-btn" onclick="toggleSelectAll(false)">全选全部</button>
+                                </div>
+                            </div>
+                        </th>
                         <th>编号</th>
                         <th>日期</th>
                         <th>主题</th>
@@ -584,10 +790,11 @@
             `;
 
             // 全选功能
-            document.getElementById('select-all')?.addEventListener('change', function(e) {
+            document.getElementById('select-page')?.addEventListener('change', function(e) {
                 document.querySelectorAll('.select-entry').forEach(checkbox => {
                     checkbox.checked = e.target.checked;
                 });
+                selectedAll = false;
             });
 
             updatePagination(totalPages);
@@ -595,20 +802,27 @@
         }
 
         function exportEntries(format) {
-            const checkboxes = document.querySelectorAll('.select-entry:checked');
-            if (checkboxes.length === 0) {
-                alert('请至少选择一个条目进行导出！');
-                return;
+            let entriesToExport = [];
+            
+            if(selectedAll) {
+                entriesToExport = entries.filter(entry => 
+                    (!currentFilterKeyword || entry.keywords.includes(currentFilterKeyword)) &&
+                    (!searchQuery || [entry.title, entry.content, entry.analysis, entry.keywords.join(' ')]
+                        .join(' ').toLowerCase().includes(searchQuery.toLowerCase()))
+                );
+            } else {
+                const checkboxes = document.querySelectorAll('.select-entry:checked');
+                if (checkboxes.length === 0) {
+                    alert('请至少选择一个条目进行导出！');
+                    return;
+                }
+                entriesToExport = Array.from(checkboxes).map(checkbox => 
+                    entries.find(e => e.id === checkbox.dataset.id)
+                );
             }
 
-            const selectedEntries = [];
-            checkboxes.forEach(checkbox => {
-                const entry = entries.find(e => e.id === checkbox.dataset.id);
-                if (entry) selectedEntries.push(entry);
-            });
-
             if (format === 'excel') {
-                exportExcel(selectedEntries);
+                exportExcel(entriesToExport);
             }
         }
 
@@ -651,7 +865,11 @@
         }
 
         function updatePagination(totalPages) {
-            const container = document.getElementById('pagination');
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = totalPages || 1;
+            document.getElementById('entriesPerPage').textContent = ENTRIES_PER_PAGE;
+            
+            const container = document.getElementById('pagination-buttons');
             container.innerHTML = Array.from({length: totalPages}, (_,i) => 
                 `<button class="page-btn ${i+1 === currentPage ? 'active' : ''}" 
                  onclick="currentPage=${i+1};renderEntries()">${i+1}</button>`).join('');
@@ -680,32 +898,74 @@
         async function saveEntry(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const newEntry = {
-                date: formData.get('date'),
-                mainCat: formData.get('main-cat'),
-                subCat: formData.get('sub-cat'),
-                title: formData.get('title'),
-                content: quill.root.innerHTML,
-                analysis: formData.get('analysis'),
-                links: formData.get('links').split(',').map(l => l.trim()).filter(Boolean),
-                keywords: formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean)
-            };
+            
+            // 校验必填项
+            if (!formData.get('date')) {
+                alert('日期为必填项！');
+                return;
+            }
+            if (!categories.main[formData.get('main-cat')]) {
+                alert('请先创建主分类');
+                return;
+            }
 
             try {
                 const entryRef = db.ref(getProjectPath('entries'));
+                const user = auth.currentUser;
+                
+                // 获取原始数据（如果是编辑状态）
+                let originalEntry = null;
                 if (editingId) {
-                    await entryRef.child(editingId).update({
-                        ...newEntry,
-                        updatedAt: firebase.database.ServerValue.TIMESTAMP
-                    });
-                } else {
-                    const newKey = entryRef.push().key;
-                    await entryRef.child(newKey).set({
-                        ...newEntry,
-                        id: newKey,
-                        createdAt: firebase.database.ServerValue.TIMESTAMP
-                    });
+                    const snapshot = await entryRef.child(editingId).once('value');
+                    originalEntry = snapshot.val();
                 }
+
+                // 生成新条目数据
+                const newEntry = {
+                    date: formData.get('date'),
+                    mainCat: formData.get('main-cat'),
+                    subCat: formData.get('sub-cat'),
+                    title: formData.get('title'),
+                    content: quill.root.innerHTML,
+                    analysis: formData.get('analysis'),
+                    links: formData.get('links').split(',').map(l => l.trim()).filter(Boolean),
+                    keywords: formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean),
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                // 检查关键字段是否修改
+                const isKeyFieldChanged = editingId && (
+                    newEntry.date !== originalEntry.date ||
+                    newEntry.mainCat !== originalEntry.mainCat ||
+                    newEntry.subCat !== originalEntry.subCat
+                );
+
+                // 提示用户关键字段修改会导致ID变更
+                if (isKeyFieldChanged && 
+                    !confirm('修改关键字段将生成新编号，原条目会被删除。是否继续？')) {
+                    return;
+                }
+
+                // 生成新ID（如果关键字段有修改）
+                if (isKeyFieldChanged) {
+                    // 删除旧条目
+                    await entryRef.child(editingId).remove();
+                    // 生成新ID
+                    newEntry.id = await generateID(newEntry);
+                } else if (editingId) {
+                    // 保持原ID
+                    newEntry.id = editingId;
+                    // 保持原创建时间
+                    newEntry.createdAt = originalEntry.createdAt;
+                } else {
+                    // 新条目，生成ID
+                    newEntry.id = await generateID(newEntry);
+                    newEntry.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                }
+
+                // 保存到数据库
+                await entryRef.child(newEntry.id).set(newEntry);
+
                 hideForm();
             } catch (error) {
                 alert('保存失败: ' + error.message);
@@ -714,6 +974,9 @@
 
         function editEntry(id) {
             const entry = entries.find(e => e.id === id);
+            editingId = id; // 保留原始ID用于后续判断
+            
+            // 填充表单数据
             document.querySelector('[name="date"]').value = entry.date;
             document.querySelector('[name="main-cat"]').value = entry.mainCat;
             updateSubCats();
@@ -725,7 +988,6 @@
             document.querySelector('[name="analysis"]').value = entry.analysis;
             document.querySelector('[name="links"]').value = entry.links?.join(', ') || '';
             document.querySelector('[name="keywords"]').value = entry.keywords.join(', ');
-            editingId = id;
             showForm();
         }
 
@@ -756,6 +1018,25 @@
             currentFilterKeyword = null;
             currentPage = 1;
             renderEntries();
+        }
+
+        // 全选功能逻辑
+        function toggleSelectAll(isPageOnly) {
+            const checkboxes = document.querySelectorAll('.select-entry');
+            const pageCheckbox = document.getElementById('select-page');
+
+            if(isPageOnly) {
+                // 切换当前页全选
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                checkboxes.forEach(cb => cb.checked = !allChecked);
+                pageCheckbox.checked = !allChecked;
+                selectedAll = false;
+            } else {
+                // 切换全选所有
+                selectedAll = !selectedAll;
+                checkboxes.forEach(cb => cb.checked = selectedAll);
+                pageCheckbox.checked = selectedAll;
+            }
         }
 
         // 初始化
