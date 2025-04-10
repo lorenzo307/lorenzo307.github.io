@@ -250,10 +250,61 @@
         .select-all-btn:hover {
             background: #e9ecef;
         }
-    </style>
 
-    <!-- 在style部分添加以下样式 -->
-    <style>
+        /* 新增提示框样式 */
+        .export-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -10px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        
+        .export-alert.info {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .export-alert.success {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .export-alert.warning {
+            background-color: #fff8e1;
+            color: #ff6f00;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .export-alert.error {
+            background-color: #ffebee;
+            color: #b71c1c;
+            border-left: 4px solid #f44336;
+        }
+        
+        .export-alert button {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
         /* 新增编辑器容器样式 */
         #editor-container {
             height: 300px;  /* 固定高度 */
@@ -276,8 +327,68 @@
             border: 1px solid #ddd !important;
             border-top: none !important;
         }
-    </style>
 
+        /* 高级检索面板 */
+        .advanced-search {
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .advanced-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 10px;
+            position: absolute;
+            width: 100%;
+            z-index: 100;
+        }
+
+        .search-row {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #tag-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .tag-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        
+        /* 分页优化 */
+        .page-jump {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 15px;
+        }
+
+        .page-jump input {
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .page-btn.more {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0 12px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -298,6 +409,9 @@
                     <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
                 </div>
                 <div style="display:inline-block;margin-left:10px">
+                    <button class="primary-btn" onclick="migrateLegacyData()" title="修复历史数据中的缺失字段">修复数据</button>
+                </div>
+                <div style="display:inline-block;margin-left:10px">
                     <select id="pageSize" onchange="changePageSize(this.value)" style="padding:6px 12px">
                         <option value="5">每页5条</option>
                         <option value="10" selected>每页10条</option>
@@ -308,6 +422,39 @@
                     </select>
                 </div>
             </div>
+            
+            <!-- 高级检索面板 -->
+            <div class="advanced-search">
+                <button class="primary-btn" onclick="toggleAdvancedSearch()">高级检索 ▽</button>
+                <div class="advanced-panel" style="display:none">
+                    <div class="search-row">
+                        <label>时间范围：</label>
+                        <input type="date" id="startDate">
+                        <span>至</span>
+                        <input type="date" id="endDate">
+                    </div>
+                    
+                    <div class="search-row">
+                        <label>包含标签：</label>
+                        <div id="tag-selector"></div>
+                    </div>
+
+                    <div class="search-row">
+                        <label>全文关键词：</label>
+                        <input type="text" id="keywords" placeholder="多个词用空格分隔">
+                        <select id="keywordLogic">
+                            <option value="AND">必须全部包含</option>
+                            <option value="OR">包含任意一个</option>
+                        </select>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="primary-btn" onclick="applyAdvancedSearch()">应用筛选</button>
+                        <button class="danger-btn" onclick="resetAdvancedSearch()">重置</button>
+                    </div>
+                </div>
+            </div>
+            
             <div id="entries-container"></div>
             <div class="pagination">
                 <div class="pagination-info">
@@ -433,7 +580,13 @@
         // 初始化数据监听
         function initDataListeners() {
             unsubscribeEntries = db.ref(getProjectPath('entries')).on('value', (snapshot) => {
-                entries = snapshot.val() ? Object.values(snapshot.val()) : [];
+                entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
+                    // 为可能缺失的字段提供默认值
+                    links: [],
+                    keywords: [],
+                    analysis: '',
+                    ...entry // 原始数据会覆盖默认值
+                })) : [];
                 renderEntries();
             });
 
@@ -472,6 +625,18 @@
         let editingId = null;
         let currentFilterKeyword = null;
         let selectedAll = false;
+        
+        // 高级筛选的全局变量
+        let advancedFilter = {
+            startDate: null,
+            endDate: null,
+            tags: [],
+            keywords: [],
+            keywordLogic: 'AND'
+        };
+        
+        // 默认总页数
+        let totalPages = 1;
 
         // 新增页面条数改变函数
         function changePageSize(size) {
@@ -526,21 +691,22 @@
 
         function renderCategoryManager() {
             const container = document.getElementById('main-categories');
-            container.innerHTML = Object.entries(categories.main).map(([code, data]) => `
-                <div class="category-item">
-                    <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
-                    <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
-                    <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
-                </div>
-                ${data.sub.map(sub => `
-                    <div class="category-item" style="margin-left:20px">
-                        <input value="${sub.split('-')[1]}" 
-                               onchange="updateSubCategory('${code}', '${sub}', this.value)">
-                        <button class="danger-btn" 
-                                onclick="removeSubCategory('${code}', '${sub}')">删除</button>
+            container.innerHTML = Object.entries(categories.main)
+                .map(([code, data]) => `
+                    <div class="category-item">
+                        <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
+                        <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
+                        <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
                     </div>
-                `).join('')}
-            `).join('');
+                    ${data.sub.map(sub => `
+                        <div class="category-item" style="margin-left:20px">
+                            <input value="${sub.split('-')[1]}" 
+                                   onchange="updateSubCategory('${code}', '${sub}', this.value)">
+                            <button class="danger-btn" 
+                                    onclick="removeSubCategory('${code}', '${sub}')">删除</button>
+                        </div>
+                    `).join('')}
+                `).join('');
         }
 
         // 分类操作
@@ -728,14 +894,7 @@
         }
 
         function renderEntries() {
-            let filteredEntries = entries.filter(entry => {
-                const matchKeyword = !currentFilterKeyword || 
-                    entry.keywords.includes(currentFilterKeyword);
-                const matchSearch = !searchQuery || 
-                    [entry.title, entry.content, entry.analysis, entry.keywords.join(' ')]
-                    .join(' ').toLowerCase().includes(searchQuery.toLowerCase());
-                return matchKeyword && matchSearch;
-            });
+            let filteredEntries = getFilteredEntries();
 
             // ======== 新增排序逻辑 ========
             filteredEntries.sort((a, b) => {
@@ -747,7 +906,7 @@
                 return a.date.localeCompare(b.date);
             });
 
-            const totalPages = Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
+            const totalPagesCount = Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
             const start = (currentPage - 1) * ENTRIES_PER_PAGE;
             const end = start + ENTRIES_PER_PAGE;
             const currentEntries = filteredEntries.slice(start, end);
@@ -776,10 +935,10 @@
                         <tr>
                             <td><input type="checkbox" class="select-entry" data-id="${entry.id}"></td>
                             <td>${entry.id}</td>
-                            <td>${entry.date}</td>
-                            <td>${getCategoryName(entry.mainCat)} - ${entry.subCat.split('-')[1]}</td>
-                            <td>${entry.title}</td>
-                            <td>${entry.keywords.map(k => `<span class="keyword-tag" onclick="filterByKeyword('${k}')">${k}</span>`).join(' ')}</td>
+                            <td>${entry.date || ''}</td>
+                            <td>${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</td>
+                            <td>${entry.title || ''}</td>
+                            <td>${(entry.keywords || []).map(k => `<span class="keyword-tag" onclick="filterByKeyword('${k}')">${k}</span>`).join(' ')}</td>
                             <td>
                                 <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
                                 <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
@@ -797,7 +956,7 @@
                 selectedAll = false;
             });
 
-            updatePagination(totalPages);
+            updatePagination(totalPagesCount);
             updateKeywords();
         }
 
@@ -813,12 +972,24 @@
             } else {
                 const checkboxes = document.querySelectorAll('.select-entry:checked');
                 if (checkboxes.length === 0) {
-                    alert('请至少选择一个条目进行导出！');
+                    showAlert('请至少选择一个条目进行导出！', 'warning');
                     return;
                 }
                 entriesToExport = Array.from(checkboxes).map(checkbox => 
                     entries.find(e => e.id === checkbox.dataset.id)
-                );
+                ).filter(Boolean); // 过滤无效条目
+            }
+
+            // 添加数据长度验证
+            if (entriesToExport.length === 0) {
+                showAlert('没有符合条件的条目可导出', 'warning');
+                return;
+            }
+
+            // 添加导出格式验证
+            if (!['excel'].includes(format)) {
+                showAlert('不支持的导出格式', 'error');
+                return;
             }
 
             if (format === 'excel') {
@@ -827,21 +998,40 @@
         }
 
         function exportExcel(entries) {
-            const data = entries.map(entry => ({
-                日期: entry.date,
-                主分类: entry.mainCat,
-                子分类: entry.subCat,
-                标题: entry.title,
-                原文内容: entry.content,
-                分析: entry.analysis,
-                相关链接: entry.links.join('; '),
-                关键词: entry.keywords.join('; ')
-            }));
+            try {
+                // 数据格式预验证
+                if (!Array.isArray(entries) || entries.length === 0) {
+                    throw new Error('导出数据格式异常');
+                }
+                
+                // 数据安全处理
+                const validatedEntries = entries.map(entry => ({
+                    ...entry,
+                    links: Array.isArray(entry.links) ? entry.links : [],
+                    keywords: Array.isArray(entry.keywords) ? entry.keywords : []
+                }));
 
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(data);
-            XLSX.utils.book_append_sheet(wb, ws, "史料数据");
-            XLSX.writeFile(wb, `史料导出_${new Date().toISOString().slice(0,10)}.xlsx`);
+                const data = validatedEntries.map(entry => ({
+                    日期: entry.date || '',
+                    主分类: entry.mainCat || '',
+                    子分类: entry.subCat || '',
+                    标题: entry.title || '',
+                    原文内容: entry.content || '',
+                    分析: entry.analysis || '',
+                    相关链接: (entry.links || []).join('; '),
+                    关键词: (entry.keywords || []).join('; ')
+                }));
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, "史料数据");
+                XLSX.writeFile(wb, `史料导出_${new Date().toISOString().slice(0,10)}.xlsx`);
+                
+                showAlert(`成功导出 ${entries.length} 条记录`, 'success');
+            } catch (error) {
+                console.error('导出失败:', error);
+                showAlert(`导出失败：${error.message}`, 'error');
+            }
         }
 
         function updateCategorySelectors() {
@@ -869,10 +1059,68 @@
             document.getElementById('totalPages').textContent = totalPages || 1;
             document.getElementById('entriesPerPage').textContent = ENTRIES_PER_PAGE;
             
+            // 保存总页数到全局变量
+            window.totalPages = totalPages || 1;
+            
             const container = document.getElementById('pagination-buttons');
-            container.innerHTML = Array.from({length: totalPages}, (_,i) => 
-                `<button class="page-btn ${i+1 === currentPage ? 'active' : ''}" 
-                 onclick="currentPage=${i+1};renderEntries()">${i+1}</button>`).join('');
+            const current = currentPage;
+            const pages = [];
+            const MAX_VISIBLE = 5; // 每边显示的页数
+
+            // 生成页码数组
+            pages.push(1);
+            if (current - MAX_VISIBLE > 2) pages.push('...');
+            for (let i = Math.max(2, current - MAX_VISIBLE); i <= Math.min(totalPages - 1, current + MAX_VISIBLE); i++) {
+                pages.push(i);
+            }
+            if (current + MAX_VISIBLE < totalPages - 1) pages.push('...');
+            if (totalPages > 1) pages.push(totalPages);
+
+            // 生成分页HTML
+            container.innerHTML = pages.map(page => {
+                if (page === '...') {
+                    return `<button class="page-btn more" onclick="showMorePages()">⋯</button>`;
+                }
+                return `<button class="page-btn ${page === current ? 'active' : ''}" 
+                              onclick="currentPage=${page};renderEntries()">${page}</button>`;
+            }).join('') + `
+                <div class="page-jump">
+                    跳至 <input type="number" min="1" max="${totalPages}" 
+                          onchange="jumpToPage(this.value)" style="width:60px"> 页
+                </div>
+            `;
+        }
+        
+        // 显示更多页码
+        function showMorePages() {
+            const current = currentPage;
+            const totalPages = parseInt(document.getElementById('totalPages').textContent);
+            const visibleRange = 5; // 每次点击显示5页
+            const start = Math.max(1, current - visibleRange);
+            const end = Math.min(totalPages, current + visibleRange);
+            
+            const pages = [];
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            document.getElementById('pagination-buttons').innerHTML = pages.map(page => `
+                <button class="page-btn ${page === current ? 'active' : ''}" 
+                        onclick="currentPage=${page};renderEntries()">${page}</button>
+            `).join('') + `
+                <div class="page-jump">
+                    跳至 <input type="number" min="1" max="${totalPages}" 
+                          onchange="jumpToPage(this.value)" style="width:60px"> 页
+                </div>
+            `;
+        }
+
+        // 跳转页面
+        function jumpToPage(page) {
+            const totalPages = parseInt(document.getElementById('totalPages').textContent);
+            page = Math.max(1, Math.min(Number(page), totalPages));
+            currentPage = page;
+            renderEntries();
         }
 
         function updateKeywords() {
@@ -901,11 +1149,11 @@
             
             // 校验必填项
             if (!formData.get('date')) {
-                alert('日期为必填项！');
+                showAlert('日期为必填项！', 'warning');
                 return;
             }
             if (!categories.main[formData.get('main-cat')]) {
-                alert('请先创建主分类');
+                showAlert('请先创建主分类', 'warning');
                 return;
             }
 
@@ -927,9 +1175,9 @@
                     subCat: formData.get('sub-cat'),
                     title: formData.get('title'),
                     content: quill.root.innerHTML,
-                    analysis: formData.get('analysis'),
-                    links: formData.get('links').split(',').map(l => l.trim()).filter(Boolean),
-                    keywords: formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean),
+                    analysis: formData.get('analysis') || '', // 提供默认值
+                    links: formData.get('links') ? formData.get('links').split(',').map(l => l.trim()).filter(Boolean) : [], // 确保始终是数组
+                    keywords: formData.get('keywords') ? formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean) : [], // 确保始终是数组
                     updatedAt: firebase.database.ServerValue.TIMESTAMP
                 };
 
@@ -984,20 +1232,25 @@
 
         function editEntry(id) {
             const entry = entries.find(e => e.id === id);
+            if (!entry) {
+                showAlert('找不到指定条目', 'error');
+                return;
+            }
+            
             editingId = id; // 保留原始ID用于后续判断
             
             // 填充表单数据
-            document.querySelector('[name="date"]').value = entry.date;
-            document.querySelector('[name="main-cat"]').value = entry.mainCat;
+            document.querySelector('[name="date"]').value = entry.date || '';
+            document.querySelector('[name="main-cat"]').value = entry.mainCat || '';
             updateSubCats();
             setTimeout(() => {
-                document.querySelector('[name="sub-cat"]').value = entry.subCat;
+                document.querySelector('[name="sub-cat"]').value = entry.subCat || '';
             }, 100);
-            document.querySelector('[name="title"]').value = entry.title;
-            quill.root.innerHTML = entry.content;
-            document.querySelector('[name="analysis"]').value = entry.analysis;
-            document.querySelector('[name="links"]').value = entry.links?.join(', ') || '';
-            document.querySelector('[name="keywords"]').value = entry.keywords.join(', ');
+            document.querySelector('[name="title"]').value = entry.title || '';
+            quill.root.innerHTML = entry.content || '';
+            document.querySelector('[name="analysis"]').value = entry.analysis || '';
+            document.querySelector('[name="links"]').value = (entry.links || []).join(', ');
+            document.querySelector('[name="keywords"]').value = (entry.keywords || []).join(', ');
             showForm();
         }
 
@@ -1044,20 +1297,203 @@
             } else {
                 // 切换全选所有
                 selectedAll = !selectedAll;
+                
+                // 同步UI状态与数据状态
                 checkboxes.forEach(cb => cb.checked = selectedAll);
                 pageCheckbox.checked = selectedAll;
+                
+                if (selectedAll) {
+                    showAlert('已选择全部条目，包括其他页面的条目', 'info');
+                }
             }
+        }
+
+        // 新增方法：获取过滤后的条目
+        function getFilteredEntries() {
+            return entries.filter(entry => {
+                // 关键字过滤
+                const keywordTagMatch = !currentFilterKeyword || 
+                    entry.keywords.includes(currentFilterKeyword);
+                
+                // 搜索过滤
+                const searchMatch = !searchQuery || 
+                    [entry.title, entry.content, entry.analysis, entry.keywords.join(' ')]
+                        .join(' ')
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase());
+                
+                // 高级筛选
+                const dateMatch = (!advancedFilter.startDate || entry.date >= advancedFilter.startDate) &&
+                                (!advancedFilter.endDate || entry.date <= advancedFilter.endDate);
+                
+                const tagMatch = advancedFilter.tags.length === 0 || 
+                                advancedFilter.tags.every(tag => entry.keywords.includes(tag));
+                
+                const contentText = [entry.title, entry.content, entry.analysis].join(' ').toLowerCase();
+                const advKeywordMatch = advancedFilter.keywords.length === 0 || 
+                                   (advancedFilter.keywordLogic === 'AND' ? 
+                                    advancedFilter.keywords.every(kw => contentText.includes(kw.toLowerCase())) :
+                                    advancedFilter.keywords.some(kw => contentText.includes(kw.toLowerCase())));
+                
+                return keywordTagMatch && searchMatch && dateMatch && tagMatch && advKeywordMatch;
+            });
+        }
+
+        // 切换高级搜索面板
+        function toggleAdvancedSearch() {
+            const panel = document.querySelector('.advanced-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            
+            // 动态加载标签
+            if(panel.style.display === 'block' && !document.getElementById('tag-selector').children.length) {
+                const allTags = [...new Set(entries.flatMap(e => e.keywords || []))];
+                document.getElementById('tag-selector').innerHTML = allTags.map(tag => `
+                    <label class="tag-checkbox">
+                        <input type="checkbox" value="${tag}">
+                        ${tag}
+                    </label>
+                `).join('');
+            }
+        }
+
+        // 应用高级筛选
+        function applyAdvancedSearch() {
+            advancedFilter = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                tags: Array.from(document.querySelectorAll('#tag-selector input:checked')).map(cb => cb.value),
+                keywords: document.getElementById('keywords').value.split(' ').filter(Boolean),
+                keywordLogic: document.getElementById('keywordLogic').value
+            };
+            
+            currentPage = 1;
+            renderEntries();
+        }
+
+        // 重置筛选
+        function resetAdvancedSearch() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.querySelectorAll('#tag-selector input').forEach(cb => cb.checked = false);
+            document.getElementById('keywords').value = '';
+            document.getElementById('keywordLogic').value = 'AND';
+            
+            advancedFilter = {
+                startDate: null,
+                endDate: null,
+                tags: [],
+                keywords: [],
+                keywordLogic: 'AND'
+            };
+            
+            currentPage = 1;
+            renderEntries();
         }
 
         // 初始化
         updateCategorySelectors();
         renderEntries();
 
+        // 自动检查数据完整性
+        setTimeout(() => {
+            // 延迟执行，确保页面其他内容已加载完成
+            checkDataIntegrity();
+        }, 2000);
+
+        // 检查数据完整性，如果有问题建议用户修复
+        function checkDataIntegrity() {
+            const entriesRef = db.ref(getProjectPath('entries'));
+            entriesRef.once('value').then(snapshot => {
+                let hasIssues = false;
+                let checkedCount = 0;
+                
+                snapshot.forEach(child => {
+                    const entry = child.val();
+                    checkedCount++;
+                    
+                    if (!entry.hasOwnProperty('links') || entry.links === null || entry.links === undefined ||
+                        !entry.hasOwnProperty('keywords') || entry.keywords === null || entry.keywords === undefined ||
+                        !entry.hasOwnProperty('analysis') || entry.analysis === null || entry.analysis === undefined) {
+                        hasIssues = true;
+                    }
+                });
+                
+                if (hasIssues && checkedCount > 0) {
+                    showAlert('检测到部分数据缺少必要字段，建议点击"修复数据"按钮进行修复', 'warning');
+                }
+            }).catch(error => {
+                console.error('数据检查失败:', error);
+            });
+        }
+
         // 页面卸载时清理监听器
         window.addEventListener('beforeunload', () => {
             if (unsubscribeEntries) unsubscribeEntries();
             if (unsubscribeCategories) unsubscribeCategories();
         });
+
+        // 新增在页面显示状态提示的方法
+        function showAlert(message, type = 'info') {
+            const alertBox = document.createElement('div');
+            alertBox.className = `export-alert ${type}`;
+            alertBox.innerHTML = `
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()">&times;</button>
+            `;
+            
+            document.body.prepend(alertBox);
+            setTimeout(() => alertBox.remove(), 5000);
+        }
+
+        // 数据迁移函数 - 修复现有数据中的字段
+        function migrateLegacyData() {
+            showAlert('开始修复历史数据...', 'info');
+            const entriesRef = db.ref(getProjectPath('entries'));
+            
+            entriesRef.once('value').then(snapshot => {
+                let updates = {};
+                let fixedCount = 0;
+                
+                snapshot.forEach(child => {
+                    const entry = child.val();
+                    let needsUpdate = false;
+                    
+                    // 检查并修复links字段
+                    if (!entry.hasOwnProperty('links') || entry.links === null || entry.links === undefined) {
+                        updates[`${child.key}/links`] = [];
+                        needsUpdate = true;
+                    }
+                    
+                    // 检查并修复keywords字段
+                    if (!entry.hasOwnProperty('keywords') || entry.keywords === null || entry.keywords === undefined) {
+                        updates[`${child.key}/keywords`] = [];
+                        needsUpdate = true;
+                    }
+                    
+                    // 检查并修复analysis字段
+                    if (!entry.hasOwnProperty('analysis') || entry.analysis === null || entry.analysis === undefined) {
+                        updates[`${child.key}/analysis`] = '';
+                        needsUpdate = true;
+                    }
+                    
+                    if (needsUpdate) {
+                        fixedCount++;
+                    }
+                });
+                
+                if (fixedCount > 0) {
+                    return entriesRef.update(updates).then(() => {
+                        showAlert(`数据修复完成，已修复${fixedCount}条记录`, 'success');
+                    });
+                } else {
+                    showAlert('所有数据格式正常，无需修复', 'info');
+                    return Promise.resolve();
+                }
+            }).catch(error => {
+                console.error('数据修复失败:', error);
+                showAlert(`数据修复失败: ${error.message}`, 'error');
+            });
+        }
     </script>
 </body>
 </html>
