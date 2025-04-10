@@ -952,19 +952,29 @@
                     await entryRef.child(editingId).remove();
                     // 生成新ID
                     newEntry.id = await generateID(newEntry);
+                    // 保存到数据库（使用set方法创建新条目）
+                    await entryRef.child(newEntry.id).set(newEntry);
                 } else if (editingId) {
                     // 保持原ID
                     newEntry.id = editingId;
                     // 保持原创建时间
                     newEntry.createdAt = originalEntry.createdAt;
+                    
+                    // 使用update方法更新部分字段，而不是set方法覆盖整个条目
+                    const updates = {};
+                    Object.keys(newEntry).forEach(key => {
+                        if (key !== 'id' && key !== 'createdAt') {
+                            updates[key] = newEntry[key];
+                        }
+                    });
+                    await entryRef.child(newEntry.id).update(updates);
                 } else {
                     // 新条目，生成ID
                     newEntry.id = await generateID(newEntry);
                     newEntry.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                    // 保存到数据库（使用set方法创建新条目）
+                    await entryRef.child(newEntry.id).set(newEntry);
                 }
-
-                // 保存到数据库
-                await entryRef.child(newEntry.id).set(newEntry);
 
                 hideForm();
             } catch (error) {
