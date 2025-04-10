@@ -388,6 +388,60 @@
             font-size: 1.2em;
             padding: 0 12px;
         }
+
+        /* 新增便签样式 */
+        .sticky-notes {
+            margin-top: 30px;
+            position: relative;
+        }
+
+        .glassmorphism-note {
+            background: rgba(255, 180, 19, 0.6); /* 背景色改为ffb413，透明度60% */
+            backdrop-filter: blur(10px) saturate(180%); /* 增加饱和度增强效果 */
+            color: #f20b9a; /* 文字颜色改为f20b9a */
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 180, 19, 0.5); /* 边框颜色同步调整 */
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        #note-date {
+            background: rgba(255, 180, 19, 0.3); /* 半透背景 */
+            border: 1px solid #f20b9a; /* 使用更新后的文字颜色作为边框 */
+            color: #f20b9a; /* 更新日期文字颜色 */
+            border-radius: 4px;
+            padding: 4px;
+            margin-left: 10px;
+        }
+
+        #note-content {
+            line-height: 1.6;
+            outline: none;
+            min-height: 180px;
+            font-family: 'KaiTi', '楷体', serif; /* 楷体字体 */
+            font-weight: bold; /* 加粗 */
+        }
+
+        /* 占位符文字颜色 */
+        .placeholder-text {
+            color: rgba(242, 11, 154, 0.5) !important; /* 50%透明的新主文字色 */
+            font-style: italic;
+        }
+
+        #note-content:focus {
+            box-shadow: 0 0 0 2px rgba(242, 11, 154, 0.3); /* 使用更新后文字颜色的淡色作为聚焦指示 */
+        }
+
+        /* 兼容性处理 */
+        @supports not (backdrop-filter: blur(10px)) {
+            .glassmorphism-note {
+                background: rgba(255, 180, 19, 0.8); /* 不支持模糊效果时透明度略高 */
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1); /* 加强阴影补偿模糊效果 */
+            }
+        }
     </style>
 </head>
 <body>
@@ -467,6 +521,16 @@
         <div class="sidebar">
             <h3>关键词索引</h3>
             <div id="keyword-cloud"></div>
+            
+            <!-- 新增便签区域 -->
+            <div class="sticky-notes">
+                <h3>每日便签
+                    <input type="date" id="note-date" onchange="loadNoteByDate(this.value)">
+                </h3>
+                <div class="glassmorphism-note">
+                    <div id="note-content" contenteditable="true" oninput="autoSaveNote()"></div>
+                </div>
+            </div>
         </div>
 
         <!-- 史料表单弹窗 -->
@@ -598,24 +662,25 @@
         }
 
         // 认证状态监听
-      auth.onAuthStateChanged(async user => {
-    if (user) {
-        const projectId = new URLSearchParams(window.location.search).get('project');
-        
-        // 从Firebase实时数据库获取项目名称
-        const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
-        const snapshot = await projectRef.once('value');
-        const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
-        
-        document.title = `${projectName} - 史料数据库`;
-        document.getElementById('projectTitle').textContent = projectName;
-        
-        initDataListeners();
-    } else {
-        window.location.href = 'index.html';
-    }
-});
-
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                const projectId = new URLSearchParams(window.location.search).get('project');
+                
+                // 从Firebase实时数据库获取项目名称
+                const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
+                const snapshot = await projectRef.once('value');
+                const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
+                
+                document.title = `${projectName} - 史料数据库`;
+                document.getElementById('projectTitle').textContent = projectName;
+                
+                initDataListeners();
+                initStickyNotes(); // 新增初始化便签
+                scheduleMidnightRefresh(); // 添加午夜刷新
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
 
         // 全局变量
         let quill = null;
@@ -1493,6 +1558,67 @@
                 console.error('数据修复失败:', error);
                 showAlert(`数据修复失败: ${error.message}`, 'error');
             });
+        }
+
+        // 在全局变量部分新增
+        let noteSavingTimer = null;
+        const NOTE_DEBOUNCE = 2000; // 2秒自动保存
+
+        // 初始化便签
+        function initStickyNotes() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('note-date').value = today;
+            loadNoteByDate(today);
+        }
+
+        // 自动保存逻辑
+        function autoSaveNote() {
+            clearTimeout(noteSavingTimer);
+            noteSavingTimer = setTimeout(saveCurrentNote, NOTE_DEBOUNCE);
+        }
+
+        async function saveCurrentNote() {
+            const date = document.getElementById('note-date').value;
+            const content = document.getElementById('note-content').innerHTML;
+            
+            try {
+                await db.ref(getProjectPath(`notes/${date}`)).set({
+                    content: content,
+                    lastModified: firebase.database.ServerValue.TIMESTAMP
+                });
+                showAlert('便签已自动保存', 'success');
+            } catch (error) {
+                showAlert('保存失败: ' + error.message, 'error');
+            }
+        }
+
+        async function loadNoteByDate(date) {
+            try {
+                const snapshot = await db.ref(getProjectPath(`notes/${date}`)).once('value');
+                document.getElementById('note-content').innerHTML = snapshot.exists() 
+                    ? snapshot.val().content 
+                    : `<p class="placeholder-text">开始记录${date}的思考...</p>`;
+            } catch (error) {
+                showAlert('加载失败: ' + error.message, 'error');
+            }
+        }
+
+        // 添加午夜自动刷新
+        function scheduleMidnightRefresh() {
+            const now = new Date();
+            const night = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate() + 1, // 第二天
+                0, 0, 0 // 午夜
+            );
+            
+            const msToMidnight = night - now;
+            
+            setTimeout(() => {
+                initStickyNotes();
+                scheduleMidnightRefresh(); // 递归调用设置下一次
+            }, msToMidnight);
         }
     </script>
 </body>
