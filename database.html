@@ -83,6 +83,43 @@
             height: fit-content;
         }
 
+        /* 关键词云样式优化 */
+        #keyword-cloud {
+            max-height: 350px; /* 设置最大高度 */
+            overflow-y: auto;  /* 启用垂直滚动 */
+            padding-right: 8px; /* 防止滚动条遮挡内容 */
+            margin: 10px 0;
+            scrollbar-width: thin;  /* Firefox滚动条宽度 */
+            scrollbar-color: rgba(100, 100, 100, 0.5) transparent; /* Firefox滚动条颜色 */
+        }
+
+        /* Webkit浏览器滚动条美化 */
+        #keyword-cloud::-webkit-scrollbar {
+            width: 8px;
+            background-color: transparent;
+        }
+
+        #keyword-cloud::-webkit-scrollbar-thumb {
+            background-color: rgba(100, 100, 100, 0.3);
+            border-radius: 4px;
+        }
+
+        #keyword-cloud::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(100, 100, 100, 0.6);
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            #keyword-cloud {
+                max-height: 250px;
+                scrollbar-width: none; /* Firefox隐藏滚动条 */
+            }
+            
+            #keyword-cloud::-webkit-scrollbar {
+                display: none; /* Chrome/Safari隐藏滚动条 */
+            }
+        }
+
         .keyword-tag {
             display: inline-block;
             background: #e3f2fd;
@@ -442,6 +479,62 @@
                 box-shadow: 0 4px 20px rgba(0,0,0,0.1); /* 加强阴影补偿模糊效果 */
             }
         }
+
+        /* 新增同步状态提示 */
+        #note-status {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .saving-status {
+            color: #2196f3 !important;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .error-text {
+            color: #f44336 !important;
+            font-style: italic;
+        }
+
+        /* 添加加载动画 */
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #f20b9a;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        .loading-spinner.mini {
+            width: 16px;
+            height: 16px;
+            border-width: 2px;
+            display: inline-block;
+            margin: 0 8px 0 0;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 禁用按钮样式 */
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -526,9 +619,11 @@
             <div class="sticky-notes">
                 <h3>每日便签
                     <input type="date" id="note-date" onchange="loadNoteByDate(this.value)">
+                    <button class="primary-btn" onclick="saveCurrentNote()" style="margin-left:10px">保存</button>
                 </h3>
                 <div class="glassmorphism-note">
                     <div id="note-content" contenteditable="true" oninput="autoSaveNote()"></div>
+                    <div id="note-status"></div>
                 </div>
             </div>
         </div>
@@ -637,7 +732,9 @@
                 window.location.href = "index.html";
                 return;
             }
-            const projectId = new URLSearchParams(window.location.search).get('project');
+            const projectId = localStorage.getItem('currentProject') || 
+                              new URLSearchParams(window.location.search).get('project') || 
+                              'default';
             return `users/${user.uid}/projects/${projectId}/${subPath}`;
         }
 
@@ -675,7 +772,7 @@
                 document.getElementById('projectTitle').textContent = projectName;
                 
                 initDataListeners();
-                initStickyNotes(); // 新增初始化便签
+                initStickyNotes(); // 初始化便签
                 scheduleMidnightRefresh(); // 添加午夜刷新
             } else {
                 window.location.href = 'index.html';
@@ -1563,44 +1660,136 @@
         // 在全局变量部分新增
         let noteSavingTimer = null;
         const NOTE_DEBOUNCE = 2000; // 2秒自动保存
+        let isNoteSaving = false; // 新增保存状态标记
 
         // 初始化便签
         function initStickyNotes() {
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('note-date').value = today;
-            loadNoteByDate(today);
+            
+            // 添加加载动画
+            document.getElementById('note-content').innerHTML = 
+                '<div class="loading-spinner"></div>';
+                
+            loadNoteByDate(today).then(() => {
+                // 添加自动恢复功能
+                const lastSaved = localStorage.getItem('lastNoteDraft');
+                if (lastSaved) {
+                    document.getElementById('note-content').innerHTML = lastSaved;
+                    showAlert('检测到未保存的草稿，已自动恢复', 'warning', 5000);
+                    localStorage.removeItem('lastNoteDraft');
+                }
+            });
         }
 
         // 自动保存逻辑
         function autoSaveNote() {
+            // 本地临时保存
+            const content = document.getElementById('note-content').innerHTML;
+            localStorage.setItem('lastNoteDraft', content);
+            
             clearTimeout(noteSavingTimer);
-            noteSavingTimer = setTimeout(saveCurrentNote, NOTE_DEBOUNCE);
+            noteSavingTimer = setTimeout(() => {
+                if (!isNoteSaving) {
+                    saveCurrentNote();
+                }
+            }, 3000); // 延长至3秒
         }
 
         async function saveCurrentNote() {
+            // 阻止默认事件
+            event && event.preventDefault();
+            
+            if (isNoteSaving) return;
+            
             const date = document.getElementById('note-date').value;
             const content = document.getElementById('note-content').innerHTML;
+            const statusEl = document.getElementById('note-status');
             
+            // 添加加载状态
+            const saveBtn = document.querySelector('.sticky-notes button');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<div class="loading-spinner mini"></div> 保存中...';
+            
+            // 空内容处理
+            if (content.includes('placeholder-text') || content === '') {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+                return;
+            }
+
             try {
+                isNoteSaving = true;
+                statusEl.textContent = '正在保存...';
+                statusEl.className = 'saving-status';
+                
+                // 使用新的路径生成方式
                 await db.ref(getProjectPath(`notes/${date}`)).set({
                     content: content,
-                    lastModified: firebase.database.ServerValue.TIMESTAMP
+                    lastModified: firebase.database.ServerValue.TIMESTAMP,
+                    userId: auth.currentUser.uid  // 添加用户ID增强安全性
                 });
-                showAlert('便签已自动保存', 'success');
+                
+                statusEl.textContent = '已保存';
+                statusEl.className = '';
+                
+                // 移除本地草稿
+                localStorage.removeItem('lastNoteDraft');
+                
+                setTimeout(() => {
+                    statusEl.textContent = '';
+                }, 3000);
+                
+                showAlert('便签已保存', 'success');
             } catch (error) {
-                showAlert('保存失败: ' + error.message, 'error');
+                console.error('保存失败:', error);
+                statusEl.textContent = '保存失败';
+                statusEl.className = 'error-text';
+                showAlert(`保存失败: ${error.code || error.message || '数据库错误'}`, 'error');
+            } finally {
+                isNoteSaving = false;
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
             }
         }
 
         async function loadNoteByDate(date) {
             try {
+                showAlert('加载便签...', 'info');
+                const statusEl = document.getElementById('note-status');
+                statusEl.textContent = '正在加载...';
+                statusEl.className = 'saving-status';
+                
                 const snapshot = await db.ref(getProjectPath(`notes/${date}`)).once('value');
-                document.getElementById('note-content').innerHTML = snapshot.exists() 
-                    ? snapshot.val().content 
-                    : `<p class="placeholder-text">开始记录${date}的思考...</p>`;
+                
+                // 添加加载状态
+                document.getElementById('note-content').innerHTML = 
+                    snapshot.exists() 
+                        ? snapshot.val().content 
+                        : `<p class="placeholder-text">开始记录${date}的思考...</p>`;
+                        
+                // 添加最后修改时间显示
+                if (snapshot.exists()) {
+                    const lastModified = new Date(snapshot.val().lastModified).toLocaleString();
+                    statusEl.textContent = `最后修改：${lastModified}`;
+                    statusEl.className = '';
+                    showAlert(`已加载 ${date} 的便签`, 'info');
+                } else {
+                    statusEl.textContent = '新便签';
+                    statusEl.className = '';
+                }
             } catch (error) {
+                const statusEl = document.getElementById('note-status');
+                statusEl.textContent = '加载失败';
+                statusEl.className = 'error-text';
+                
                 showAlert('加载失败: ' + error.message, 'error');
+                document.getElementById('note-content').innerHTML = 
+                    `<p class="error-text">加载失败，请检查网络连接</p>`;
             }
+            
+            return Promise.resolve(); // 确保返回Promise以支持链式调用
         }
 
         // 添加午夜自动刷新
@@ -1619,6 +1808,53 @@
                 initStickyNotes();
                 scheduleMidnightRefresh(); // 递归调用设置下一次
             }, msToMidnight);
+        }
+
+        // 添加网络状态检测
+        window.addEventListener('online', () => {
+            showAlert('网络连接已恢复', 'success');
+            if (navigator.onLine) {
+                // 自动重试保存便签
+                const content = document.getElementById('note-content').innerHTML;
+                if (!content.includes('placeholder-text') && content !== '') {
+                    saveCurrentNote();
+                }
+                
+                // 重新加载便签数据
+                loadNoteByDate(document.getElementById('note-date').value);
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            showAlert('网络连接中断，将使用本地存储', 'warning');
+        });
+
+        // 增加页面卸载时的便签保存
+        window.addEventListener('beforeunload', (event) => {
+            if (!isNoteSaving) {
+                // 保存当前便签
+                const content = document.getElementById('note-content').innerHTML;
+                if (!content.includes('placeholder-text') && content !== '') {
+                    // 使用同步方法保存到本地
+                    localStorage.setItem('lastNoteDraft', content);
+                    saveCurrentNote();
+                }
+            }
+        });
+
+        // 添加到初始化部分
+        function enableFirebaseDebug() {
+            if (location.hostname === "localhost") {
+                db.enableLogging(true);
+                console.log("Firebase调试日志已启用");
+            }
+        }
+
+        // 添加数据流监控函数
+        function monitorDataChanges() {
+            db.ref(getProjectPath('notes')).limitToLast(5).on('child_changed', snap => {
+                console.log('便签更新:', snap.key, snap.val());
+            });
         }
     </script>
 </body>
