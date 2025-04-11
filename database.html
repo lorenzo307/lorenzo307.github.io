@@ -426,114 +426,110 @@
             padding: 0 12px;
         }
 
-        /* 新增便签样式 */
-        .sticky-notes {
-            margin-top: 30px;
-            position: relative;
-        }
-
-        .glassmorphism-note {
-            background: rgba(255, 180, 19, 0.6); /* 背景色改为ffb413，透明度60% */
-            backdrop-filter: blur(10px) saturate(180%); /* 增加饱和度增强效果 */
-            color: #f20b9a; /* 文字颜色改为f20b9a */
+        /* 日志相关样式优化 */
+        .log-item {
+            transition: all 0.3s;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            padding: 20px;
             border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 180, 19, 0.5); /* 边框颜色同步调整 */
-            min-height: 200px;
-            max-height: 400px;
-            overflow-y: auto;
+            border: 1px solid #eee;
         }
-
-        #note-date {
-            background: rgba(255, 180, 19, 0.3); /* 半透背景 */
-            border: 1px solid #f20b9a; /* 使用更新后的文字颜色作为边框 */
-            color: #f20b9a; /* 更新日期文字颜色 */
-            border-radius: 4px;
-            padding: 4px;
-            margin-left: 10px;
+        
+        .log-item:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
         }
-
-        #note-content {
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .log-title {
+            font-size: 1.2em;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .log-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .log-content {
             line-height: 1.6;
-            outline: none;
-            min-height: 180px;
-            font-family: 'KaiTi', '楷体', serif; /* 楷体字体 */
-            font-weight: bold; /* 加粗 */
+            color: #333;
+            white-space: pre-wrap;
         }
-
-        /* 占位符文字颜色 */
-        .placeholder-text {
-            color: rgba(242, 11, 154, 0.5) !important; /* 50%透明的新主文字色 */
-            font-style: italic;
+        
+        .log-actions {
+            display: flex;
+            gap: 8px;
         }
-
-        #note-content:focus {
-            box-shadow: 0 0 0 2px rgba(242, 11, 154, 0.3); /* 使用更新后文字颜色的淡色作为聚焦指示 */
+        
+        .log-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
         }
-
-        /* 兼容性处理 */
-        @supports not (backdrop-filter: blur(10px)) {
-            .glassmorphism-note {
-                background: rgba(255, 180, 19, 0.8); /* 不支持模糊效果时透明度略高 */
-                box-shadow: 0 4px 20px rgba(0,0,0,0.1); /* 加强阴影补偿模糊效果 */
-            }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-
-        /* 新增同步状态提示 */
-        #note-status {
-            position: absolute;
-            right: 10px;
-            top: 10px;
+        
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
             font-size: 0.8em;
             color: #666;
         }
-
-        .saving-status {
-            color: #2196f3 !important;
-            animation: pulse 1s infinite;
+        
+        #log-editor-container {
+            height: 300px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        
+        .log-date-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
         }
-
-        .error-text {
-            color: #f44336 !important;
-            font-style: italic;
+        
+        .log-date-filter input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
         }
-
-        /* 添加加载动画 */
-        .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #f20b9a;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-
-        .loading-spinner.mini {
-            width: 16px;
-            height: 16px;
-            border-width: 2px;
-            display: inline-block;
-            margin: 0 8px 0 0;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* 禁用按钮样式 */
-        button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
+        
+        .log-empty {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
         }
     </style>
 </head>
@@ -552,6 +548,7 @@
                 <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="flex:1">
                 <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
                 <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
+                <button class="primary-btn" onclick="showLogViewer()">工作日志</button>
                 <div style="display:inline-block;margin-left:10px">
                     <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
                 </div>
@@ -615,19 +612,7 @@
             <h3>关键词索引</h3>
             <div id="keyword-cloud"></div>
             
-            <!-- 新增便签区域 -->
-            <div class="sticky-notes">
-                <h3>每日便签
-                    <input type="date" id="note-date" onchange="loadNoteByDate(this.value)">
-                    <button class="primary-btn" onclick="saveCurrentNote()" style="margin-left:10px">保存</button>
-                </h3>
-                <div class="glassmorphism-note">
-                    <div id="note-content" contenteditable="true" oninput="autoSaveNote()"></div>
-                    <div id="note-status"></div>
-                </div>
-            </div>
-        </div>
-
+           
         <!-- 史料表单弹窗 -->
         <div id="entry-form" class="form-popup">
             <h2>史料条目编辑</h2>
@@ -701,6 +686,47 @@
                 <button class="danger-btn" onclick="hideCategoryManager()">关闭</button>
             </div>
         </div>
+        
+        <!-- 日志表单弹窗 -->
+        <div id="log-form" class="form-popup">
+            <h2>工作日志</h2>
+            <form onsubmit="saveLog(event)">
+                <div class="form-row">
+                    <label>日期：</label>
+                    <input type="date" name="log-date" required>
+                </div>
+
+                <div class="form-row">
+                    <label>标题：</label>
+                    <input type="text" name="log-title" required>
+                </div>
+
+                <div class="form-row">
+                    <label>内容：</label>
+                    <div id="log-editor-container"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="primary-btn">保存</button>
+                    <button type="button" class="danger-btn" onclick="hideLogForm()">取消</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 日志查看弹窗 -->
+        <div id="log-viewer" class="form-popup" style="width: 800px; max-height: 80vh; overflow-y: auto;">
+            <h2>工作日志记录</h2>
+            <div class="action-buttons" style="margin-bottom: 15px;">
+                <button class="primary-btn" onclick="showLogForm()">＋ 新增日志</button>
+                <button class="danger-btn" onclick="hideLogViewer()">关闭</button>
+            </div>
+            <div class="log-date-filter">
+                <label>按日期筛选：</label>
+                <input type="date" id="log-filter-date" onchange="filterLogsByDate(this.value)">
+                <button class="primary-btn" onclick="resetLogFilter()">重置</button>
+            </div>
+            <div id="logs-container"></div>
+        </div>
     </div>
 
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -772,8 +798,7 @@
                 document.getElementById('projectTitle').textContent = projectName;
                 
                 initDataListeners();
-                initStickyNotes(); // 初始化便签
-                scheduleMidnightRefresh(); // 添加午夜刷新
+             
             } else {
                 window.location.href = 'index.html';
             }
@@ -787,6 +812,15 @@
         let editingId = null;
         let currentFilterKeyword = null;
         let selectedAll = false;
+        let entries = [];  // 添加entries数组初始化
+        let categories = { main: {} };  // 添加categories对象初始化
+        
+        // 日志相关变量
+        let logQuill = null;
+        let editingLogId = null;
+        let logs = [];  // 初始化logs数组
+        let filteredLogs = [];  // 初始化filteredLogs数组
+        let currentLogFilterDate = null;  // 初始化currentLogFilterDate
         
         // 高级筛选的全局变量
         let advancedFilter = {
@@ -1657,190 +1691,253 @@
             });
         }
 
-        // 在全局变量部分新增
-        let noteSavingTimer = null;
-        const NOTE_DEBOUNCE = 2000; // 2秒自动保存
-        let isNoteSaving = false; // 新增保存状态标记
+        // 日志相关功能
+        // 初始化日志编辑器
+        function initLogQuill() {
+            if (!logQuill) {
+                logQuill = new Quill('#log-editor-container', {
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['link', 'image'],
+                            ['clean']
+                        ]
+                    },
+                    theme: 'snow'
+                });
+            }
+        }
 
-        // 初始化便签
-        function initStickyNotes() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('note-date').value = today;
+        // 显示日志表单
+        function showLogForm() {
+            document.getElementById('log-form').style.display = 'block';
+            document.getElementById('log-viewer').style.display = 'none';
+            initLogQuill();
             
-            // 添加加载动画
-            document.getElementById('note-content').innerHTML = 
-                '<div class="loading-spinner"></div>';
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('[name="log-date"]').value = today;
+            
+            // 清空表单
+            document.querySelector('[name="log-title"]').value = '';
+            logQuill.root.innerHTML = '';
+            editingLogId = null;
+        }
+
+        // 隐藏日志表单
+        function hideLogForm() {
+            document.getElementById('log-form').style.display = 'none';
+            document.querySelector('form').reset();
+            if (logQuill) logQuill.root.innerHTML = '';
+            editingLogId = null;
+        }
+
+        // 显示日志查看器
+        function showLogViewer() {
+            document.getElementById('log-viewer').style.display = 'block';
+            document.getElementById('log-form').style.display = 'none';
+            loadLogs();
+        }
+
+        // 隐藏日志查看器
+        function hideLogViewer() {
+            document.getElementById('log-viewer').style.display = 'none';
+        }
+
+        // 加载日志数据
+        function loadLogs() {
+            const logsRef = db.ref(getProjectPath('logs'));
+            logsRef.once('value').then(snapshot => {
+                logs = snapshot.val() ? Object.values(snapshot.val()) : [];
                 
-            loadNoteByDate(today).then(() => {
-                // 添加自动恢复功能
-                const lastSaved = localStorage.getItem('lastNoteDraft');
-                if (lastSaved) {
-                    document.getElementById('note-content').innerHTML = lastSaved;
-                    showAlert('检测到未保存的草稿，已自动恢复', 'warning', 5000);
-                    localStorage.removeItem('lastNoteDraft');
+                // 按日期降序排序（最新的在前）
+                logs.sort((a, b) => b.date.localeCompare(a.date));
+                
+                // 应用当前筛选条件
+                if (currentLogFilterDate) {
+                    filteredLogs = logs.filter(log => log.date === currentLogFilterDate);
+                } else {
+                    filteredLogs = [...logs];
                 }
+                
+                renderLogs();
+            }).catch(error => {
+                console.error('加载日志失败:', error);
+                showAlert(`加载日志失败: ${error.message}`, 'error');
             });
         }
 
-        // 自动保存逻辑
-        function autoSaveNote() {
-            // 本地临时保存
-            const content = document.getElementById('note-content').innerHTML;
-            localStorage.setItem('lastNoteDraft', content);
+        // 渲染日志列表
+        function renderLogs() {
+            const container = document.getElementById('logs-container');
             
-            clearTimeout(noteSavingTimer);
-            noteSavingTimer = setTimeout(() => {
-                if (!isNoteSaving) {
-                    saveCurrentNote();
-                }
-            }, 3000); // 延长至3秒
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="log-empty">
+                        <p>暂无日志记录</p>
+                        <button class="primary-btn" onclick="showLogForm()">创建新日志</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 计算日志统计信息
+            const totalLogs = logs.length;
+            const todayLogs = logs.filter(log => log.date === new Date().toISOString().split('T')[0]).length;
+            const thisMonthLogs = logs.filter(log => {
+                const logDate = new Date(log.date);
+                const now = new Date();
+                return logDate.getMonth() === now.getMonth() && 
+                       logDate.getFullYear() === now.getFullYear();
+            }).length;
+            
+            // 渲染统计信息
+            const statsHtml = `
+                <div class="log-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">${totalLogs}</span>
+                        <span class="stat-label">总日志数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${todayLogs}</span>
+                        <span class="stat-label">今日日志</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${thisMonthLogs}</span>
+                        <span class="stat-label">本月日志</span>
+                    </div>
+                </div>
+            `;
+            
+            // 渲染日志列表
+            const logsHtml = filteredLogs.map(log => `
+                <div class="log-item">
+                    <div class="log-header">
+                        <h3 class="log-title">${log.title}</h3>
+                        <div class="log-actions">
+                            <span class="log-date">${log.date}</span>
+                            <button class="primary-btn" onclick="editLog('${log.id}')">编辑</button>
+                            <button class="danger-btn" onclick="deleteLog('${log.id}')">删除</button>
+                        </div>
+                    </div>
+                    <div class="log-content">${log.content}</div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = statsHtml + logsHtml;
         }
 
-        async function saveCurrentNote() {
-            // 阻止默认事件
-            event && event.preventDefault();
+        // 保存日志
+        async function saveLog(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
             
-            if (isNoteSaving) return;
-            
-            const date = document.getElementById('note-date').value;
-            const content = document.getElementById('note-content').innerHTML;
-            const statusEl = document.getElementById('note-status');
-            
-            // 添加加载状态
-            const saveBtn = document.querySelector('.sticky-notes button');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<div class="loading-spinner mini"></div> 保存中...';
-            
-            // 空内容处理
-            if (content.includes('placeholder-text') || content === '') {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalText;
+            // 校验必填项
+            if (!formData.get('log-date')) {
+                showAlert('日期为必填项！', 'warning');
+                return;
+            }
+            if (!formData.get('log-title')) {
+                showAlert('标题为必填项！', 'warning');
                 return;
             }
 
             try {
-                isNoteSaving = true;
-                statusEl.textContent = '正在保存...';
-                statusEl.className = 'saving-status';
+                const logsRef = db.ref(getProjectPath('logs'));
                 
-                // 使用新的路径生成方式
-                await db.ref(getProjectPath(`notes/${date}`)).set({
-                    content: content,
-                    lastModified: firebase.database.ServerValue.TIMESTAMP,
-                    userId: auth.currentUser.uid  // 添加用户ID增强安全性
-                });
-                
-                statusEl.textContent = '已保存';
-                statusEl.className = '';
-                
-                // 移除本地草稿
-                localStorage.removeItem('lastNoteDraft');
-                
-                setTimeout(() => {
-                    statusEl.textContent = '';
-                }, 3000);
-                
-                showAlert('便签已保存', 'success');
-            } catch (error) {
-                console.error('保存失败:', error);
-                statusEl.textContent = '保存失败';
-                statusEl.className = 'error-text';
-                showAlert(`保存失败: ${error.code || error.message || '数据库错误'}`, 'error');
-            } finally {
-                isNoteSaving = false;
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalText;
-            }
-        }
+                // 获取原始数据（如果是编辑状态）
+                let originalLog = null;
+                if (editingLogId) {
+                    const snapshot = await logsRef.child(editingLogId).once('value');
+                    originalLog = snapshot.val();
+                }
 
-        async function loadNoteByDate(date) {
-            try {
-                showAlert('加载便签...', 'info');
-                const statusEl = document.getElementById('note-status');
-                statusEl.textContent = '正在加载...';
-                statusEl.className = 'saving-status';
-                
-                const snapshot = await db.ref(getProjectPath(`notes/${date}`)).once('value');
-                
-                // 添加加载状态
-                document.getElementById('note-content').innerHTML = 
-                    snapshot.exists() 
-                        ? snapshot.val().content 
-                        : `<p class="placeholder-text">开始记录${date}的思考...</p>`;
-                        
-                // 添加最后修改时间显示
-                if (snapshot.exists()) {
-                    const lastModified = new Date(snapshot.val().lastModified).toLocaleString();
-                    statusEl.textContent = `最后修改：${lastModified}`;
-                    statusEl.className = '';
-                    showAlert(`已加载 ${date} 的便签`, 'info');
+                // 生成新日志数据
+                const newLog = {
+                    date: formData.get('log-date'),
+                    title: formData.get('log-title'),
+                    content: logQuill.root.innerHTML,
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                if (editingLogId) {
+                    // 保持原ID
+                    newLog.id = editingLogId;
+                    // 保持原创建时间
+                    newLog.createdAt = originalLog.createdAt;
+                    
+                    // 更新日志
+                    await logsRef.child(newLog.id).update(newLog);
                 } else {
-                    statusEl.textContent = '新便签';
-                    statusEl.className = '';
+                    // 新日志，生成ID
+                    newLog.id = `LOG-${Date.now()}`;
+                    newLog.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                    // 保存到数据库
+                    await logsRef.child(newLog.id).set(newLog);
                 }
+
+                hideLogForm();
+                showLogViewer(); // 保存后显示日志查看器
+                showAlert('日志保存成功！', 'success');
             } catch (error) {
-                const statusEl = document.getElementById('note-status');
-                statusEl.textContent = '加载失败';
-                statusEl.className = 'error-text';
-                
-                showAlert('加载失败: ' + error.message, 'error');
-                document.getElementById('note-content').innerHTML = 
-                    `<p class="error-text">加载失败，请检查网络连接</p>`;
+                showAlert(`保存失败: ${error.message}`, 'error');
             }
-            
-            return Promise.resolve(); // 确保返回Promise以支持链式调用
         }
 
-        // 添加午夜自动刷新
-        function scheduleMidnightRefresh() {
-            const now = new Date();
-            const night = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate() + 1, // 第二天
-                0, 0, 0 // 午夜
-            );
+        // 编辑日志
+        function editLog(id) {
+            const log = logs.find(l => l.id === id);
+            if (!log) {
+                showAlert('找不到指定日志', 'error');
+                return;
+            }
             
-            const msToMidnight = night - now;
+            editingLogId = id;
             
-            setTimeout(() => {
-                initStickyNotes();
-                scheduleMidnightRefresh(); // 递归调用设置下一次
-            }, msToMidnight);
+            // 填充表单数据
+            document.querySelector('[name="log-date"]').value = log.date || '';
+            document.querySelector('[name="log-title"]').value = log.title || '';
+            logQuill.root.innerHTML = log.content || '';
+            
+            // 显示表单
+            document.getElementById('log-form').style.display = 'block';
+            document.getElementById('log-viewer').style.display = 'none';
         }
 
-        // 添加网络状态检测
-        window.addEventListener('online', () => {
-            showAlert('网络连接已恢复', 'success');
-            if (navigator.onLine) {
-                // 自动重试保存便签
-                const content = document.getElementById('note-content').innerHTML;
-                if (!content.includes('placeholder-text') && content !== '') {
-                    saveCurrentNote();
-                }
-                
-                // 重新加载便签数据
-                loadNoteByDate(document.getElementById('note-date').value);
-            }
-        });
-
-        window.addEventListener('offline', () => {
-            showAlert('网络连接中断，将使用本地存储', 'warning');
-        });
-
-        // 增加页面卸载时的便签保存
-        window.addEventListener('beforeunload', (event) => {
-            if (!isNoteSaving) {
-                // 保存当前便签
-                const content = document.getElementById('note-content').innerHTML;
-                if (!content.includes('placeholder-text') && content !== '') {
-                    // 使用同步方法保存到本地
-                    localStorage.setItem('lastNoteDraft', content);
-                    saveCurrentNote();
+        // 删除日志
+        async function deleteLog(id) {
+            if (confirm('确定要删除该日志吗？')) {
+                try {
+                    await db.ref(getProjectPath(`logs/${id}`)).remove();
+                    loadLogs(); // 重新加载日志列表
+                    showAlert('日志已删除', 'success');
+                } catch (error) {
+                    showAlert(`删除失败: ${error.message}`, 'error');
                 }
             }
-        });
+        }
+
+        // 按日期筛选日志
+        function filterLogsByDate(date) {
+            currentLogFilterDate = date;
+            if (date) {
+                filteredLogs = logs.filter(log => log.date === date);
+            } else {
+                filteredLogs = [...logs];
+            }
+            renderLogs();
+        }
+        
+        // 重置日志筛选
+        function resetLogFilter() {
+            currentLogFilterDate = null;
+            document.getElementById('log-filter-date').value = '';
+            filteredLogs = [...logs];
+            renderLogs();
+        }
 
         // 添加到初始化部分
         function enableFirebaseDebug() {
@@ -1850,12 +1947,7 @@
             }
         }
 
-        // 添加数据流监控函数
-        function monitorDataChanges() {
-            db.ref(getProjectPath('notes')).limitToLast(5).on('child_changed', snap => {
-                console.log('便签更新:', snap.key, snap.val());
-            });
-        }
+       
     </script>
 </body>
 </html>
