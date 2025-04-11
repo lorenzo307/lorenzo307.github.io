@@ -15,18 +15,22 @@
     
     <style>
         :root {
-            --primary-color: #c62828;
-            --secondary-color: #1565c0;
-            --background: #fff8e1;
-            --text-primary: #3e2723;
-        }
+    --primary-color: #b84f0b;
+    --secondary-color: #eebf67;
+    --tertiary-color: #b5867a;
+    --background: #fff8e1;
+    --text-primary: #3e2723;
+}
+        
 
+       
         body {
             font-family: 'Noto Serif SC', serif;
             margin: 0;
             padding: 40px 20px;
             background: var(--background);
             color: var(--text-primary);
+            transition: all 0.3s ease;
         }
 
         .container {
@@ -71,16 +75,18 @@
 
         .entry-table th {
             background: var(--primary-color);
-            color: white;
+            color: #FFFFFF;
+            font-weight: bold;
             width: 100px;
         }
 
         .sidebar {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             height: fit-content;
+            color: #1A1A1A;
         }
 
         /* 关键词云样式优化 */
@@ -122,13 +128,14 @@
 
         .keyword-tag {
             display: inline-block;
-            background: #e3f2fd;
-            color: var(--secondary-color);
+            background: var(--secondary-color);
+            color: var(--background);
             padding: 6px 12px;
             margin: 4px;
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s;
+            font-weight: 500;
         }
 
         .keyword-tag:hover {
@@ -160,14 +167,17 @@
         .page-btn {
             padding: 6px 12px;
             border: 1px solid #ddd;
-            background: white;
+            background: var(--secondary-color);
             cursor: pointer;
             border-radius: 4px;
+            color: var(--background);
+            font-weight: 500;
         }
 
         .page-btn.active {
             background: var(--primary-color);
             color: white;
+            font-weight: bold;
         }
 
         .form-popup {
@@ -175,7 +185,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
+            background: #FFFFFF;
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -183,6 +193,7 @@
             max-width: 90%;
             display: none;
             z-index: 1000;
+            color: #1A1A1A;
         }
 
         .category-manager {
@@ -190,7 +201,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
+            background: #FFFFFF;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
@@ -198,6 +209,7 @@
             width: 80%;
             max-width: 500px;
             display: none;
+            color: #1A1A1A;
         }
 
         .back-btn {
@@ -221,13 +233,15 @@
         }
 
         .primary-btn {
-            background: var(--secondary-color);
-            color: white;
+            background: var(--primary-color);
+            color: #FFFFFF;
+            font-weight: bold;
         }
 
         .danger-btn {
-            background: #e74c3c;
-            color: white;
+            background: #dc3545;
+            color: #FFFFFF;
+            font-weight: bold;
         }
 
         .entry-table td:first-child {
@@ -489,14 +503,15 @@
         }
         
         .stat-value {
-            font-size: 1.2em;
+            font-size: 1.4em;
             font-weight: bold;
             color: var(--primary-color);
         }
         
         .stat-label {
             font-size: 0.8em;
-            color: #666;
+            color: var(--text-primary);
+            font-weight: 500;
         }
         
         #log-editor-container {
@@ -534,6 +549,40 @@
     </style>
 </head>
 <body>
+    <script>
+        // 添加主题切换功能
+        function setThemeByDay() {
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const today = new Date().getDay();
+            const theme = `theme-${days[today]}`;
+            
+            // 移除所有主题类
+            document.body.classList.remove(...days.map(day => `theme-${day}`));
+            // 添加当天的主题类
+            document.body.classList.add(theme);
+        }
+
+        // 页面加载时设置主题
+        document.addEventListener('DOMContentLoaded', setThemeByDay);
+
+        // 每天凌晨自动更新主题
+        function scheduleThemeUpdate() {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            
+            const timeUntilMidnight = tomorrow - now;
+            
+            setTimeout(() => {
+                setThemeByDay();
+                scheduleThemeUpdate(); // 设置下一天的更新
+            }, timeUntilMidnight);
+        }
+
+        // 启动主题自动更新
+        scheduleThemeUpdate();
+    </script>
     <div class="container">
         <div class="header">
             <button class="back-btn" onclick="location.href='index.html'">
@@ -719,6 +768,14 @@
             <div class="action-buttons" style="margin-bottom: 15px;">
                 <button class="primary-btn" onclick="showLogForm()">＋ 新增日志</button>
                 <button class="danger-btn" onclick="hideLogViewer()">关闭</button>
+                <select id="logPageSize" onchange="changeLogPageSize(this.value)" style="padding:6px 12px;margin-left:10px">
+                    <option value="5">每页5条</option>
+                    <option value="10" selected>每页10条</option>
+                    <option value="15">每页15条</option>
+                    <option value="20">每页20条</option>
+                    <option value="30">每页30条</option>
+                    <option value="50">每页50条</option>
+                </select>
             </div>
             <div class="log-date-filter">
                 <label>按日期筛选：</label>
@@ -726,6 +783,12 @@
                 <button class="primary-btn" onclick="resetLogFilter()">重置</button>
             </div>
             <div id="logs-container"></div>
+            <div class="pagination" id="log-pagination">
+                <div class="pagination-info">
+                    第<span id="currentLogPage">1</span>页，共<span id="totalLogPages">1</span>页，每页<span id="logsPerPage"></span>条
+                </div>
+                <div id="log-pagination-buttons"></div>
+            </div>
         </div>
     </div>
 
@@ -1781,6 +1844,7 @@
                         <button class="primary-btn" onclick="showLogForm()">创建新日志</button>
                     </div>
                 `;
+                document.getElementById('log-pagination').style.display = 'none';
                 return;
             }
             
@@ -1793,6 +1857,12 @@
                 return logDate.getMonth() === now.getMonth() && 
                        logDate.getFullYear() === now.getFullYear();
             }).length;
+            
+            // 计算分页
+            const totalPages = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
+            const start = (currentLogPage - 1) * LOGS_PER_PAGE;
+            const end = start + LOGS_PER_PAGE;
+            const currentPageLogs = filteredLogs.slice(start, end);
             
             // 渲染统计信息
             const statsHtml = `
@@ -1812,8 +1882,8 @@
                 </div>
             `;
             
-            // 渲染日志列表
-            const logsHtml = filteredLogs.map(log => `
+            // 渲染当前页的日志列表
+            const logsHtml = currentPageLogs.map(log => `
                 <div class="log-item">
                     <div class="log-header">
                         <h3 class="log-title">${log.title}</h3>
@@ -1828,6 +1898,10 @@
             `).join('');
             
             container.innerHTML = statsHtml + logsHtml;
+            
+            // 更新分页信息
+            updateLogPagination(totalPages);
+            document.getElementById('log-pagination').style.display = 'block';
         }
 
         // 保存日志
@@ -1923,6 +1997,7 @@
         // 按日期筛选日志
         function filterLogsByDate(date) {
             currentLogFilterDate = date;
+            currentLogPage = 1; // 重置页码
             if (date) {
                 filteredLogs = logs.filter(log => log.date === date);
             } else {
@@ -1934,9 +2009,83 @@
         // 重置日志筛选
         function resetLogFilter() {
             currentLogFilterDate = null;
+            currentLogPage = 1; // 重置页码
             document.getElementById('log-filter-date').value = '';
             filteredLogs = [...logs];
             renderLogs();
+        }
+
+        // 添加日志分页相关函数
+        let currentLogPage = 1;
+        let LOGS_PER_PAGE = 10;
+
+        function updateLogPagination(totalPages) {
+            document.getElementById('currentLogPage').textContent = currentLogPage;
+            document.getElementById('totalLogPages').textContent = totalPages;
+            document.getElementById('logsPerPage').textContent = LOGS_PER_PAGE;
+            
+            const container = document.getElementById('log-pagination-buttons');
+            const current = currentLogPage;
+            const pages = [];
+            const MAX_VISIBLE = 5;
+
+            // 生成页码数组
+            pages.push(1);
+            if (current - MAX_VISIBLE > 2) pages.push('...');
+            for (let i = Math.max(2, current - MAX_VISIBLE); i <= Math.min(totalPages - 1, current + MAX_VISIBLE); i++) {
+                pages.push(i);
+            }
+            if (current + MAX_VISIBLE < totalPages - 1) pages.push('...');
+            if (totalPages > 1) pages.push(totalPages);
+
+            // 生成分页HTML
+            container.innerHTML = pages.map(page => {
+                if (page === '...') {
+                    return `<button class="page-btn more" onclick="showMoreLogPages()">⋯</button>`;
+                }
+                return `<button class="page-btn ${page === current ? 'active' : ''}" 
+                              onclick="jumpToLogPage(${page})">${page}</button>`;
+            }).join('') + `
+                <div class="page-jump">
+                    跳至 <input type="number" min="1" max="${totalPages}" 
+                          onchange="jumpToLogPage(this.value)" style="width:60px"> 页
+                </div>
+            `;
+        }
+
+        function changeLogPageSize(size) {
+            LOGS_PER_PAGE = parseInt(size);
+            currentLogPage = 1;
+            renderLogs();
+        }
+
+        function jumpToLogPage(page) {
+            const totalPages = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
+            page = Math.max(1, Math.min(Number(page), totalPages));
+            currentLogPage = page;
+            renderLogs();
+        }
+
+        function showMoreLogPages() {
+            const totalPages = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
+            const visibleRange = 5;
+            const start = Math.max(1, currentLogPage - visibleRange);
+            const end = Math.min(totalPages, currentLogPage + visibleRange);
+            
+            const pages = [];
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            document.getElementById('log-pagination-buttons').innerHTML = pages.map(page => `
+                <button class="page-btn ${page === currentLogPage ? 'active' : ''}" 
+                        onclick="jumpToLogPage(${page})">${page}</button>
+            `).join('') + `
+                <div class="page-jump">
+                    跳至 <input type="number" min="1" max="${totalPages}" 
+                          onchange="jumpToLogPage(this.value)" style="width:60px"> 页
+                </div>
+            `;
         }
 
         // 添加到初始化部分
