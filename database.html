@@ -1,0 +1,2102 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>史料数据库</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+    --primary-color: #b84f0b;
+    --secondary-color: #eebf67;
+    --tertiary-color: #b5867a;
+    --background: #fff8e1;
+    --text-primary: #3e2723;
+}
+        
+
+       
+        body {
+            font-family: 'Noto Serif SC', serif;
+            margin: 0;
+            padding: 40px 20px;
+            background: var(--background);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 24px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .entry-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .entry-table th, 
+        .entry-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            vertical-align: top;
+        }
+
+        .entry-table th {
+            background: var(--primary-color);
+            color: #FFFFFF;
+            font-weight: bold;
+            width: 100px;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+            color: #1A1A1A;
+        }
+
+        /* 关键词云样式优化 */
+        #keyword-cloud {
+            max-height: 350px; /* 设置最大高度 */
+            overflow-y: auto;  /* 启用垂直滚动 */
+            padding-right: 8px; /* 防止滚动条遮挡内容 */
+            margin: 10px 0;
+            scrollbar-width: thin;  /* Firefox滚动条宽度 */
+            scrollbar-color: rgba(100, 100, 100, 0.5) transparent; /* Firefox滚动条颜色 */
+        }
+
+        /* Webkit浏览器滚动条美化 */
+        #keyword-cloud::-webkit-scrollbar {
+            width: 8px;
+            background-color: transparent;
+        }
+
+        #keyword-cloud::-webkit-scrollbar-thumb {
+            background-color: rgba(100, 100, 100, 0.3);
+            border-radius: 4px;
+        }
+
+        #keyword-cloud::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(100, 100, 100, 0.6);
+        }
+
+        /* 移动端优化 */
+        @media (max-width: 768px) {
+            #keyword-cloud {
+                max-height: 250px;
+                scrollbar-width: none; /* Firefox隐藏滚动条 */
+            }
+            
+            #keyword-cloud::-webkit-scrollbar {
+                display: none; /* Chrome/Safari隐藏滚动条 */
+            }
+        }
+
+        .keyword-tag {
+            display: inline-block;
+            background: var(--secondary-color);
+            color: var(--background);
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .keyword-tag:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .keyword-tag.active {
+            background: var(--primary-color);
+            color: white !important;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 5px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            flex: 100%;
+            text-align: center;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .page-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: var(--secondary-color);
+            cursor: pointer;
+            border-radius: 4px;
+            color: var(--background);
+            font-weight: 500;
+        }
+
+        .page-btn.active {
+            background: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        .form-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #FFFFFF;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            width: 700px;
+            max-width: 90%;
+            display: none;
+            z-index: 1000;
+            color: #1A1A1A;
+        }
+
+        .category-manager {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #FFFFFF;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            width: 80%;
+            max-width: 500px;
+            display: none;
+            color: #1A1A1A;
+        }
+
+        .back-btn {
+            background: #8d6e63;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .primary-btn {
+            background: var(--primary-color);
+            color: #FFFFFF;
+            font-weight: bold;
+        }
+
+        .danger-btn {
+            background: #dc3545;
+            color: #FFFFFF;
+            font-weight: bold;
+        }
+
+        .entry-table td:first-child {
+            width: 30px;
+            padding: 12px 4px !important;
+        }
+
+        .select-all-checkbox {
+            margin-left: 8px;
+        }
+
+        .select-options {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .select-all-buttons {
+            display: flex;
+            gap: 4px;
+            flex-direction: column;
+        }
+
+        .select-all-btn {
+            padding: 2px 6px;
+            font-size: 12px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        /* 添加页面条数选择器样式 */
+        #pageSize {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            height: 36px;
+        }
+
+        /* 优化全选按钮组 */
+        .select-all-buttons {
+            display: flex;
+            gap: 4px;
+            flex-direction: column;
+            margin-top: 4px;
+        }
+
+        .select-all-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s;
+        }
+
+        .select-all-btn:hover {
+            background: #e9ecef;
+        }
+
+        /* 新增提示框样式 */
+        .export-alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -10px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        
+        .export-alert.info {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .export-alert.success {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .export-alert.warning {
+            background-color: #fff8e1;
+            color: #ff6f00;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .export-alert.error {
+            background-color: #ffebee;
+            color: #b71c1c;
+            border-left: 4px solid #f44336;
+        }
+        
+        .export-alert button {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        /* 新增编辑器容器样式 */
+        #editor-container {
+            height: 300px;  /* 固定高度 */
+            overflow-y: auto;  /* 启用垂直滚动 */
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* 增强工具栏样式 */
+        .ql-toolbar {
+            background: #f8f9fa;
+            border-radius: 4px 4px 0 0;
+            border: 1px solid #ddd !important;
+            border-bottom: none !important;
+        }
+
+        .ql-container {
+            border-radius: 0 0 4px 4px;
+            border: 1px solid #ddd !important;
+            border-top: none !important;
+        }
+
+        /* 高级检索面板 */
+        .advanced-search {
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .advanced-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 10px;
+            position: absolute;
+            width: 100%;
+            z-index: 100;
+        }
+
+        .search-row {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #tag-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .tag-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        
+        /* 分页优化 */
+        .page-jump {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: 15px;
+        }
+
+        .page-jump input {
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .page-btn.more {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 0 12px;
+        }
+
+        /* 日志相关样式优化 */
+        .log-item {
+            transition: all 0.3s;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        
+        .log-item:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .log-title {
+            font-size: 1.2em;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .log-date {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .log-content {
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+        }
+        
+        .log-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .log-stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        #log-editor-container {
+            height: 300px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .log-date-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .log-date-filter input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .log-empty {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // 添加主题切换功能
+        function setThemeByDay() {
+            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const today = new Date().getDay();
+            const theme = `theme-${days[today]}`;
+            
+            // 移除所有主题类
+            document.body.classList.remove(...days.map(day => `theme-${day}`));
+            // 添加当天的主题类
+            document.body.classList.add(theme);
+        }
+
+        // 页面加载时设置主题
+        document.addEventListener('DOMContentLoaded', setThemeByDay);
+
+        // 每天凌晨自动更新主题
+        function scheduleThemeUpdate() {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            
+            const timeUntilMidnight = tomorrow - now;
+            
+            setTimeout(() => {
+                setThemeByDay();
+                scheduleThemeUpdate(); // 设置下一天的更新
+            }, timeUntilMidnight);
+        }
+
+        // 启动主题自动更新
+        scheduleThemeUpdate();
+    </script>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="location.href='index.html'">
+                <span class="material-icons">arrow_back</span>
+                返回课题列表
+            </button>
+            <h1 id="projectTitle">加载中...</h1>
+        </div>
+
+        <div class="main-content">
+            <div class="action-buttons">
+                <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="flex:1">
+                <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
+                <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
+                <button class="primary-btn" onclick="showLogViewer()">工作日志</button>
+                <div style="display:inline-block;margin-left:10px">
+                    <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
+                </div>
+                <div style="display:inline-block;margin-left:10px">
+                    <button class="primary-btn" onclick="migrateLegacyData()" title="修复历史数据中的缺失字段">修复数据</button>
+                </div>
+                <div style="display:inline-block;margin-left:10px">
+                    <select id="pageSize" onchange="changePageSize(this.value)" style="padding:6px 12px">
+                        <option value="5">每页5条</option>
+                        <option value="10" selected>每页10条</option>
+                        <option value="15">每页15条</option>
+                        <option value="20">每页20条</option>
+                        <option value="30">每页30条</option>
+                        <option value="50">每页50条</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 高级检索面板 -->
+            <div class="advanced-search">
+                <button class="primary-btn" onclick="toggleAdvancedSearch()">高级检索 ▽</button>
+                <div class="advanced-panel" style="display:none">
+                    <div class="search-row">
+                        <label>时间范围：</label>
+                        <input type="date" id="startDate">
+                        <span>至</span>
+                        <input type="date" id="endDate">
+                    </div>
+                    
+                    <div class="search-row">
+                        <label>包含标签：</label>
+                        <div id="tag-selector"></div>
+                    </div>
+
+                    <div class="search-row">
+                        <label>全文关键词：</label>
+                        <input type="text" id="keywords" placeholder="多个词用空格分隔">
+                        <select id="keywordLogic">
+                            <option value="AND">必须全部包含</option>
+                            <option value="OR">包含任意一个</option>
+                        </select>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="primary-btn" onclick="applyAdvancedSearch()">应用筛选</button>
+                        <button class="danger-btn" onclick="resetAdvancedSearch()">重置</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="entries-container"></div>
+            <div class="pagination">
+                <div class="pagination-info">
+                    第<span id="currentPage">1</span>页，共<span id="totalPages">1</span>页，每页<span id="entriesPerPage"></span>条
+                </div>
+                <div id="pagination-buttons"></div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h3>关键词索引</h3>
+            <div id="keyword-cloud"></div>
+            
+           
+        <!-- 史料表单弹窗 -->
+        <div id="entry-form" class="form-popup">
+            <h2>史料条目编辑</h2>
+            <form onsubmit="saveEntry(event)">
+                <div class="form-row">
+                    <label>日期：</label>
+                    <input type="date" name="date" required>
+                </div>
+
+                <div class="form-row">
+                    <label>主类：</label>
+                    <select name="main-cat" onchange="updateSubCats()" required>
+                        <!-- 动态加载选项 -->
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label>子类：</label>
+                    <select name="sub-cat" id="sub-cat" required></select>
+                </div>
+
+                <div class="form-row">
+                    <label>标题：</label>
+                    <input type="text" name="title" required>
+                </div>
+
+                <div class="form-row">
+                    <label>原文摘抄：</label>
+                    <div id="editor-container"></div>
+                </div>
+
+                <div class="form-row">
+                    <label>分析：</label>
+                    <textarea name="analysis" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <label>相关链接（逗号分隔）：</label>
+                    <input type="text" name="links">
+                </div>
+
+                <div class="form-row">
+                    <label>关键词（逗号分隔）：</label>
+                    <input type="text" name="keywords" required>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="primary-btn">保存</button>
+                    <button type="button" class="danger-btn" onclick="hideForm()">取消</button>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- 分类管理弹窗 -->
+        <div id="category-manager" class="category-manager">
+            <h3>分类管理</h3>
+            <div class="category-section">
+                <h4>主类管理</h4>
+                <div id="main-categories"></div>
+                <button class="primary-btn" onclick="addMainCategory()">＋ 添加主类</button>
+            </div>
+
+            <div class="category-section">
+                <h4>子类管理</h4>
+                <div id="sub-categories"></div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="primary-btn" onclick="saveCategories()">保存</button>
+                <button class="danger-btn" onclick="hideCategoryManager()">关闭</button>
+            </div>
+        </div>
+        
+        <!-- 日志表单弹窗 -->
+        <div id="log-form" class="form-popup">
+            <h2>工作日志</h2>
+            <form onsubmit="saveLog(event)">
+                <div class="form-row">
+                    <label>日期：</label>
+                    <input type="date" name="log-date" required>
+                </div>
+
+                <div class="form-row">
+                    <label>标题：</label>
+                    <input type="text" name="log-title" required>
+                </div>
+
+                <div class="form-row">
+                    <label>内容：</label>
+                    <div id="log-editor-container"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="primary-btn">保存</button>
+                    <button type="button" class="danger-btn" onclick="hideLogForm()">取消</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- 日志查看弹窗 -->
+        <div id="log-viewer" class="form-popup" style="width: 800px; max-height: 80vh; overflow-y: auto;">
+            <h2>工作日志记录</h2>
+            <div class="action-buttons" style="margin-bottom: 15px;">
+                <button class="primary-btn" onclick="showLogForm()">＋ 新增日志</button>
+                <button class="danger-btn" onclick="hideLogViewer()">关闭</button>
+                <select id="logPageSize" onchange="changeLogPageSize(this.value)" style="padding:6px 12px;margin-left:10px">
+                    <option value="5">每页5条</option>
+                    <option value="10" selected>每页10条</option>
+                    <option value="15">每页15条</option>
+                    <option value="20">每页20条</option>
+                    <option value="30">每页30条</option>
+                    <option value="50">每页50条</option>
+                </select>
+            </div>
+            <div class="log-date-filter">
+                <label>按日期筛选：</label>
+                <input type="date" id="log-filter-date" onchange="filterLogsByDate(this.value)">
+                <button class="primary-btn" onclick="resetLogFilter()">重置</button>
+            </div>
+            <div id="logs-container"></div>
+            <div class="pagination" id="log-pagination">
+                <div class="pagination-info">
+                    第<span id="currentLogPage">1</span>页，共<span id="totalLogPages">1</span>页，每页<span id="logsPerPage"></span>条
+                </div>
+                <div id="log-pagination-buttons"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <script>
+        // Firebase初始化
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
+            authDomain: "slsj-54760.firebaseapp.com",
+            databaseURL: "https://slsj-54760-default-rtdb.firebaseio.com",
+            projectId: "slsj-54760",
+            storageBucket: "slsj-54760.firebasestorage.app",
+            messagingSenderId: "890890573955",
+            appId: "1:890890573955:web:328c0ed09af23d634b23b6"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // 全局数据监听器
+        let unsubscribeEntries = null;
+        let unsubscribeCategories = null;
+
+        // 获取项目路径
+        function getProjectPath(subPath = "") {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("用户未登录，即将跳转");
+                window.location.href = "index.html";
+                return;
+            }
+            const projectId = localStorage.getItem('currentProject') || 
+                              new URLSearchParams(window.location.search).get('project') || 
+                              'default';
+            return `users/${user.uid}/projects/${projectId}/${subPath}`;
+        }
+
+        // 初始化数据监听
+        function initDataListeners() {
+            unsubscribeEntries = db.ref(getProjectPath('entries')).on('value', (snapshot) => {
+                entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
+                    // 为可能缺失的字段提供默认值
+                    links: [],
+                    keywords: [],
+                    analysis: '',
+                    ...entry // 原始数据会覆盖默认值
+                })) : [];
+                renderEntries();
+            });
+
+            unsubscribeCategories = db.ref(getProjectPath('categories')).on('value', (snapshot) => {
+                categories = snapshot.val() || { main: {} };
+                updateCategorySelectors();
+                renderEntries();
+            });
+        }
+
+        // 认证状态监听
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                const projectId = new URLSearchParams(window.location.search).get('project');
+                
+                // 从Firebase实时数据库获取项目名称
+                const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
+                const snapshot = await projectRef.once('value');
+                const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
+                
+                document.title = `${projectName} - 史料数据库`;
+                document.getElementById('projectTitle').textContent = projectName;
+                
+                initDataListeners();
+             
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // 全局变量
+        let quill = null;
+        let currentPage = 1;
+        let ENTRIES_PER_PAGE = 10;
+        let searchQuery = '';
+        let editingId = null;
+        let currentFilterKeyword = null;
+        let selectedAll = false;
+        let entries = [];  // 添加entries数组初始化
+        let categories = { main: {} };  // 添加categories对象初始化
+        
+        // 日志相关变量
+        let logQuill = null;
+        let editingLogId = null;
+        let logs = [];  // 初始化logs数组
+        let filteredLogs = [];  // 初始化filteredLogs数组
+        let currentLogFilterDate = null;  // 初始化currentLogFilterDate
+        
+        // 高级筛选的全局变量
+        let advancedFilter = {
+            startDate: null,
+            endDate: null,
+            tags: [],
+            keywords: [],
+            keywordLogic: 'AND'
+        };
+        
+        // 默认总页数
+        let totalPages = 1;
+
+        // 新增页面条数改变函数
+        function changePageSize(size) {
+            ENTRIES_PER_PAGE = parseInt(size);
+            currentPage = 1;
+            renderEntries();
+            document.getElementById('entriesPerPage').textContent = size;
+        }
+
+        // 编辑器初始化
+        function initQuill() {
+            if (!quill) {
+                quill = new Quill('#editor-container', {
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['link', 'image'],
+                            ['clean']
+                        ]
+                    },
+                    theme: 'snow'
+                });
+            }
+        }
+
+        // 表单操作
+        function showForm() {
+            document.getElementById('entry-form').style.display = 'block';
+            initQuill();
+            updateSubCats();
+        }
+
+        function hideForm() {
+            document.getElementById('entry-form').style.display = 'none';
+            document.querySelector('form').reset();
+            if (quill) quill.root.innerHTML = '';
+            editingId = null;
+        }
+
+        // 分类管理
+        function showCategoryManager() {
+            document.getElementById('category-manager').style.display = 'block';
+            renderCategoryManager();
+        }
+
+        function hideCategoryManager() {
+            document.getElementById('category-manager').style.display = 'none';
+        }
+
+        function renderCategoryManager() {
+            const container = document.getElementById('main-categories');
+            container.innerHTML = Object.entries(categories.main)
+                .map(([code, data]) => `
+                    <div class="category-item">
+                        <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
+                        <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
+                        <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
+                    </div>
+                    ${data.sub.map(sub => `
+                        <div class="category-item" style="margin-left:20px">
+                            <input value="${sub.split('-')[1]}" 
+                                   onchange="updateSubCategory('${code}', '${sub}', this.value)">
+                            <button class="danger-btn" 
+                                    onclick="removeSubCategory('${code}', '${sub}')">删除</button>
+                        </div>
+                    `).join('')}
+                `).join('');
+        }
+
+        // 分类操作
+        function addMainCategory() {
+            const code = prompt("请输入主类代码（2位字母）：");
+            if (code && code.length === 2) {
+                categories.main[code] = { name: '新分类', sub: [] };
+                renderCategoryManager();
+            }
+        }
+
+        function removeMainCategory(code) {
+            if (confirm("确定要删除这个主类及其所有子类吗？")) {
+                delete categories.main[code];
+                renderCategoryManager();
+            }
+        }
+
+        function addSubCategory(mainCode) {
+            const subCode = prompt("请输入子类代码（1位字母）：");
+            if (subCode && subCode.length === 1) {
+                const subName = prompt("请输入子类名称：");
+                categories.main[mainCode].sub.push(`${subCode}-${subName}`);
+                renderCategoryManager();
+            }
+        }
+
+        function removeSubCategory(mainCode, subCode) {
+            categories.main[mainCode].sub = categories.main[mainCode].sub.filter(
+                sc => sc !== subCode
+            );
+            renderCategoryManager();
+        }
+
+        async function updateMainCategory(code, newName) {
+            const oldCode = code; // 保存旧代码用于查找条目
+            
+            // 查询可能影响的条目数量
+            const entriesRef = db.ref(getProjectPath('entries'));
+            const snapshot = await entriesRef.once('value');
+            const entriesData = snapshot.val() || {};
+            const affectedEntries = Object.values(entriesData).filter(entry => entry.mainCat === oldCode).length;
+            
+            // 提示用户
+            const newCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的主类代码（2位字母）：`, code);
+            
+            if (newCode && newCode.length === 2 && newCode !== oldCode) {
+                if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
+                    return;
+                }
+                
+                // 更新分类数据
+                categories.main[newCode] = {...categories.main[oldCode]};
+                categories.main[newCode].name = newName;
+                delete categories.main[oldCode];
+                
+                // 更新所有相关条目
+                const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
+                    if (entry.mainCat === oldCode) {
+                        // 删除旧条目
+                        await entriesRef.child(id).remove();
+                        // 创建新条目
+                        entry.mainCat = newCode;
+                        entry.id = await generateID(entry); // 重新生成ID
+                        await entriesRef.child(entry.id).set(entry);
+                    }
+                });
+                
+                await Promise.all(updatePromises);
+                renderCategoryManager();
+                
+                // 提示更新成功
+                if (affectedEntries > 0) {
+                    alert(`主类代码已从 ${oldCode} 更新为 ${newCode}，共更新了 ${affectedEntries} 个条目的编号。`);
+                } else {
+                    alert(`主类代码已从 ${oldCode} 更新为 ${newCode}。`);
+                }
+            } else if (newCode === oldCode) {
+                // 仅修改名称
+                categories.main[oldCode].name = newName;
+                renderCategoryManager();
+            }
+        }
+
+        async function updateSubCategory(mainCode, oldSub, newName) {
+            const [oldSubCode] = oldSub.split('-');
+            
+            // 查询可能影响的条目数量
+            const entriesRef = db.ref(getProjectPath('entries'));
+            const snapshot = await entriesRef.once('value');
+            const entriesData = snapshot.val() || {};
+            const affectedEntries = Object.values(entriesData).filter(entry => 
+                entry.mainCat === mainCode && entry.subCat === oldSub
+            ).length;
+            
+            // 提示用户
+            const newSubCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的子类代码（1位字母）：`, oldSubCode);
+            
+            if (newSubCode && newSubCode.length === 1) {
+                const index = categories.main[mainCode].sub.indexOf(oldSub);
+                const newSub = `${newSubCode}-${newName}`;
+                
+                // 检查代码是否真的变更
+                if (oldSubCode !== newSubCode) {
+                    if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
+                        return;
+                    }
+                    
+                    // 更新分类数据
+                    categories.main[mainCode].sub[index] = newSub;
+                    
+                    // 更新所有相关条目
+                    const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
+                        if (entry.mainCat === mainCode && entry.subCat === oldSub) {
+                            // 删除旧条目
+                            await entriesRef.child(id).remove();
+                            // 创建新条目
+                            entry.subCat = newSub;
+                            entry.id = await generateID(entry); // 重新生成ID
+                            await entriesRef.child(entry.id).set(entry);
+                        }
+                    });
+                    
+                    await Promise.all(updatePromises);
+                    
+                    // 提示更新成功
+                    if (affectedEntries > 0) {
+                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}，共更新了 ${affectedEntries} 个条目的编号。`);
+                    } else {
+                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}。`);
+                    }
+                } else {
+                    // 仅修改名称，不更改代码
+                    categories.main[mainCode].sub[index] = `${oldSubCode}-${newName}`;
+                }
+                
+                renderCategoryManager();
+            }
+        }
+
+        function saveCategories() {
+            try {
+                db.ref(getProjectPath('categories')).set(categories);
+                updateCategorySelectors();
+                hideCategoryManager();
+                alert('分类保存成功！');
+            } catch (error) {
+                alert('保存失败: ' + error.message);
+            }
+        }
+
+        // 核心功能
+        async function generateID(entry) {
+            // 强制校验
+            if (!entry.date) throw new Error('日期为必填项');
+            if (!entry.mainCat || !categories.main[entry.mainCat]) throw new Error('无效主分类');
+
+            // 获取分类代码
+            const mainCode = entry.mainCat;
+            const subCode = entry.subCat.split('-')[0];
+            
+            // 日期格式化为YYYYMMDD（使用用户输入的日期）
+            const dateObj = new Date(entry.date);
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            const datePart = `${year}${month}${day}`;
+
+            // 生成基础编号前缀
+            const baseID = `${mainCode}-${subCode}-${datePart}`;
+            
+            // 使用事务确保序号唯一性
+            const counterRef = db.ref(getProjectPath(`counters/${baseID}`));
+            let seq = 1;
+            
+            await counterRef.transaction(currentValue => {
+                if (currentValue === null) return 1; // 初始化计数器
+                return currentValue + 1; // 递增序号
+            }).then(({ committed, snapshot }) => {
+                if (committed) seq = snapshot.val();
+            });
+
+            // 返回完整编号（示例：DF-S-20231015-01）
+            return `${baseID}-${seq.toString().padStart(2, '0')}`;
+        }
+
+        function renderEntries() {
+            let filteredEntries = getFilteredEntries();
+
+            // ======== 新增排序逻辑 ========
+            filteredEntries.sort((a, b) => {
+                // 处理空日期情况（将空日期排到最后）
+                if (!a.date && !b.date) return 0;
+                if (!a.date) return 1;
+                if (!b.date) return -1;
+                // 按日期升序排列（从早到晚）
+                return a.date.localeCompare(b.date);
+            });
+
+            const totalPagesCount = Math.ceil(filteredEntries.length / ENTRIES_PER_PAGE);
+            const start = (currentPage - 1) * ENTRIES_PER_PAGE;
+            const end = start + ENTRIES_PER_PAGE;
+            const currentEntries = filteredEntries.slice(start, end);
+
+            // 渲染表格
+            document.getElementById('entries-container').innerHTML = `
+                <table class="entry-table">
+                    <tr>
+                        <th>
+                            <div class="select-options">
+                                <input type="checkbox" id="select-page" class="select-all-checkbox">
+                                <div class="select-all-buttons">
+                                    <button class="select-all-btn" onclick="toggleSelectAll(true)">本页全选</button>
+                                    <button class="select-all-btn" onclick="toggleSelectAll(false)">全选全部</button>
+                                </div>
+                            </div>
+                        </th>
+                        <th>编号</th>
+                        <th>日期</th>
+                        <th>主题</th>
+                        <th>标题</th>
+                        <th>关键词</th>
+                        <th>操作</th>
+                    </tr>
+                    ${currentEntries.map(entry => `
+                        <tr>
+                            <td><input type="checkbox" class="select-entry" data-id="${entry.id}"></td>
+                            <td>${entry.id}</td>
+                            <td>${entry.date || ''}</td>
+                            <td>${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</td>
+                            <td>${entry.title || ''}</td>
+                            <td>${(entry.keywords || []).map(k => `<span class="keyword-tag" onclick="filterByKeyword('${k}')">${k}</span>`).join(' ')}</td>
+                            <td>
+                                <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
+                                <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </table>
+            `;
+
+            // 全选功能
+            document.getElementById('select-page')?.addEventListener('change', function(e) {
+                document.querySelectorAll('.select-entry').forEach(checkbox => {
+                    checkbox.checked = e.target.checked;
+                });
+                selectedAll = false;
+            });
+
+            updatePagination(totalPagesCount);
+            updateKeywords();
+        }
+
+        function exportEntries(format) {
+            let entriesToExport = [];
+            
+            if(selectedAll) {
+                entriesToExport = entries.filter(entry => 
+                    (!currentFilterKeyword || entry.keywords.includes(currentFilterKeyword)) &&
+                    (!searchQuery || [entry.title, entry.content, entry.analysis, entry.keywords.join(' ')]
+                        .join(' ').toLowerCase().includes(searchQuery.toLowerCase()))
+                );
+            } else {
+                const checkboxes = document.querySelectorAll('.select-entry:checked');
+                if (checkboxes.length === 0) {
+                    showAlert('请至少选择一个条目进行导出！', 'warning');
+                    return;
+                }
+                entriesToExport = Array.from(checkboxes).map(checkbox => 
+                    entries.find(e => e.id === checkbox.dataset.id)
+                ).filter(Boolean); // 过滤无效条目
+            }
+
+            // 添加数据长度验证
+            if (entriesToExport.length === 0) {
+                showAlert('没有符合条件的条目可导出', 'warning');
+                return;
+            }
+
+            // 添加导出格式验证
+            if (!['excel'].includes(format)) {
+                showAlert('不支持的导出格式', 'error');
+                return;
+            }
+
+            if (format === 'excel') {
+                exportExcel(entriesToExport);
+            }
+        }
+
+        function exportExcel(entries) {
+            try {
+                // 数据格式预验证
+                if (!Array.isArray(entries) || entries.length === 0) {
+                    throw new Error('导出数据格式异常');
+                }
+                
+                // 数据安全处理
+                const validatedEntries = entries.map(entry => ({
+                    ...entry,
+                    links: Array.isArray(entry.links) ? entry.links : [],
+                    keywords: Array.isArray(entry.keywords) ? entry.keywords : []
+                }));
+
+                const data = validatedEntries.map(entry => ({
+                    日期: entry.date || '',
+                    主分类: entry.mainCat || '',
+                    子分类: entry.subCat || '',
+                    标题: entry.title || '',
+                    原文内容: entry.content || '',
+                    分析: entry.analysis || '',
+                    相关链接: (entry.links || []).join('; '),
+                    关键词: (entry.keywords || []).join('; ')
+                }));
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, "史料数据");
+                XLSX.writeFile(wb, `史料导出_${new Date().toISOString().slice(0,10)}.xlsx`);
+                
+                showAlert(`成功导出 ${entries.length} 条记录`, 'success');
+            } catch (error) {
+                console.error('导出失败:', error);
+                showAlert(`导出失败：${error.message}`, 'error');
+            }
+        }
+
+        function updateCategorySelectors() {
+            const mainSelect = document.querySelector('[name="main-cat"]');
+            mainSelect.innerHTML = Object.entries(categories.main)
+                .map(([code, data]) => `<option value="${code}">${data.name}</option>`)
+                .join('');
+            updateSubCats();
+        }
+
+        function updateSubCats() {
+            const mainCat = document.querySelector('[name="main-cat"]').value;
+            const subSelect = document.getElementById('sub-cat');
+            subSelect.innerHTML = categories.main[mainCat]?.sub
+                .map(sc => `<option value="${sc}">${sc.split('-')[1]}</option>`)
+                .join('') || '';
+        }
+
+        function getCategoryName(code) {
+            return categories.main[code]?.name || '未知分类';
+        }
+
+        function updatePagination(totalPages) {
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = totalPages || 1;
+            document.getElementById('entriesPerPage').textContent = ENTRIES_PER_PAGE;
+            
+            // 保存总页数到全局变量
+            window.totalPages = totalPages || 1;
+            
+            const container = document.getElementById('pagination-buttons');
+            const current = currentPage;
+            const pages = [];
+            const MAX_VISIBLE = 5; // 每边显示的页数
+
+            // 生成页码数组
+            pages.push(1);
+            if (current - MAX_VISIBLE > 2) pages.push('...');
+            for (let i = Math.max(2, current - MAX_VISIBLE); i <= Math.min(totalPages - 1, current + MAX_VISIBLE); i++) {
+                pages.push(i);
+            }
+            if (current + MAX_VISIBLE < totalPages - 1) pages.push('...');
+            if (totalPages > 1) pages.push(totalPages);
+
+            // 生成分页HTML
+            container.innerHTML = pages.map(page => {
+                if (page === '...') {
+                    return `<button class="page-btn more" onclick="showMorePages()">⋯</button>`;
+                }
+                return `<button class="page-btn ${page === current ? 'active' : ''}" 
+                              onclick="currentPage=${page};renderEntries()">${page}</button>`;
+            }).join('') + `
+                <div class="page-jump">
+                    跳至 <input type="number" min="1" max="${totalPages}" 
+                          onchange="jumpToPage(this.value)" style="width:60px"> 页
+                </div>
+            `;
+        }
+        
+        // 显示更多页码
+        function showMorePages() {
+            const current = currentPage;
+            const totalPages = parseInt(document.getElementById('totalPages').textContent);
+            const visibleRange = 5; // 每次点击显示5页
+            const start = Math.max(1, current - visibleRange);
+            const end = Math.min(totalPages, current + visibleRange);
+            
+            const pages = [];
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            document.getElementById('pagination-buttons').innerHTML = pages.map(page => `
+                <button class="page-btn ${page === current ? 'active' : ''}" 
+                        onclick="currentPage=${page};renderEntries()">${page}</button>
+            `).join('') + `
+                <div class="page-jump">
+                    跳至 <input type="number" min="1" max="${totalPages}" 
+                          onchange="jumpToPage(this.value)" style="width:60px"> 页
+                </div>
+            `;
+        }
+
+        // 跳转页面
+        function jumpToPage(page) {
+            const totalPages = parseInt(document.getElementById('totalPages').textContent);
+            page = Math.max(1, Math.min(Number(page), totalPages));
+            currentPage = page;
+            renderEntries();
+        }
+
+        function updateKeywords() {
+            const keywords = [...new Set(entries.flatMap(e => e.keywords))];
+            document.getElementById('keyword-cloud').innerHTML = `
+                <span class="keyword-tag ${!currentFilterKeyword ? 'active' : ''}" 
+                      onclick="resetFilter()">
+                    全部 (${entries.length})
+                </span>
+                ${keywords.map(k => `
+                    <span class="keyword-tag ${currentFilterKeyword === k ? 'active' : ''}" 
+                          onclick="filterByKeyword('${k}')">
+                        ${k} (${countKeyword(k)})
+                    </span>
+                `).join('')}
+            `;
+        }
+
+        function countKeyword(keyword) {
+            return entries.filter(e => e.keywords.includes(keyword)).length;
+        }
+
+        async function saveEntry(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            // 校验必填项
+            if (!formData.get('date')) {
+                showAlert('日期为必填项！', 'warning');
+                return;
+            }
+            if (!categories.main[formData.get('main-cat')]) {
+                showAlert('请先创建主分类', 'warning');
+                return;
+            }
+
+            try {
+                const entryRef = db.ref(getProjectPath('entries'));
+                const user = auth.currentUser;
+                
+                // 获取原始数据（如果是编辑状态）
+                let originalEntry = null;
+                if (editingId) {
+                    const snapshot = await entryRef.child(editingId).once('value');
+                    originalEntry = snapshot.val();
+                }
+
+                // 生成新条目数据
+                const newEntry = {
+                    date: formData.get('date'),
+                    mainCat: formData.get('main-cat'),
+                    subCat: formData.get('sub-cat'),
+                    title: formData.get('title'),
+                    content: quill.root.innerHTML,
+                    analysis: formData.get('analysis') || '', // 提供默认值
+                    links: formData.get('links') ? formData.get('links').split(',').map(l => l.trim()).filter(Boolean) : [], // 确保始终是数组
+                    keywords: formData.get('keywords') ? formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean) : [], // 确保始终是数组
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                // 检查关键字段是否修改
+                const isKeyFieldChanged = editingId && (
+                    newEntry.date !== originalEntry.date ||
+                    newEntry.mainCat !== originalEntry.mainCat ||
+                    newEntry.subCat !== originalEntry.subCat
+                );
+
+                // 提示用户关键字段修改会导致ID变更
+                if (isKeyFieldChanged && 
+                    !confirm('修改关键字段将生成新编号，原条目会被删除。是否继续？')) {
+                    return;
+                }
+
+                // 生成新ID（如果关键字段有修改）
+                if (isKeyFieldChanged) {
+                    // 删除旧条目
+                    await entryRef.child(editingId).remove();
+                    // 生成新ID
+                    newEntry.id = await generateID(newEntry);
+                    // 保存到数据库（使用set方法创建新条目）
+                    await entryRef.child(newEntry.id).set(newEntry);
+                } else if (editingId) {
+                    // 保持原ID
+                    newEntry.id = editingId;
+                    // 保持原创建时间
+                    newEntry.createdAt = originalEntry.createdAt;
+                    
+                    // 使用update方法更新部分字段，而不是set方法覆盖整个条目
+                    const updates = {};
+                    Object.keys(newEntry).forEach(key => {
+                        if (key !== 'id' && key !== 'createdAt') {
+                            updates[key] = newEntry[key];
+                        }
+                    });
+                    await entryRef.child(newEntry.id).update(updates);
+                } else {
+                    // 新条目，生成ID
+                    newEntry.id = await generateID(newEntry);
+                    newEntry.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                    // 保存到数据库（使用set方法创建新条目）
+                    await entryRef.child(newEntry.id).set(newEntry);
+                }
+
+                hideForm();
+            } catch (error) {
+                alert('保存失败: ' + error.message);
+            }
+        }
+
+        function editEntry(id) {
+            const entry = entries.find(e => e.id === id);
+            if (!entry) {
+                showAlert('找不到指定条目', 'error');
+                return;
+            }
+            
+            editingId = id; // 保留原始ID用于后续判断
+            
+            // 填充表单数据
+            document.querySelector('[name="date"]').value = entry.date || '';
+            document.querySelector('[name="main-cat"]').value = entry.mainCat || '';
+            updateSubCats();
+            setTimeout(() => {
+                document.querySelector('[name="sub-cat"]').value = entry.subCat || '';
+            }, 100);
+            document.querySelector('[name="title"]').value = entry.title || '';
+            quill.root.innerHTML = entry.content || '';
+            document.querySelector('[name="analysis"]').value = entry.analysis || '';
+            document.querySelector('[name="links"]').value = (entry.links || []).join(', ');
+            document.querySelector('[name="keywords"]').value = (entry.keywords || []).join(', ');
+            showForm();
+        }
+
+        async function deleteEntry(id) {
+            if (confirm('确定要删除该条目吗？')) {
+                try {
+                    await db.ref(getProjectPath(`entries/${id}`)).remove();
+                } catch (error) {
+                    alert('删除失败: ' + error.message);
+                }
+            }
+        }
+
+        // 事件监听
+        document.getElementById('search-input').addEventListener('input', () => {
+            searchQuery = document.getElementById('search-input').value;
+            currentPage = 1;
+            renderEntries();
+        });
+
+        function filterByKeyword(keyword) {
+            currentFilterKeyword = keyword === currentFilterKeyword ? null : keyword;
+            currentPage = 1;
+            renderEntries();
+        }
+
+        function resetFilter() {
+            currentFilterKeyword = null;
+            currentPage = 1;
+            renderEntries();
+        }
+
+        // 全选功能逻辑
+        function toggleSelectAll(isPageOnly) {
+            const checkboxes = document.querySelectorAll('.select-entry');
+            const pageCheckbox = document.getElementById('select-page');
+
+            if(isPageOnly) {
+                // 切换当前页全选
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                checkboxes.forEach(cb => cb.checked = !allChecked);
+                pageCheckbox.checked = !allChecked;
+                selectedAll = false;
+            } else {
+                // 切换全选所有
+                selectedAll = !selectedAll;
+                
+                // 同步UI状态与数据状态
+                checkboxes.forEach(cb => cb.checked = selectedAll);
+                pageCheckbox.checked = selectedAll;
+                
+                if (selectedAll) {
+                    showAlert('已选择全部条目，包括其他页面的条目', 'info');
+                }
+            }
+        }
+
+        // 新增方法：获取过滤后的条目
+        function getFilteredEntries() {
+            return entries.filter(entry => {
+                // 关键字过滤
+                const keywordTagMatch = !currentFilterKeyword || 
+                    entry.keywords.includes(currentFilterKeyword);
+                
+                // 搜索过滤
+                const searchMatch = !searchQuery || 
+                    [entry.title, entry.content, entry.analysis, entry.keywords.join(' ')]
+                        .join(' ')
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase());
+                
+                // 高级筛选
+                const dateMatch = (!advancedFilter.startDate || entry.date >= advancedFilter.startDate) &&
+                                (!advancedFilter.endDate || entry.date <= advancedFilter.endDate);
+                
+                const tagMatch = advancedFilter.tags.length === 0 || 
+                                advancedFilter.tags.every(tag => entry.keywords.includes(tag));
+                
+                const contentText = [entry.title, entry.content, entry.analysis].join(' ').toLowerCase();
+                const advKeywordMatch = advancedFilter.keywords.length === 0 || 
+                                   (advancedFilter.keywordLogic === 'AND' ? 
+                                    advancedFilter.keywords.every(kw => contentText.includes(kw.toLowerCase())) :
+                                    advancedFilter.keywords.some(kw => contentText.includes(kw.toLowerCase())));
+                
+                return keywordTagMatch && searchMatch && dateMatch && tagMatch && advKeywordMatch;
+            });
+        }
+
+        // 切换高级搜索面板
+        function toggleAdvancedSearch() {
+            const panel = document.querySelector('.advanced-panel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            
+            // 动态加载标签
+            if(panel.style.display === 'block' && !document.getElementById('tag-selector').children.length) {
+                const allTags = [...new Set(entries.flatMap(e => e.keywords || []))];
+                document.getElementById('tag-selector').innerHTML = allTags.map(tag => `
+                    <label class="tag-checkbox">
+                        <input type="checkbox" value="${tag}">
+                        ${tag}
+                    </label>
+                `).join('');
+            }
+        }
+
+        // 应用高级筛选
+        function applyAdvancedSearch() {
+            advancedFilter = {
+                startDate: document.getElementById('startDate').value,
+                endDate: document.getElementById('endDate').value,
+                tags: Array.from(document.querySelectorAll('#tag-selector input:checked')).map(cb => cb.value),
+                keywords: document.getElementById('keywords').value.split(' ').filter(Boolean),
+                keywordLogic: document.getElementById('keywordLogic').value
+            };
+            
+            currentPage = 1;
+            renderEntries();
+        }
+
+        // 重置筛选
+        function resetAdvancedSearch() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.querySelectorAll('#tag-selector input').forEach(cb => cb.checked = false);
+            document.getElementById('keywords').value = '';
+            document.getElementById('keywordLogic').value = 'AND';
+            
+            advancedFilter = {
+                startDate: null,
+                endDate: null,
+                tags: [],
+                keywords: [],
+                keywordLogic: 'AND'
+            };
+            
+            currentPage = 1;
+            renderEntries();
+        }
+
+        // 初始化
+        updateCategorySelectors();
+        renderEntries();
+
+        // 自动检查数据完整性
+        setTimeout(() => {
+            // 延迟执行，确保页面其他内容已加载完成
+            checkDataIntegrity();
+        }, 2000);
+
+        // 检查数据完整性，如果有问题建议用户修复
+        function checkDataIntegrity() {
+            const entriesRef = db.ref(getProjectPath('entries'));
+            entriesRef.once('value').then(snapshot => {
+                let hasIssues = false;
+                let checkedCount = 0;
+                
+                snapshot.forEach(child => {
+                    const entry = child.val();
+                    checkedCount++;
+                    
+                    if (!entry.hasOwnProperty('links') || entry.links === null || entry.links === undefined ||
+                        !entry.hasOwnProperty('keywords') || entry.keywords === null || entry.keywords === undefined ||
+                        !entry.hasOwnProperty('analysis') || entry.analysis === null || entry.analysis === undefined) {
+                        hasIssues = true;
+                    }
+                });
+                
+                if (hasIssues && checkedCount > 0) {
+                    showAlert('检测到部分数据缺少必要字段，建议点击"修复数据"按钮进行修复', 'warning');
+                }
+            }).catch(error => {
+                console.error('数据检查失败:', error);
+            });
+        }
+
+        // 页面卸载时清理监听器
+        window.addEventListener('beforeunload', () => {
+            if (unsubscribeEntries) unsubscribeEntries();
+            if (unsubscribeCategories) unsubscribeCategories();
+        });
+
+        // 新增在页面显示状态提示的方法
+        function showAlert(message, type = 'info') {
+            const alertBox = document.createElement('div');
+            alertBox.className = `export-alert ${type}`;
+            alertBox.innerHTML = `
+                <span>${message}</span>
+                <button onclick="this.parentElement.remove()">&times;</button>
+            `;
+            
+            document.body.prepend(alertBox);
+            setTimeout(() => alertBox.remove(), 5000);
+        }
+
+        // 数据迁移函数 - 修复现有数据中的字段
+        function migrateLegacyData() {
+            showAlert('开始修复历史数据...', 'info');
+            const entriesRef = db.ref(getProjectPath('entries'));
+            
+            entriesRef.once('value').then(snapshot => {
+                let updates = {};
+                let fixedCount = 0;
+                
+                snapshot.forEach(child => {
+                    const entry = child.val();
+                    let needsUpdate = false;
+                    
+                    // 检查并修复links字段
+                    if (!entry.hasOwnProperty('links') || entry.links === null || entry.links === undefined) {
+                        updates[`${child.key}/links`] = [];
+                        needsUpdate = true;
+                    }
+                    
+                    // 检查并修复keywords字段
+                    if (!entry.hasOwnProperty('keywords') || entry.keywords === null || entry.keywords === undefined) {
+                        updates[`${child.key}/keywords`] = [];
+                        needsUpdate = true;
+                    }
+                    
+                    // 检查并修复analysis字段
+                    if (!entry.hasOwnProperty('analysis') || entry.analysis === null || entry.analysis === undefined) {
+                        updates[`${child.key}/analysis`] = '';
+                        needsUpdate = true;
+                    }
+                    
+                    if (needsUpdate) {
+                        fixedCount++;
+                    }
+                });
+                
+                if (fixedCount > 0) {
+                    return entriesRef.update(updates).then(() => {
+                        showAlert(`数据修复完成，已修复${fixedCount}条记录`, 'success');
+                    });
+                } else {
+                    showAlert('所有数据格式正常，无需修复', 'info');
+                    return Promise.resolve();
+                }
+            }).catch(error => {
+                console.error('数据修复失败:', error);
+                showAlert(`数据修复失败: ${error.message}`, 'error');
+            });
+        }
+
+        // 日志相关功能
+        // 初始化日志编辑器
+        function initLogQuill() {
+            if (!logQuill) {
+                logQuill = new Quill('#log-editor-container', {
+                    modules: {
+                        toolbar: [
+                            ['bold', 'italic', 'underline'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['link', 'image'],
+                            ['clean']
+                        ]
+                    },
+                    theme: 'snow'
+                });
+            }
+        }
+
+        // 显示日志表单
+        function showLogForm() {
+            document.getElementById('log-form').style.display = 'block';
+            document.getElementById('log-viewer').style.display = 'none';
+            initLogQuill();
+            
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('[name="log-date"]').value = today;
+            
+            // 清空表单
+            document.querySelector('[name="log-title"]').value = '';
+            logQuill.root.innerHTML = '';
+            editingLogId = null;
+        }
+
+        // 隐藏日志表单
+        function hideLogForm() {
+            document.getElementById('log-form').style.display = 'none';
+            document.querySelector('form').reset();
+            if (logQuill) logQuill.root.innerHTML = '';
+            editingLogId = null;
+        }
+
+        // 显示日志查看器
+        function showLogViewer() {
+            document.getElementById('log-viewer').style.display = 'block';
+            document.getElementById('log-form').style.display = 'none';
+            loadLogs();
+        }
+
+        // 隐藏日志查看器
+        function hideLogViewer() {
+            document.getElementById('log-viewer').style.display = 'none';
+        }
+
+        // 加载日志数据
+        function loadLogs() {
+            const logsRef = db.ref(getProjectPath('logs'));
+            logsRef.once('value').then(snapshot => {
+                logs = snapshot.val() ? Object.values(snapshot.val()) : [];
+                
+                // 按日期降序排序（最新的在前）
+                logs.sort((a, b) => b.date.localeCompare(a.date));
+                
+                // 应用当前筛选条件
+                if (currentLogFilterDate) {
+                    filteredLogs = logs.filter(log => log.date === currentLogFilterDate);
+                } else {
+                    filteredLogs = [...logs];
+                }
+                
+                renderLogs();
+            }).catch(error => {
+                console.error('加载日志失败:', error);
+                showAlert(`加载日志失败: ${error.message}`, 'error');
+            });
+        }
+
+        // 渲染日志列表
+        function renderLogs() {
+            const container = document.getElementById('logs-container');
+            
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="log-empty">
+                        <p>暂无日志记录</p>
+                        <button class="primary-btn" onclick="showLogForm()">创建新日志</button>
+                    </div>
+                `;
+                document.getElementById('log-pagination').style.display = 'none';
+                return;
+            }
+            
+            // 计算日志统计信息
+            const totalLogs = logs.length;
+            const todayLogs = logs.filter(log => log.date === new Date().toISOString().split('T')[0]).length;
+            const thisMonthLogs = logs.filter(log => {
+                const logDate = new Date(log.date);
+                const now = new Date();
+                return logDate.getMonth() === now.getMonth() && 
+                       logDate.getFullYear() === now.getFullYear();
+            }).length;
+            
+            // 计算分页
+            const totalPages = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
+            const start = (currentLogPage - 1) * LOGS_PER_PAGE;
+            const end = start + LOGS_PER_PAGE;
+            const currentPageLogs = filteredLogs.slice(start, end);
+            
+            // 渲染统计信息
+            const statsHtml = `
+                <div class="log-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">${totalLogs}</span>
+                        <span class="stat-label">总日志数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${todayLogs}</span>
+                        <span class="stat-label">今日日志</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${thisMonthLogs}</span>
+                        <span class="stat-label">本月日志</span>
+                    </div>
+                </div>
+            `;
+            
+            // 渲染当前页的日志列表
+            const logsHtml = currentPageLogs.map(log => `
+                <div class="log-item">
+                    <div class="log-header">
+                        <h3 class="log-title">${log.title}</h3>
+                        <div class="log-actions">
+                            <span class="log-date">${log.date}</span>
+                            <button class="primary-btn" onclick="editLog('${log.id}')">编辑</button>
+                            <button class="danger-btn" onclick="deleteLog('${log.id}')">删除</button>
+                        </div>
+                    </div>
+                    <div class="log-content">${log.content}</div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = statsHtml + logsHtml;
+            
+            // 更新分页信息
+            updateLogPagination(totalPages);
+            document.getElementById('log-pagination').style.display = 'block';
+        }
+
+        // 保存日志
+        async function saveLog(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            // 校验必填项
+            if (!formData.get('log-date')) {
+                showAlert('日期为必填项！', 'warning');
+                return;
+            }
+            if (!formData.get('log-title')) {
+                showAlert('标题为必填项！', 'warning');
+                return;
+            }
+
+            try {
+                const logsRef = db.ref(getProjectPath('logs'));
+                
+                // 获取原始数据（如果是编辑状态）
+                let originalLog = null;
+                if (editingLogId) {
+                    const snapshot = await logsRef.child(editingLogId).once('value');
+                    originalLog = snapshot.val();
+                }
+
+                // 生成新日志数据
+                const newLog = {
+                    date: formData.get('log-date'),
+                    title: formData.get('log-title'),
+                    content: logQuill.root.innerHTML,
+                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                if (editingLogId) {
+                    // 保持原ID
+                    newLog.id = editingLogId;
+                    // 保持原创建时间
+                    newLog.createdAt = originalLog.createdAt;
+                    
+                    // 更新日志
+                    await logsRef.child(newLog.id).update(newLog);
+                } else {
+                    // 新日志，生成ID
+                    newLog.id = `LOG-${Date.now()}`;
+                    newLog.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                    // 保存到数据库
+                    await logsRef.child(newLog.id).set(newLog);
+                }
+
+                hideLogForm();
+                showLogViewer(); // 保存后显示日志查看器
+                showAlert('日志保存成功！', 'success');
+            } catch (error) {
+                showAlert(`保存失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 编辑日志
+        function editLog(id) {
+            const log = logs.find(l => l.id === id);
+            if (!log) {
+                showAlert('找不到指定日志', 'error');
+                return;
+            }
+            
+            editingLogId = id;
+            
+            // 填充表单数据
+            document.querySelector('[name="log-date"]').value = log.date || '';
+            document.querySelector('[name="log-title"]').value = log.title || '';
+            logQuill.root.innerHTML = log.content || '';
+            
+            // 显示表单
+            document.getElementById('log-form').style.display = 'block';
+            document.getElementById('log-viewer').style.display = 'none';
+        }
+
+        // 删除日志
+        async function deleteLog(id) {
+            if (confirm('确定要删除该日志吗？')) {
+                try {
+                    await db.ref(getProjectPath(`logs/${id}`)).remove();
+                    loadLogs(); // 重新加载日志列表
+                    showAlert('日志已删除', 'success');
+                } catch (error) {
+                    showAlert(`删除失败: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // 按日期筛选日志
+        function filterLogsByDate(date) {
+            currentLogFilterDate = date;
+            currentLogPage = 1; // 重置页码
+            if (date) {
+                filteredLogs = logs.filter(log => log.date === date);
+            } else {
+                filteredLogs = [...logs];
+            }
+            renderLogs();
+        }
+        
+        // 重置日志筛选
+        function resetLogFilter() {
+            currentLogFilterDate = null;
+            currentLogPage = 1; // 重置页码
+            document.getElementById('log-filter-date').value = '';
+            filteredLogs = [...logs];
+            renderLogs();
+        }
+
+        // 添加日志分页相关函数
+        let currentLogPage = 1;
+        let LOGS_PER_PAGE = 10;
+
+        function updateLogPagination(totalPages) {
+            document.getElementById('currentLogPage').textContent = currentLogPage;
+            document.getElementById('totalLogPages').textContent = totalPages;
+            document.getElementById('logsPerPage').textContent = LOGS_PER_PAGE;
+            
+            const container = document.getElementById('log-pagination-buttons');
+            const current = currentLogPage;
+            const pages = [];
+            const MAX_VISIBLE = 5;
+
+            // 生成页码数组
+            pages.push(1);
+            if (current - MAX_VISIBLE > 2) pages.push('...');
+            for (let i = Math.max(2, current - MAX_VISIBLE); i <= Math.min(totalPages - 1, current + MAX_VISIBLE); i++) {
+                pages.push(i);
+            }
+            if (current + MAX_VISIBLE < totalPages - 1) pages.push('...');
+            if (totalPages > 1) pages.push(totalPages);
+
+            // 生成分页HTML
+            container.innerHTML = pages.map(page => {
+                if (page === '...') {
+                    return `<button class="page-btn more" onclick="showMoreLogPages()">⋯</button>`;
+                }
+                return `<button class="page-btn ${page === current ? 'active' : ''}" 
+                              onclick="jumpToLogPage(${page})">${page}</button>`;
+            }).join('') + `
+                <div class="page-jump">
+                    跳至 <input type="number" min="1" max="${totalPages}" 
+                          onchange="jumpToLogPage(this.value)" style="width:60px"> 页
+                </div>
+            `;
+        }
+
+        function changeLogPageSize(size) {
+            LOGS_PER_PAGE = parseInt(size);
+            currentLogPage = 1;
+            renderLogs();
+        }
+
+        function jumpToLogPage(page) {
+            const totalPages = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
+            page = Math.max(1, Math.min(Number(page), totalPages));
+            currentLogPage = page;
+            renderLogs();
+        }
+
+        function showMoreLogPages() {
+            const totalPages = Math.ceil(filteredLogs.length / LOGS_PER_PAGE);
+            const visibleRange = 5;
+            const start = Math.max(1, currentLogPage - visibleRange);
+            const end = Math.min(totalPages, currentLogPage + visibleRange);
+            
+            const pages = [];
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            
+            document.getElementById('log-pagination-buttons').innerHTML = pages.map(page => `
+                <button class="page-btn ${page === currentLogPage ? 'active' : ''}" 
+                        onclick="jumpToLogPage(${page})">${page}</button>
+            `).join('') + `
+                <div class="page-jump">
+                    跳至 <input type="number" min="1" max="${totalPages}" 
+                          onchange="jumpToLogPage(this.value)" style="width:60px"> 页
+                </div>
+            `;
+        }
+
+        // 添加到初始化部分
+        function enableFirebaseDebug() {
+            if (location.hostname === "localhost") {
+                db.enableLogging(true);
+                console.log("Firebase调试日志已启用");
+            }
+        }
+
+       
+    </script>
+</body>
+</html>
