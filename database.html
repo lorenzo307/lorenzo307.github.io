@@ -1132,6 +1132,8 @@
                 <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
                 <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
                 <button class="primary-btn" onclick="showLogViewer()">工作日志</button>
+                <button class="primary-btn" onclick="showRecycleBin()">回收站</button>
+                <button class="primary-btn" onclick="showTimeTracker()">工作时间</button>
                 <div style="display:inline-block;margin-left:10px">
                     <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
                 </div>
@@ -1395,9 +1397,13 @@
                 document.getElementById('projectTitle').textContent = projectName;
                 
                 initDataListeners();
+                initTimeTracking();
+                restoreCachedSessions();
              
             } else {
                 window.location.href = 'index.html';
+                clearInterval(trackingInterval);
+                localStorage.removeItem('currentSession');
             }
         });
 
@@ -2246,11 +2252,20 @@
         }
 
         async function deleteEntry(id) {
-            if (confirm('确定要删除该条目吗？')) {
+            if (confirm('确定要删除该条目吗？删除的条目将移至回收站。')) {
                 try {
+                    const entry = entries.find(e => e.id === id);
+                    if (entry) {
+                        // 添加删除时间戳
+                        entry.deletedAt = Date.now();
+                        // 移动到回收站
+                        await db.ref(getProjectPath(`trash/${id}`)).set(entry);
+                        // 从当前列表中删除
                     await db.ref(getProjectPath(`entries/${id}`)).remove();
+                        showAlert('条目已移至回收站', 'info');
+                    }
                 } catch (error) {
-                    alert('删除失败: ' + error.message);
+                    showAlert('删除失败: ' + error.message, 'error');
                 }
             }
         }
@@ -2828,7 +2843,1025 @@
             }
         }
 
-       
+        // 回收站功能
+        let deletedEntries = [];
+        let recycleCurrentPage = 1;
+        const RECYCLE_ENTRIES_PER_PAGE = 10;
+
+        async function showRecycleBin() {
+            try {
+                // 加载回收站数据
+                const snapshot = await db.ref(getProjectPath('trash')).once('value');
+                const trashData = snapshot.val() || {};
+                
+                // 过滤保留50天内的条目
+                deletedEntries = Object.values(trashData).filter(entry => {
+                    const days = (Date.now() - entry.deletedAt) / (1000 * 3600 * 24);
+                    return days <= 50;
+                });
+                
+                renderDeletedEntries();
+                
+                // 显示回收站弹窗
+                const recycleBin = document.getElementById('recycle-bin');
+                if (recycleBin) {
+                    recycleBin.style.display = 'block';
+                    console.log('回收站弹窗显示成功');
+                } else {
+                    console.error('找不到回收站元素');
+                }
+            } catch (error) {
+                showAlert('加载回收站失败: ' + error.message, 'error');
+            }
+        }
+
+        // hideRecycleBin函数 - 关闭回收站
+        function hideRecycleBin() {
+            console.log('正在执行关闭回收站 - 增强版');
+            const recycleBin = document.getElementById('recycle-bin');
+            if (recycleBin) {
+                recycleBin.style.display = 'none';
+                console.log('回收站成功隐藏');
+            } else {
+                console.error('找不到回收站元素!');
+                // 尝试使用querySelector
+                const recycleBinByQuery = document.querySelector('.form-popup#recycle-bin');
+                if (recycleBinByQuery) {
+                    recycleBinByQuery.style.display = 'none';
+                    console.log('通过querySelector找到并隐藏回收站');
+                }
+            }
+            
+            // 确保全局函数也被调用
+            window.closeRecycleBin && window.closeRecycleBin();
+        }
+
+        function renderDeletedEntries() {
+            const container = document.getElementById('deleted-entries-container');
+            const totalEntries = deletedEntries.length;
+            
+            if (totalEntries === 0) {
+                container.innerHTML = '<p class="empty-message">回收站为空</p>';
+                document.getElementById('recycle-pagination').style.display = 'none';
+                return;
+            }
+            
+            // 分页处理
+            const totalPages = Math.ceil(totalEntries / RECYCLE_ENTRIES_PER_PAGE);
+            recycleCurrentPage = Math.min(recycleCurrentPage, totalPages);
+            
+            const start = (recycleCurrentPage - 1) * RECYCLE_ENTRIES_PER_PAGE;
+            const end = Math.min(start + RECYCLE_ENTRIES_PER_PAGE, totalEntries);
+            const pageEntries = deletedEntries.slice(start, end);
+            
+            // 渲染表格
+            container.innerHTML = `
+                <table class="entry-table">
+                    <thead>
+                        <tr>
+                            <th>编号</th>
+                            <th>标题</th>
+                            <th>删除日期</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${pageEntries.map(entry => `
+                            <tr class="deleted-entry">
+                                <td>${entry.id || ''}</td>
+                                <td>${entry.title || ''}</td>
+                                <td>${new Date(entry.deletedAt).toLocaleDateString()}</td>
+                                <td>
+                                    <button class="restore-btn" onclick="restoreEntry('${entry.id}')">恢复</button>
+                                    <button class="danger-btn" onclick="deletePermanently('${entry.id}')">彻底删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            // 更新分页
+            updateRecyclePagination(totalPages);
+        }
+
+        function updateRecyclePagination(totalPages) {
+            const container = document.getElementById('recycle-pagination');
+            container.style.display = 'flex';
+            
+            container.innerHTML = `
+                <div class="pagination-info">
+                    第<span id="recycleCurrentPage">${recycleCurrentPage}</span>页，共<span id="recycleTotalPages">${totalPages}</span>页
+                </div>
+                <div id="recycle-pagination-buttons">
+                    ${Array.from({length: totalPages}, (_, i) => i + 1).map(page => `
+                        <button class="page-btn ${page === recycleCurrentPage ? 'active' : ''}" 
+                                onclick="recycleCurrentPage=${page};renderDeletedEntries()">${page}</button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        async function restoreEntry(id) {
+            try {
+                // 获取被删除的条目
+                const deletedEntry = deletedEntries.find(e => e.id === id);
+                if (!deletedEntry) {
+                    showAlert('找不到指定条目', 'error');
+                    return;
+                }
+                
+                // 检查分类是否存在
+                const categoriesSnapshot = await db.ref(getProjectPath('categories')).once('value');
+                const categories = categoriesSnapshot.val() || { main: {} };
+                
+                // 如果分类不存在，提示用户
+                if (!categories.main[deletedEntry.mainCat]) {
+                    if (!confirm(`条目的主分类 "${deletedEntry.mainCat}" 不存在。是否仍要恢复？`)) {
+                        return;
+                    }
+                }
+                
+                // 移除删除时间戳
+                delete deletedEntry.deletedAt;
+                
+                // 恢复到正常条目列表
+                await db.ref(getProjectPath(`entries/${id}`)).set(deletedEntry);
+                
+                // 从回收站删除
+                await db.ref(getProjectPath(`trash/${id}`)).remove();
+                
+                // 从本地列表中移除
+                deletedEntries = deletedEntries.filter(e => e.id !== id);
+                
+                // 重新渲染
+                renderDeletedEntries();
+                showAlert('条目已恢复', 'success');
+            } catch (error) {
+                showAlert('恢复失败: ' + error.message, 'error');
+            }
+        }
+
+        async function deletePermanently(id) {
+            if (confirm('确定要永久删除该条目吗？此操作无法撤销！')) {
+                try {
+                    await db.ref(getProjectPath(`trash/${id}`)).remove();
+                    deletedEntries = deletedEntries.filter(e => e.id !== id);
+                    renderDeletedEntries();
+                    showAlert('条目已永久删除', 'info');
+                } catch (error) {
+                    showAlert('删除失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        async function emptyRecycleBin() {
+            if (confirm('确定要清空回收站吗？此操作无法撤销！')) {
+                try {
+                    await db.ref(getProjectPath('trash')).remove();
+                    deletedEntries = [];
+                    renderDeletedEntries();
+                    showAlert('回收站已清空', 'info');
+                } catch (error) {
+                    showAlert('清空回收站失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 工作时间记录功能
+        let timeEntries = [];
+
+        async function showTimeTracker() {
+            try {
+                // 设置默认日期为今天
+                document.getElementById('work-date').value = new Date().toISOString().split('T')[0];
+                
+                // 设置默认时间
+                const now = new Date();
+                const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+                document.getElementById('start-time').value = currentTime;
+                
+                // 加载工作时间记录
+                const snapshot = await db.ref(getProjectPath('worklogs')).once('value');
+                timeEntries = Object.values(snapshot.val() || {});
+                
+                // 按时间戳排序（最新的在前）
+                timeEntries.sort((a, b) => b.timestamp - a.timestamp);
+                
+                updateTimeStats();
+                renderTimeRecords();
+                document.getElementById('time-tracker').style.display = 'block';
+            } catch (error) {
+                showAlert('加载工作时间记录失败: ' + error.message, 'error');
+            }
+        }
+
+        function hideTimeTracker() {
+            document.getElementById('time-tracker').style.display = 'none';
+        }
+
+        function renderTimeRecords() {
+            const tbody = document.getElementById('time-records-body');
+            
+            if (timeEntries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center">暂无记录</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = timeEntries.map(entry => `
+                <tr>
+                    <td>${entry.date}</td>
+                    <td>${entry.start} - ${entry.end}</td>
+                    <td>${entry.duration}</td>
+                    <td>
+                        <button class="danger-btn" onclick="deleteTimeEntry('${entry.timestamp}')">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function addTimeEntry() {
+            try {
+                const date = document.getElementById('work-date').value;
+                const start = document.getElementById('start-time').value;
+                const end = document.getElementById('end-time').value;
+                
+                // 验证输入
+                if (!date || !start || !end) {
+                    showAlert('请填写完整时间信息', 'warning');
+                    return;
+                }
+                
+                // 验证结束时间是否晚于开始时间
+                const [sh, sm] = start.split(':').map(Number);
+                const [eh, em] = end.split(':').map(Number);
+                const startMinutes = sh * 60 + sm;
+                const endMinutes = eh * 60 + em;
+                
+                if (endMinutes <= startMinutes) {
+                    showAlert('结束时间必须晚于开始时间', 'warning');
+                    return;
+                }
+                
+                const timestamp = Date.now();
+                const duration = calculateDuration(start, end);
+                
+                const entry = {
+                    date,
+                    start,
+                    end,
+                    duration,
+                    timestamp
+                };
+                
+                // 保存到数据库
+                await db.ref(getProjectPath(`worklogs/${timestamp}`)).set(entry);
+                
+                // 更新本地数据
+                timeEntries.unshift(entry);
+                
+                // 更新统计和显示
+                updateTimeStats();
+                renderTimeRecords();
+                
+                // 清空结束时间，便于连续记录
+                document.getElementById('end-time').value = '';
+                
+                showAlert('工作时间已记录', 'success');
+            } catch (error) {
+                showAlert('记录工作时间失败: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteTimeEntry(timestamp) {
+            if (confirm('确定要删除此时间记录吗？')) {
+                try {
+                    await db.ref(getProjectPath(`worklogs/${timestamp}`)).remove();
+                    
+                    // 更新本地数据
+                    timeEntries = timeEntries.filter(e => e.timestamp != timestamp);
+                    
+                    // 更新统计和显示
+                    updateTimeStats();
+                    renderTimeRecords();
+                    
+                    showAlert('时间记录已删除', 'info');
+                } catch (error) {
+                    showAlert('删除时间记录失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        function calculateDuration(start, end) {
+            const [sh, sm] = start.split(':').map(Number);
+            const [eh, em] = end.split(':').map(Number);
+            const totalMinutes = (eh * 60 + em) - (sh * 60 + sm);
+            return `${Math.floor(totalMinutes/60)}h ${totalMinutes%60}m`;
+        }
+
+        function parseDuration(dur) {
+            if (!dur) return 0;
+            const match = dur.match(/(\d+)h\s*(\d+)m/);
+            if (match) {
+                return parseInt(match[1]) * 60 + parseInt(match[2]);
+            }
+            return 0;
+        }
+
+        function updateTimeStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayEntries = timeEntries.filter(e => e.date === today);
+            
+            const todayTotal = todayEntries.reduce((sum, e) => sum + parseDuration(e.duration), 0);
+            
+            document.getElementById('today-total').textContent = 
+                `${Math.floor(todayTotal/60)}h ${todayTotal%60}m`;
+        }
+        
+        // 样式联动处理
+        function updateThemeStyles() {
+            document.querySelectorAll('.glass-container').forEach(el => {
+                el.style.setProperty('background', 'var(--glass-bg)');
+                el.style.setProperty('border-color', 'var(--glass-border)');
+            });
+            
+            document.querySelectorAll('.primary-btn').forEach(btn => {
+                btn.style.setProperty('background', 'var(--primary-bg)');
+            });
+        }
+
+        // 初始化时监听主题变化
+        document.documentElement.addEventListener('theme-change', updateThemeStyles);
+
+        // 回收站和工作时间记录功能
+
+        // hideRecycleBin函数 - 关闭回收站
+        function hideRecycleBin() {
+            console.log('正在执行关闭回收站');
+            document.getElementById('recycle-bin').style.display = 'none';
+        }
+
+        // 自动工作时间记录系统
+        let activeSessionStart = null;
+        let isSessionActive = false;
+        let sessionTimeoutId = null;
+        const SESSION_TIMEOUT = 15 * 60 * 1000; // 15分钟无操作视为会话结束
+
+        // 初始化自动时间记录
+        function initAutoTimeTracking() {
+            if (!localStorage.getItem('autoTimeTracking')) {
+                localStorage.setItem('autoTimeTracking', 'enabled');
+            }
+            
+            // 在认证状态变化时启动时间跟踪
+            const originalAuthCallback = auth.onAuthStateChanged;
+            auth.onAuthStateChanged = function(callback) {
+                return originalAuthCallback.call(auth, (user) => {
+                    if (user) {
+                        startTimeTracking();
+                    } else {
+                        stopTimeTracking(true);
+                    }
+                    callback(user);
+                });
+            };
+            
+            // 添加用户活动监听
+            ['click', 'keydown', 'scroll', 'mousemove'].forEach(eventType => {
+                document.addEventListener(eventType, resetSessionTimeout);
+            });
+        }
+
+        // 开始时间跟踪
+        function startTimeTracking() {
+            if (!isSessionActive && localStorage.getItem('autoTimeTracking') === 'enabled') {
+                activeSessionStart = Date.now();
+                isSessionActive = true;
+                resetSessionTimeout();
+                console.log("工作时间跟踪已开始");
+            }
+        }
+
+        // 重置会话超时
+        function resetSessionTimeout() {
+            if (isSessionActive) {
+                clearTimeout(sessionTimeoutId);
+                sessionTimeoutId = setTimeout(() => {
+                    stopTimeTracking();
+                }, SESSION_TIMEOUT);
+            }
+        }
+
+        // 停止时间跟踪并记录
+        async function stopTimeTracking(isLogout = false) {
+            if (isSessionActive && activeSessionStart) {
+                isSessionActive = false;
+                clearTimeout(sessionTimeoutId);
+                
+                const sessionDuration = Date.now() - activeSessionStart;
+                // 只记录超过1分钟的会话
+                if (sessionDuration > 60000) {
+                    try {
+                        const startTime = new Date(activeSessionStart).toLocaleTimeString('zh-CN', { 
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        const endTime = new Date().toLocaleTimeString('zh-CN', { 
+                            hour12: false,
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        });
+                        const duration = new Date(sessionDuration).toISOString().substr(11, 8); // 格式化为 HH:mm:ss
+
+                        const entry = {
+                            date: new Date().toISOString().split('T')[0], // 获取当前日期
+                            start: startTime,
+                            end: endTime,
+                            duration: duration,
+                            timestamp: Date.now(),
+                            automatic: true
+                        };
+                        
+                        // 保存到数据库
+                        await db.ref(getProjectPath(`worklogs/${entry.timestamp}`)).set(entry);
+                        console.log("自动记录工作时间:", entry);
+                    } catch (error) {
+                        console.error("记录工作时间失败:", error);
+                    }
+                }
+                
+                activeSessionStart = null;
+                
+                // 如果不是登出，则重新开始记录
+                if (!isLogout) {
+                    startTimeTracking();
+                }
+            }
+        }
+
+        // 修改showTimeTracker函数显示自动和手动记录
+        async function showTimeTracker() {
+            try {
+                // 加载工作时间记录
+                const snapshot = await db.ref(getProjectPath('worklogs')).once('value');
+                timeEntries = Object.values(snapshot.val() || {});
+                
+                // 按时间戳排序（最新的在前）
+                timeEntries.sort((a, b) => b.timestamp - a.timestamp);
+                
+                // 更新状态显示
+                const isAutoEnabled = localStorage.getItem('autoTimeTracking') === 'enabled';
+                document.getElementById('auto-tracking-status').innerText = 
+                    isAutoEnabled ? "自动记录已启用" : "自动记录已禁用";
+                document.getElementById('auto-tracking-toggle').innerText = 
+                    isAutoEnabled ? "禁用自动记录" : "启用自动记录";
+                
+                updateTimeStats();
+                renderTimeRecords();
+                document.getElementById('time-tracker').style.display = 'block';
+            } catch (error) {
+                showAlert('加载工作时间记录失败: ' + error.message, 'error');
+            }
+        }
+
+        // 切换自动记录状态
+        function toggleAutoTracking() {
+            const isCurrentlyEnabled = localStorage.getItem('autoTimeTracking') === 'enabled';
+            
+            if (isCurrentlyEnabled) {
+                localStorage.setItem('autoTimeTracking', 'disabled');
+                stopTimeTracking();
+                document.getElementById('auto-tracking-status').innerText = "自动记录已禁用";
+                document.getElementById('auto-tracking-toggle').innerText = "启用自动记录";
+            } else {
+                localStorage.setItem('autoTimeTracking', 'enabled');
+                startTimeTracking();
+                document.getElementById('auto-tracking-status').innerText = "自动记录已启用";
+                document.getElementById('auto-tracking-toggle').innerText = "禁用自动记录";
+            }
+        }
+
+        // 修改renderTimeRecords函数以显示自动/手动标记
+        function renderTimeRecords() {
+            const tbody = document.getElementById('time-records-body');
+            
+            if (timeEntries.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center">暂无记录</td></tr>`;
+                return;
+            }
+            
+            tbody.innerHTML = timeEntries.map(entry => `
+                <tr>
+                    <td>${entry.date}</td>
+                    <td>${entry.start} - ${entry.end} ${entry.automatic ? '<span class="auto-badge">自动</span>' : ''}</td>
+                    <td>${entry.duration}</td>
+                    <td>
+                        <button class="danger-btn" onclick="deleteTimeEntry('${entry.timestamp}')">删除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 在页面加载时初始化自动时间跟踪
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            initAutoTimeTracking(); // 直接初始化时间跟踪
+            
+            // 添加回收站关闭监听
+            document.getElementById('recycle-close-btn').addEventListener('click', () => {
+                console.log('关闭回收站 via 标准监听');
+                hideRecycleBin();
+            });
+        });
+
+        // 在页面关闭时记录时间
+        window.addEventListener('beforeunload', function() {
+            stopTimeTracking();
+        });
+        
+        // 添加全局函数，确保回收站能够关闭
+        window.closeRecycleBin = function() {
+            console.log('关闭回收站 - 全局函数被调用');
+            document.getElementById('recycle-bin').style.display = 'none';
+        }
+
+        function formatDuration(seconds) {
+            const hrs = Math.floor(seconds / 3600);
+            const mins = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hrs}h ${mins}m ${secs}s`;
+        }
+
+        function migrateTimeFormat() {
+            const worklogsRef = db.ref(getProjectPath('worklogs'));
+            worklogsRef.once('value').then(snapshot => {
+                const updates = {};
+                snapshot.forEach(child => {
+                    const entry = child.val();
+                    if (typeof entry.start === 'string') {
+                        const [h, m, s] = entry.start.split(':');
+                        updates[`${child.key}/start`] = {
+                            hours: parseInt(h),
+                            minutes: parseInt(m),
+                            seconds: parseInt(s || 0)
+                        };
+                        updates[`${child.key}/duration_seconds`] = 
+                            (parseInt(entry.duration.split('h')[0]) * 3600) +
+                            (parseInt(entry.duration.split('m')[0].split('h')[1]) * 60) +
+                            (parseInt(entry.duration.split('m')[1]) || 0);
+                    }
+                });
+                worklogsRef.update(updates);
+            });
+        }
+
+        // 添加定时清理任务（每天凌晨执行）
+        function setupAutoPurge() {
+            setInterval(() => {
+                const cutoff = Date.now() - 50 * 24 * 60 * 60 * 1000;
+                db.ref('recycle_bin').orderByChild('deleted_time').endAt(cutoff)
+                  .once('value').then(snapshot => {
+                      const updates = {};
+                      snapshot.forEach(child => {
+                          updates[child.key] = null; // 标记删除
+                      });
+                      db.ref('recycle_bin').update(updates);
+                  });
+            }, 24 * 60 * 60 * 1000); // 每日执行
+        }
+
+        // 在恢复/删除操作前添加验证
+        function validateRecycleAction(user) {
+            return user.roles.includes('admin') || 
+                   user.permissions.includes('manage_recycle');
+        }
+
+        // 记录回收站操作日志
+        function logRecycleAction(action, items) {
+            db.ref('audit_logs').push({
+                user: currentUser.uid,
+                action: action,
+                items: items.map(i => i.id),
+                timestamp: Date.now()
+            });
+        }
+
+        function confirmDestructiveAction() {
+            return new Promise(resolve => {
+                showDialog({
+                    title: "危险操作确认",
+                    content: "请输入安全密码：",
+                    inputType: "password",
+                    onConfirm: (pw) => validatePassword(pw).then(resolve)
+                });
+            });
+        }
+
+        // 实现虚拟滚动
+        const virtualScroll = new VirtualScroll({
+            container: '#recycle-list',
+            itemHeight: 48,
+            render: (index) => createRecycleItem(data[index])
+        });
+
+        let activeTimer = null;
+        let startTimestamp = null;
+
+        // 修改开始记录函数
+        function startWorkSession() {
+            startTimestamp = Date.now();
+            
+            if (activeTimer) clearInterval(activeTimer);
+            
+            activeTimer = setInterval(() => {
+                const duration = Date.now() - startTimestamp;
+                updateLiveTimer(duration);
+            }, 1000);
+            
+            document.getElementById('live-timer-container').classList.add('active');
+        }
+
+        // 修改停止记录函数 
+        function stopWorkSession() {
+            if (activeTimer) {
+                clearInterval(activeTimer);
+                activeTimer = null;
+                
+                const duration = Date.now() - startTimestamp;
+                saveWorklog(duration);
+                
+                updateLiveTimer(0);
+                document.getElementById('live-timer-container').classList.remove('active');
+            }
+        }
+
+        // 实时更新函数
+        function updateLiveTimer(milliseconds) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            // 智能格式显示
+            let displayText = '';
+            if (hours > 0) displayText += `${hours}小时 `;
+            if (minutes > 0 || hours > 0) displayText += `${minutes}分 `;
+            displayText += `${seconds}秒`;
+
+            document.getElementById('current-duration').textContent = displayText;
+        }
+
+        // 页面可见性监听（防止后台标签页计时不准确）
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                clearInterval(trackingInterval);
+            } else {
+                startTracking();
+            }
+        });
+
+        // 页面刷新恢复计时
+        window.addEventListener('load', () => {
+            const savedStart = localStorage.getItem('worklogStart');
+            if (savedStart) {
+                startTimestamp = parseInt(savedStart);
+                startWorkSession();
+            }
+        });
+
+        function startWorkSession() {
+            startTimestamp = Date.now();
+            localStorage.setItem('worklogStart', startTimestamp);
+            // ...原有逻辑
+        }
+
+        function stopWorkSession() {
+            localStorage.removeItem('worklogStart');
+            // ...原有逻辑
+        }
+
+        // 通过WebSocket同步计时状态
+        const ws = new WebSocket('wss://yourserver.com/worklog');
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'sync') {
+                startTimestamp = data.start;
+                if (!activeTimer) startWorkSession();
+            }
+        }
+
+        // 新增全局变量
+        let trackingInterval;
+        let sessionStartTime;
+        let lastUpdateTime = 0;
+        const HEARTBEAT_INTERVAL = 30000; // 30秒同步一次
+
+        // 初始化时间跟踪
+        function initTimeTracking() {
+          // 恢复上次未完成会话
+          const lastSession = localStorage.getItem('currentSession');
+          if (lastSession) {
+            const { start, lastDuration } = JSON.parse(lastSession);
+            sessionStartTime = start;
+            updateTimerDisplay(Date.now() - start + lastDuration);
+            startTracking();
+          }
+
+          // 监听用户活动
+          ['mousemove', 'keydown', 'click', 'scroll'].forEach(event => {
+            document.addEventListener(event, handleUserActivity);
+          });
+        }
+
+        // 用户活动处理
+        function handleUserActivity() {
+          if (!sessionStartTime) {
+            startNewSession();
+          } else {
+            resetInactivityTimer();
+          }
+        }
+
+        // 开始新会话
+        function startNewSession() {
+          sessionStartTime = Date.now();
+          localStorage.setItem('currentSession', JSON.stringify({
+            start: sessionStartTime,
+            lastDuration: 0
+          }));
+          startTracking();
+        }
+
+        // 启动计时器
+        function startTracking() {
+          trackingInterval = setInterval(() => {
+            const currentDuration = Date.now() - sessionStartTime;
+            updateTimerDisplay(currentDuration);
+            autoSaveSession(currentDuration);
+          }, 1000);
+        }
+
+        // 自动保存
+        function autoSaveSession(duration) {
+          if (Date.now() - lastUpdateTime > HEARTBEAT_INTERVAL) {
+            saveSessionToFirebase(duration);
+            lastUpdateTime = Date.now();
+          }
+        }
+
+        // 更新界面显示
+        function updateTimerDisplay(milliseconds) {
+          const totalSeconds = Math.floor(milliseconds / 1000);
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+          
+          document.getElementById('current-duration').textContent = 
+            `${hours}小时${minutes}分${seconds}秒`;
+        }
+
+        // 保存会话记录
+        async function saveSessionToFirebase(duration) {
+          const user = auth.currentUser;
+          if (!user) return;
+
+          const sessionData = {
+            start: sessionStartTime,
+            end: Date.now(),
+            duration: duration,
+            autoRecord: true,
+            deviceId: getDeviceFingerprint() // 需要实现设备指纹
+          };
+
+          try {
+            await db.ref(`worklogs/${user.uid}/${sessionStartTime}`).update(sessionData);
+            localStorage.setItem('currentSession', JSON.stringify({
+              start: sessionStartTime,
+              lastDuration: duration
+            }));
+          } catch (error) {
+            console.error('保存失败:', error);
+            cacheSessionLocally(sessionData); // 本地缓存
+          }
+        }
+
+        // 设备指纹生成
+        function getDeviceFingerprint() {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          ctx.textBaseline = 'top';
+          ctx.font = "14px 'Arial'";
+          ctx.fillText('ID', 2, 15);
+          return canvas.toDataURL().slice(-20);
+        }
+
+        // 本地缓存
+        function cacheSessionLocally(data) {
+          const cached = JSON.parse(localStorage.getItem('cachedSessions') || '[]');
+          cached.push(data);
+          localStorage.setItem('cachedSessions', JSON.stringify(cached.slice(-10))); // 保留最后10条
+        }
+
+        // 恢复离线数据
+        async function restoreCachedSessions() {
+          const cached = JSON.parse(localStorage.getItem('cachedSessions') || '[]');
+          if (cached.length > 0) {
+            const user = auth.currentUser;
+            await Promise.all(cached.map(session => 
+              db.ref(`worklogs/${user.uid}/${session.start}`).set(session)
+            ));
+            localStorage.removeItem('cachedSessions');
+          }
+        }
     </script>
+    
+    <!-- 删除现有回收站弹窗，添加新的回收站弹窗 -->
+    <!-- 回收站弹窗 -->
+    <div id="recycle-bin" class="form-popup" style="width: 90%; display: none; z-index: 9999 !important;">
+        <h2>回收站（保留最近50天）</h2>
+        <div class="glass-container">
+            <div id="deleted-entries-container"></div>
+            <div class="pagination" id="recycle-pagination"></div>
+        </div>
+        <div class="action-buttons" style="position: relative; z-index: 10000 !important;">
+            <button class="danger-btn" onclick="emptyRecycleBin()">清空回收站</button>
+            <button class="cancel-btn" id="recycle-close-btn" style="background: red !important; color: white !important; font-weight: bold; padding: 15px 30px !important;" onclick="window.closeRecycleBin(); return false;">关闭回收站</button>
+        </div>
+    </div>
+
+    <!-- 工作时间记录弹窗 -->
+    <div id="time-tracker" class="form-popup" style="display: none;">
+        <h2>工作时间记录</h2>
+        <div class="glass-container">
+            <!-- 自动记录状态 -->
+            <div class="auto-tracking-info glass-container">
+                <div class="stat-item">
+                    <span id="auto-tracking-status" class="stat-value">自动记录已启用</span>
+                    <button id="auto-tracking-toggle" class="primary-btn" onclick="toggleAutoTracking()">禁用自动记录</button>
+                </div>
+            </div>
+            <!-- 统计展示 -->
+            <div class="time-stats glass-container">
+                <div class="stat-item">
+                    <span class="stat-value" id="today-total">0h 0m</span>
+                    <span class="stat-label">今日累计</span>
+                </div>
+            </div>
+            <!-- 记录列表 -->
+            <table class="time-records entry-table">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>时间段</th>
+                        <th>持续时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="time-records-body"></tbody>
+            </table>
+        </div>
+        <div class="action-buttons">
+            <button class="cancel-btn" onclick="hideTimeTracker()">关闭</button>
+        </div>
+    </div>
+    
+    <style>
+    /* 回收站样式 */
+    #deleted-entries-container .entry-table {
+        background: var(--glass-bg);
+        border-color: var(--accent-1-15);
+    }
+
+    .deleted-entry {
+        opacity: 0.8;
+        border-left: 4px solid var(--danger-bg);
+    }
+
+    .restore-btn {
+        background: var(--accent-2) !important;
+    }
+
+    /* 时间记录样式 */
+    .time-form {
+        display: grid;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--glass-bg);
+        border-radius: 8px;
+    }
+
+    .time-inputs {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .time-stats {
+        margin: 1rem 0;
+        padding: 1rem;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+    }
+
+    .time-records {
+        margin-top: 1rem;
+    }
+
+    .time-records td {
+        padding: 0.8rem;
+    }
+
+    /* 适配暗色主题 */
+    @media (prefers-color-scheme: dark) {
+        .deleted-entry {
+            border-left-color: var(--danger-hover);
+        }
+        
+        .time-form input {
+            background: var(--input-bg);
+            color: var(--text-primary);
+        }
+    }
+
+    /* 自动时间记录样式 */
+    .auto-badge {
+        background: var(--accent-2);
+        color: var(--text-primary);
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        margin-left: 5px;
+    }
+    
+    .auto-tracking-info {
+        margin-bottom: 1rem;
+        padding: 0.8rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    /* 增加回收站关闭按钮样式，确保足够大的可点击区域 */
+    #recycle-close-btn {
+        cursor: pointer !important;
+        font-size: 18px !important;
+        min-width: 120px !important;
+        min-height: 50px !important;
+        position: relative !important;
+        z-index: 99999 !important;
+        display: block !important;
+        margin: 10px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+        background: var(--danger-bg) !important;
+    }
+    
+    /* 增加动画效果，让按钮更明显 */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    #recycle-close-btn:hover {
+        animation: pulse 1s infinite;
+    }
+
+    /* 添加时间轴样式 */
+    .recycle-item::before {
+        content: "";
+        position: absolute;
+        left: -15px;
+        top: 0;
+        height: 100%;
+        width: 2px;
+        background: var(--accent-color);
+        opacity: 0.3;
+    }
+    </style>
+
+    <!-- 实时计时器 -->
+    <div id="live-timer-container" class="live-timer">
+        <span>当前工作持续时间：</span>
+        <span id="current-duration">0秒</span>
+    </div>
 </body>
 </html>
