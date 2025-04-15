@@ -1033,6 +1033,147 @@
             background-color: var(--accent-1-05);
             animation: pulse 2s infinite alternate;
         }
+
+        /* 详细视图样式 */
+        .detail-view-container {
+            display: grid;
+            gap: 20px;
+        }
+
+        .detail-entry {
+            padding: 20px;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .detail-entry:hover {
+            transform: translateY(-3px);
+        }
+
+        /* 重用或调整 .entry-header, .entry-meta, .entry-actions */
+        .detail-entry .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .detail-entry .entry-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+
+        .detail-entry .entry-title {
+            color: var(--text-primary);
+            margin: 15px 0;
+            font-size: 1.4em;
+        }
+
+        .content-section, .analysis-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: var(--input-bg);
+            border-radius: 8px;
+        }
+
+        .content-section h4, .analysis-section h4 {
+            margin-top: 0;
+            color: var(--accent-1);
+            font-size: 1.1em;
+        }
+
+        .entry-content, .entry-analysis {
+            line-height: 1.8;
+            color: var(--text-primary);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .entry-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* 垂直居中对齐 */
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .entry-links a {
+            color: var(--accent-1);
+            margin-left: 10px;
+            text-decoration: none;
+        }
+
+        .entry-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* 确保分页在两种视图下都居中显示 */
+        .pagination {
+            justify-content: center;
+            margin-top: 30px; /* 增加与列表的间距 */
+        }
+
+        /* 确保选择容器在详细视图中位置正确 */
+        .detail-entry.bulk-mode .select-entry-container {
+            /* 使用与 entry-item.bulk-mode 相同或相似的定位 */
+            position: absolute;
+            left: 10px; /* 或根据需要调整 */
+            top: 20px;  /* 或根据需要调整 */
+            z-index: 1; /* 确保在内容之上 */
+        }
+
+        /* 增加对 entry-item 的基础样式，以适应列表视图 */
+        .entry-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            background: var(--glass-bg);
+        }
+
+        .entry-item .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; /* 顶部对齐 */
+            margin-bottom: 10px;
+        }
+
+        .entry-item .entry-title {
+            margin: 0 0 5px 0;
+            font-size: 1.2em;
+            flex-grow: 1; /* 标题占据更多空间 */
+            margin-right: 15px;
+        }
+
+        .entry-item .entry-meta {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            flex-shrink: 0; /* 防止元信息被压缩 */
+            text-align: right; /* 右对齐 */
+        }
+
+        .entry-item .entry-meta span {
+            display: block; /* 每个信息项占一行 */
+            margin-bottom: 3px;
+        }
+
+        .entry-item .entry-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 15px; /* 与元信息分隔 */
+            flex-shrink: 0;
+        }
+
+        .entry-item .entry-footer {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--glass-border);
+        }
     </style>
 </head>
 <body>
@@ -1207,6 +1348,12 @@
                 </div>
                 <div style="display:inline-block;margin-left:10px">
                     <button class="primary-btn" onclick="toggleBulkMode()">批量操作</button>
+                </div>
+                <div style="display:inline-block;margin-left:10px">
+                    <select id="viewMode" onchange="changeViewMode(this.value)">
+                        <option value="list">目录视图</option>
+                        <option value="detail">详细视图</option>
+                    </select>
                 </div>
                 <div style="display:inline-block;margin-left:10px">
                     <select id="pageSize" onchange="changePageSize(this.value)" style="padding:6px 12px">
@@ -1524,6 +1671,7 @@
         let bulkModeActive = false;
         let selectedEntryIds = new Set();
         let selectedAll = false;
+        let currentViewMode = 'list'; // 默认目录视图
         
         // 切换批量操作模式
         function toggleBulkMode() {
@@ -2113,78 +2261,11 @@
             const end = start + ENTRIES_PER_PAGE;
             const currentPageEntries = filteredEntries.slice(start, end);
             
-            // 渲染列表
+            // 渲染列表 - 根据视图模式选择渲染函数
             const container = document.getElementById('entries-container');
-            container.innerHTML = '';
-            
-            if (filteredEntries.length === 0) {
-                container.innerHTML = `
-                    <div class="entry-empty">
-                        <p>未找到符合条件的条目</p>
-                    </div>
-                `;
-            } else {
-                // 在批量操作模式下，添加一个显示复选框的容器
-                currentPageEntries.forEach(entry => {
-                    const element = document.createElement('div');
-                    element.className = `entry-item ${bulkModeActive ? 'bulk-mode' : ''}`;
-                    element.setAttribute('data-id', entry.id);
-                    
-                    // 检查该条目是否被选中
-                    const isSelected = selectedAll || selectedEntryIds.has(entry.id);
-                    if (isSelected) {
-                        element.classList.add('selected');
-                    }
-                    
-                    // 构建条目HTML
-                    let entryContent = '';
-                    
-                    // 批量模式时添加复选框
-                    if (bulkModeActive) {
-                        entryContent += `
-                            <div class="select-entry-container">
-                                <input type="checkbox" class="select-entry" 
-                                       ${isSelected ? 'checked' : ''} 
-                                       onchange="handleEntrySelection('${entry.id}', this.checked)">
-                            </div>
-                        `;
-                    }
-                    
-                    // 条目主要内容
-                    entryContent += `
-                        <div class="entry-header">
-                            <h3 class="entry-title">${entry.title}</h3>
-                            <div class="entry-actions">
-                                <span class="entry-date">${entry.date}</span>
-                                <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
-                                <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
-                                <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
-                            </div>
-                        </div>
-                        <div class="entry-content">
-                            ${entry.content}
-                        </div>
-                        ${entry.analysis ? `
-                            <div class="entry-analysis">
-                                <h4>分析：</h4>
-                                ${entry.analysis}
-                            </div>
-                        ` : ''}
-                        <div class="entry-meta">
-                            ${entry.keywords && entry.keywords.length > 0 ? `
-                                <div class="entry-keywords">
-                                    ${entry.keywords.map(kw => `
-                                        <span class="keyword-tag" onclick="filterByKeyword('${kw}')">${kw}</span>
-                                    `).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
-                    `;
-                    
-                    element.innerHTML = entryContent;
-                    container.appendChild(element);
-                });
-            }
+            container.innerHTML = currentViewMode === 'list' ? 
+                renderListView(currentPageEntries) : 
+                renderDetailView(currentPageEntries);
             
             // 更新分页
             updatePagination(totalPages);
@@ -2193,6 +2274,105 @@
             if (bulkModeActive) {
                 updateSelectedCount();
             }
+        }
+
+        // 渲染目录视图 (使用div结构以兼容批量操作)
+        function renderListView(entries) {
+            return entries.map(entry => {
+                const elementClass = `entry-item ${bulkModeActive ? 'bulk-mode' : ''} ${selectedAll || selectedEntryIds.has(entry.id) ? 'selected' : ''}`;
+                let entryContent = '';
+
+                // 批量模式复选框
+                if (bulkModeActive) {
+                    entryContent += `
+                        <div class="select-entry-container">
+                            <input type="checkbox" class="select-entry" 
+                                   ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''} 
+                                   onchange="handleEntrySelection('${entry.id}', this.checked)">
+                        </div>`;
+                }
+
+                // 简化的条目内容
+                entryContent += `
+                    <div class="entry-header">
+                        <h3 class="entry-title">${entry.title}</h3>
+                        <div class="entry-meta">
+                            <span class="entry-id">${entry.id}</span>
+                            <span class="entry-date">${entry.date}</span>
+                            <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
+                        </div>
+                        <div class="entry-actions">
+                            <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
+                            <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
+                        </div>
+                    </div>
+                    <div class="entry-footer">
+                        <div class="entry-keywords">
+                            ${(entry.keywords || []).map(kw => `<span class="keyword-tag" onclick="filterByKeyword('${kw}')">${kw}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+
+                return `<div class="${elementClass}" data-id="${entry.id}">${entryContent}</div>`;
+            }).join('');
+        }
+
+        // 渲染详细视图
+        function renderDetailView(entries) {
+            return `<div class="detail-view-container">` + 
+                   entries.map(entry => {
+                       const elementClass = `detail-entry glass-container ${bulkModeActive ? 'bulk-mode' : ''} ${selectedAll || selectedEntryIds.has(entry.id) ? 'selected' : ''}`;
+                       let entryContent = '';
+
+                       // 批量模式复选框
+                       if (bulkModeActive) {
+                           entryContent += `
+                               <div class="select-entry-container">
+                                   <input type="checkbox" class="select-entry" 
+                                          ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''} 
+                                          onchange="handleEntrySelection('${entry.id}', this.checked)">
+                               </div>`;
+                       }
+
+                       // 详细条目内容
+                       entryContent += `
+                           <div class="entry-header">
+                               <div class="entry-meta">
+                                   <span class="entry-id">${entry.id}</span>
+                                   <span class="entry-date">${entry.date}</span>
+                                   <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
+                               </div>
+                               <div class="entry-actions">
+                                   <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
+                                   <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
+                               </div>
+                           </div>
+                           <div class="entry-body">
+                               <h3 class="entry-title">${entry.title}</h3>
+                               <div class="content-section">
+                                   <h4>原文内容</h4>
+                                   <div class="entry-content">${entry.content || '无内容'}</div>
+                               </div>
+                               ${entry.analysis ? `
+                                   <div class="analysis-section">
+                                       <h4>分析解读</h4>
+                                       <div class="entry-analysis">${entry.analysis}</div>
+                                   </div>
+                               ` : ''}
+                               <div class="entry-footer">
+                                   <div class="entry-keywords">
+                                       ${(entry.keywords || []).map(k => `<span class="keyword-tag" onclick="filterByKeyword('${k}')">${k}</span>`).join('')}
+                                   </div>
+                                   <div class="entry-links">
+                                       ${(entry.links || []).map(l => `<a href="${l}" target="_blank">相关链接</a>`).join('')}
+                                   </div>
+                               </div>
+                           </div>
+                       `;
+
+                       return `<div class="${elementClass}" data-id="${entry.id}">${entryContent}</div>`;
+                   }).join('') + 
+                   `</div>`;
         }
 
         function exportEntries(format) {
@@ -4256,6 +4436,12 @@
                 button.disabled = false;
                 button.textContent = '删除选中项以外的重复条目';
             }
+        }
+
+        // 切换视图模式
+        function changeViewMode(mode) {
+            currentViewMode = mode;
+            renderEntries();
         }
     </script>
     
