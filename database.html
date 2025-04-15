@@ -802,6 +802,42 @@
             background: var(--input-bg);
         }
 
+        /* 分析编辑器样式 */
+        #analysis-editor-container {
+            height: 300px;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            background: var(--input-bg);
+            overflow-y: auto;
+        }
+
+        .analysis-editor .ql-container {
+            height: calc(100% - 42px) !important;
+            border: none !important;
+        }
+
+        .analysis-editor .ql-toolbar {
+            position: sticky;
+            top: 0;
+            background: var(--glass-bg);
+            z-index: 1;
+        }
+
+        /* 确保滚动条样式统一 */
+        #analysis-editor-container::-webkit-scrollbar {
+            width: 8px;
+            background-color: transparent;
+        }
+
+        #analysis-editor-container::-webkit-scrollbar-thumb {
+            background-color: var(--glass-border);
+            border-radius: 4px;
+        }
+
+        #analysis-editor-container::-webkit-scrollbar-thumb:hover {
+            background-color: var(--glass-active);
+        }
+
         /* 分类管理样式优化 */
         .category-section {
             margin-bottom: 24px;
@@ -1193,7 +1229,7 @@
 
                 <div class="form-row">
                     <label>分析：</label>
-                    <textarea name="analysis" rows="3"></textarea>
+                    <div id="analysis-editor-container"></div>
                 </div>
 
                 <div class="form-row">
@@ -1434,6 +1470,29 @@
                     theme: 'snow'
                 });
             }
+            
+            // 新增分析编辑器初始化
+            if (!window.analysisQuill) {
+                window.analysisQuill = new Quill('#analysis-editor-container', {
+                    modules: {
+                        toolbar: [
+                            [{ 'font': ['宋体', '楷体', '仿宋', '黑体'] }],
+                            [{ 'size': ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px', '72px'] }],
+                            ['bold', 'italic', 'underline'],
+                            [{ 'color': [] }, { 'background': [] }],
+                            ['blockquote', 'code-block'],
+                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                            ['link', 'image'],
+                            ['clean']
+                        ]
+                    },
+                    theme: 'snow'
+                });
+                
+                // 设置固定高度
+                analysisQuill.container.style.height = '300px';
+                analysisQuill.container.style.overflowY = 'auto';
+            }
         }
 
         // 添加字体和字号样式
@@ -1607,6 +1666,7 @@
             document.getElementById('entry-form').style.display = 'none';
             document.querySelector('form').reset();
             if (quill) quill.root.innerHTML = '';
+            if (window.analysisQuill) window.analysisQuill.root.innerHTML = '';
             editingId = null;
         }
 
@@ -2106,9 +2166,9 @@
                     subCat: formData.get('sub-cat'),
                     title: formData.get('title'),
                     content: quill.root.innerHTML,
-                    analysis: formData.get('analysis') || '', // 提供默认值
-                    links: formData.get('links') ? formData.get('links').split(',').map(l => l.trim()).filter(Boolean) : [], // 确保始终是数组
-                    keywords: formData.get('keywords') ? formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean) : [], // 确保始终是数组
+                    analysis: window.analysisQuill.root.innerHTML,
+                    links: formData.get('links') ? formData.get('links').split(',').map(l => l.trim()).filter(Boolean) : [],
+                    keywords: formData.get('keywords') ? formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean) : [],
                     updatedAt: firebase.database.ServerValue.TIMESTAMP
                 };
 
@@ -2179,7 +2239,7 @@
             }, 100);
             document.querySelector('[name="title"]').value = entry.title || '';
             quill.root.innerHTML = entry.content || '';
-            document.querySelector('[name="analysis"]').value = entry.analysis || '';
+            window.analysisQuill.root.innerHTML = entry.analysis || '';
             document.querySelector('[name="links"]').value = (entry.links || []).join(', ');
             document.querySelector('[name="keywords"]').value = (entry.keywords || []).join(', ');
             showForm();
