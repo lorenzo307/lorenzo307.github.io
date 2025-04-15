@@ -546,6 +546,85 @@
             border-radius: 8px;
             margin: 20px 0;
         }
+
+        /* 新增字体选项的样式支持 */
+        .ql-font span[data-label="Arial"]::before {
+            font-family: Arial;
+        }
+        .ql-font span[data-label="宋体"]::before {
+            font-family: SimSun;
+        }
+        .ql-font span[data-label="楷体"]::before {
+            font-family: KaiTi;
+        }
+        .ql-font span[data-label="黑体"]::before {
+            font-family: SimHei;
+        }
+
+        /* 编辑器内容区域字体应用 */
+        .ql-font-arial {
+            font-family: Arial;
+        }
+        .ql-font-simsun {
+            font-family: SimSun;
+        }
+        .ql-font-kaiti {
+            font-family: KaiTi;
+        }
+        .ql-font-simhei {
+            font-family: SimHei;
+        }
+
+        /* 编辑器内容区域字号应用 */
+        .ql-size-small {
+            font-size: 0.75em;
+        }
+        .ql-size-normal {
+            font-size: 1em;
+        }
+        .ql-size-large {
+            font-size: 1.5em;
+        }
+        .ql-size-huge {
+            font-size: 2em;
+        }
+
+        /* 批注样式 */
+        .annotation {
+            background-color: #fff3cd;
+            border-bottom: 2px dashed #ffc107;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .annotation-popup {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-width: 300px;
+            border-radius: 4px;
+        }
+
+        .annotation-item {
+            margin: 5px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .annotation-delete {
+            color: #dc3545;
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 0.8em;
+        }
+
+        .annotation-delete:hover {
+            color: #b02a37;
+        }
     </style>
 </head>
 <body>
@@ -706,6 +785,12 @@
                 <div class="form-row">
                     <label>关键词（逗号分隔）：</label>
                     <input type="text" name="keywords" required>
+                </div>
+
+                <div id="annotation-container" style="display:none; margin-top:10px">
+                    <div id="annotation-list"></div>
+                    <input type="text" id="new-annotation" placeholder="输入批注内容" style="width:80%">
+                    <button class="primary-btn" onclick="saveAnnotation()">添加批注</button>
                 </div>
 
                 <div class="action-buttons">
@@ -878,6 +963,32 @@
         let entries = [];  // 添加entries数组初始化
         let categories = { main: {} };  // 添加categories对象初始化
         
+        // 批注相关变量
+        let annotations = [];
+        let currentSelection = null;
+
+        // 自定义批注格式
+        const Inline = Quill.import('blots/inline');
+
+        class AnnotationFormat extends Inline {
+            static create(value) {
+                const node = super.create();
+                node.dataset.annotationIds = value.join(',');
+                return node;
+            }
+
+            static formats(node) {
+                return node.dataset.annotationIds.split(',').map(Number);
+            }
+        }
+
+        AnnotationFormat.blotName = 'annotation';
+        AnnotationFormat.tagName = 'span';
+        AnnotationFormat.className = 'annotation';
+
+        // 注册批注格式
+        Quill.register(AnnotationFormat, true);
+
         // 日志相关变量
         let logQuill = null;
         let editingLogId = null;
@@ -911,15 +1022,38 @@
                 quill = new Quill('#editor-container', {
                     modules: {
                         toolbar: [
+                            [{ 'font': ['arial', 'simsun', 'kaiti', 'simhei'] }, { 'size': ['small', 'normal', 'large', 'huge'] }],
                             ['bold', 'italic', 'underline'],
                             [{ 'color': [] }, { 'background': [] }],
                             ['blockquote', 'code-block'],
                             [{ 'list': 'ordered' }, { 'list': 'bullet' }],
                             ['link', 'image'],
-                            ['clean']
+                            ['clean'],
+                            ['annotation'] // 添加批注按钮
                         ]
                     },
                     theme: 'snow'
+                });
+
+                // 注册批注按钮
+                let toolbar = quill.getModule('toolbar');
+                toolbar.addHandler('annotation', function() {
+                    showAnnotationUI();
+                });
+
+                // 监听选区变化
+                quill.on('selection-change', function(range) {
+                    if (range && range.length > 0) {
+                        currentSelection = range;
+                        document.getElementById('annotation-container').style.display = 'block';
+                    }
+                });
+
+                // 点击批注显示详情
+                quill.root.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('annotation')) {
+                        showAnnotationDetails(e.target);
+                    }
                 });
             }
         }
@@ -1496,7 +1630,7 @@
                 return;
             }
             
-            editingId = id; // 保留原始ID用于后续判断
+            editingId = id;
             
             // 填充表单数据
             document.querySelector('[name="date"]').value = entry.date || '';
@@ -1510,7 +1644,18 @@
             document.querySelector('[name="analysis"]').value = entry.analysis || '';
             document.querySelector('[name="links"]').value = (entry.links || []).join(', ');
             document.querySelector('[name="keywords"]').value = (entry.keywords || []).join(', ');
-            showForm();
+            
+            // 加载批注数据
+            if (entry.annotations) {
+                annotations = entry.annotations;
+                entry.annotations.forEach(anno => {
+                    quill.formatText(anno.index, anno.length, 'annotation', true);
+                });
+                updateAnnotationList();
+            }
+            
+            // 显示表单
+            document.getElementById('entry-form').style.display = 'block';
         }
 
         async function deleteEntry(id) {
@@ -1649,6 +1794,11 @@
             renderEntries();
         }
 
+        // 添加字体白名单配置
+        const Font = Quill.import('formats/font');
+        Font.whitelist = ['arial', 'simsun', 'kaiti', 'simhei'];
+        Quill.register(Font, true);
+
         // 初始化
         updateCategorySelectors();
         renderEntries();
@@ -1761,6 +1911,7 @@
                 logQuill = new Quill('#log-editor-container', {
                     modules: {
                         toolbar: [
+                            [{ 'font': ['arial', 'simsun', 'kaiti', 'simhei'] }, { 'size': ['small', 'normal', 'large', 'huge'] }],
                             ['bold', 'italic', 'underline'],
                             [{ 'color': [] }, { 'background': [] }],
                             ['blockquote', 'code-block'],
@@ -2096,7 +2247,164 @@
             }
         }
 
-       
+        // 批注相关函数
+        function showAnnotationUI() {
+            if (!currentSelection) {
+                showAlert('请先选择要批注的文本', 'warning');
+                return;
+            }
+            document.getElementById('new-annotation').value = '';
+        }
+
+        function saveAnnotation() {
+            const content = document.getElementById('new-annotation').value;
+            if (!content) {
+                showAlert('请输入批注内容', 'warning');
+                return;
+            }
+
+            const annotation = {
+                id: Date.now(),
+                index: currentSelection.index,
+                length: currentSelection.length,
+                text: quill.getText(currentSelection.index, currentSelection.length),
+                content: content,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+
+            // 检查是否存在重叠批注
+            const existing = annotations.find(a => 
+                a.index === annotation.index && 
+                a.length === annotation.length
+            );
+            
+            if (existing) {
+                // 合并到现有格式
+                existing.content += `\n${annotation.content}`;
+            } else {
+                // 添加新批注
+                annotations.push(annotation);
+            }
+
+            // 更新格式
+            updateAllAnnotationsFormat();
+            updateAnnotationList();
+        }
+
+        function updateAnnotationList() {
+            const container = document.getElementById('annotation-list');
+            container.innerHTML = annotations.map(anno => `
+                <div class="annotation-item" data-id="${anno.id}">
+                    <strong>${anno.text}</strong>
+                    <span class="annotation-delete" onclick="deleteAnnotation(${anno.id})">×</span>
+                    <p>${anno.content}</p>
+                    <small>${new Date(anno.timestamp).toLocaleString()}</small>
+                </div>
+            `).join('');
+        }
+
+        function showAnnotationDetails(element) {
+            const rect = element.getBoundingClientRect();
+            const popup = document.createElement('div');
+            popup.className = 'annotation-popup';
+            popup.style.left = rect.left + 'px';
+            popup.style.top = (rect.top + 20) + 'px';
+
+            const relatedAnnotations = annotations.filter(anno => 
+                element.dataset.annotationIds.includes(anno.id)
+            );
+
+            popup.innerHTML = relatedAnnotations.map(anno => `
+                <div class="annotation-item">
+                    <p>${anno.content}</p>
+                    <small>${new Date(anno.timestamp).toLocaleString()}</small>
+                </div>
+            `).join('');
+
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 3000);
+        }
+
+        function deleteAnnotation(annotationId) {
+            if (!confirm('确定要删除这个批注吗？')) return;
+            
+            // 从数据中移除
+            const index = annotations.findIndex(a => a.id === annotationId);
+            if (index === -1) return;
+            
+            // 获取要删除的批注
+            const deletedAnnotation = annotations[index];
+            
+            // 从编辑器移除格式
+            quill.formatText(
+                deletedAnnotation.index, 
+                deletedAnnotation.length, 
+                'annotation', 
+                false
+            );
+            
+            // 更新数据
+            annotations.splice(index, 1);
+            
+            // 重新渲染列表
+            updateAnnotationList();
+            
+            // 同步更新所有相关格式
+            updateAllAnnotationsFormat();
+        }
+
+        function updateAllAnnotationsFormat() {
+            // 先清除所有批注格式
+            const currentContent = quill.getContents();
+            currentContent.ops.forEach(op => {
+                if (op.attributes && op.attributes.annotation) {
+                    quill.formatText(
+                        op.offset, 
+                        op.length, 
+                        'annotation', 
+                        false
+                    );
+                }
+            });
+            
+            // 重新应用有效批注
+            annotations.forEach(anno => {
+                quill.formatText(
+                    anno.index,
+                    anno.length,
+                    'annotation',
+                    true
+                );
+            });
+        }
+
+        // 修改saveEntry函数保存批注数据
+        async function saveEntry(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            
+            // ...原有保存逻辑
+            
+            // 添加批注数据
+            const newEntry = {
+                ...newEntry,
+                annotations: annotations  // 添加批注数据
+            };
+
+            // ...后续保存逻辑
+        }
+
+        // 修改editEntry函数加载批注
+        function editEntry(id) {
+            const entry = entries.find(e => e.id === id);
+            if (entry.annotations) {
+                annotations = entry.annotations;
+                entry.annotations.forEach(anno => {
+                    quill.formatText(anno.index, anno.length, 'annotation', true);
+                });
+                updateAnnotationList();
+            }
+        }
     </script>
 </body>
 </html>
