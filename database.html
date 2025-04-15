@@ -14,21 +14,54 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     
     <style>
+        /* 更新根变量 */
         :root {
-    --primary-color: #b84f0b;
-    --secondary-color: #eebf67;
-    --tertiary-color: #b5867a;
-    --background: #fff8e1;
-    --text-primary: #3e2723;
-}
-        
+            --base-1: #FFF7F1;  /* 浅米背景色 */
+            --base-2: #FFE4C9;  /* 奶油橘辅助色 */
+            --accent-1: #E78895;  /* 珊瑚红主强调色 */
+            --accent-2: #BED1CF;  /* 灰蓝绿次强调色 */
+            --base-1-80: rgba(255, 247, 241, 0.8);
+            --accent-1-15: rgba(231, 136, 149, 0.15);
+            --text-primary: #8C454F;  /* 珊瑚红深色变体 */
+            --text-secondary: #4F6B68;  /* 灰蓝绿深色变体 */
+            --glass-bg: var(--base-1-80);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 4px 20px -10px var(--accent-1-15);
+            --glass-inset: inset 0 0 12px rgba(255, 255, 255, 0.05);
+            --glass-hover: rgba(255, 255, 255, 0.3);
+            --glass-active: rgba(255, 255, 255, 0.4);
+            --glass-text: var(--text-primary);
+            --glass-text-hover: #1b0000;
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --input-border: rgba(231, 136, 149, 0.3);
+            --input-text: #8C454F;
+        }
 
-       
+        /* 暗色模式变量 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --base-1: #1A120B;  /* 深褐底色 */
+                --base-2: #362312;  /* 深咖啡色 */
+                --text-primary: #FFB5C2;  /* 浅珊瑚色 */
+                --text-secondary: #BED1CF;  /* 灰蓝绿 */
+                --glass-bg: rgba(26, 18, 11, 0.8);
+                --glass-border: rgba(255, 255, 255, 0.1);
+                --glass-hover: rgba(255, 255, 255, 0.15);
+                --glass-active: rgba(255, 255, 255, 0.2);
+                --glass-text: #FFB5C2;
+                --glass-text-hover: #ffffff;
+                --input-bg: rgba(255, 255, 255, 0.12);
+                --input-border: rgba(255, 255, 255, 0.2);
+                --input-text: #FFB5C2;
+            }
+        }
+
+        /* 更新body背景 */
         body {
             font-family: 'Noto Serif SC', serif;
             margin: 0;
             padding: 40px 20px;
-            background: var(--background);
+            background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
             color: var(--text-primary);
             transition: all 0.3s ease;
         }
@@ -41,12 +74,230 @@
             gap: 24px;
         }
 
+        /* 更新导航栏样式 */
         .header {
             grid-column: 1 / -1;
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 24px;
+            background: var(--base-1-80) !important;
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: var(--glass-shadow);
+            padding: 16px 24px;
+            position: relative;
+            z-index: 100;
+        }
+
+        /* 添加主题选择器样式 */
+        .theme-selector {
+            position: relative;
+            margin-left: 16px;
+        }
+
+        .theme-selector button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .theme-selector .theme-options {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 8px;
+            display: none;
+            min-width: 200px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .theme-selector .theme-options.show {
+            display: block;
+        }
+
+        .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .theme-option:hover {
+            background: var(--glass-hover);
+        }
+
+        .theme-preview {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .theme-preview div {
+            flex: 1;
+        }
+
+        /* 添加主题变量 */
+        :root[data-theme="theme1"] {
+            --base-1: #FFF7F1;
+            --base-2: #FFE4C9;
+            --accent-1: #E78895;
+            --accent-2: #BED1CF;
+            --text-primary: #8C454F;
+            --text-secondary: #4F6B68;
+            --glass-bg: rgba(255, 247, 241, 0.8);
+            --glass-border: rgba(231, 136, 149, 0.2);
+            --glass-shadow: 0 4px 20px -10px rgba(231, 136, 149, 0.15);
+            --glass-hover: rgba(231, 136, 149, 0.1);
+            --glass-active: rgba(231, 136, 149, 0.2);
+            --glass-text: #8C454F;
+            --glass-text-hover: #4F6B68;
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --input-border: rgba(231, 136, 149, 0.3);
+            --input-text: #8C454F;
+        }
+
+        :root[data-theme="theme2"] {
+            --base-1: #F8F4E8;    /* 主色：浅米色 (60%) */
+            --base-2: #F0E6D2;    /* 辅助色：浅驼色 (30%) */
+            --accent-1: #8B7355;  /* 点缀色：深驼色 (5%) */
+            --accent-2: #6B5B4D;  /* 点缀色：深褐色 (5%) */
+            --text-primary: #4A3B32;
+            --text-secondary: #6B5B4D;
+            --glass-bg: rgba(248, 244, 232, 0.88);
+            --glass-border: rgba(139, 115, 85, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(107, 91, 77, 0.12);
+            --glass-hover: rgba(240, 230, 210, 0.2);
+            --glass-active: rgba(240, 230, 210, 0.3);
+            --glass-text: #4A3B32;
+            --glass-text-hover: #6B5B4D;
+            --input-bg: rgba(255, 255, 255, 0.82);
+            --input-border: rgba(139, 115, 85, 0.2);
+            --input-text: #4A3B32;
+        }
+
+        :root[data-theme="theme3"] {
+            /* 主色：浅蓝灰 - 改为浅蓝灰色系 */
+            --base-1: #F0F4F8;    /* 主色：浅蓝灰 (60%) */
+            --base-2: #E6ECF2;    /* 辅助色：浅灰蓝 (30%) */
+            --accent-1: #7B90B5;  /* 点缀色：中蓝灰 (5%) */
+            --accent-2: #2E3B51;  /* 点缀色：深蓝灰 (5%) */
+            --text-primary: #2E3B51;
+            --text-secondary: #7B90B5;
+            --glass-bg: rgba(240, 244, 248, 0.88);
+            --glass-border: rgba(123, 144, 181, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(46, 59, 81, 0.12);
+            --glass-hover: rgba(230, 236, 242, 0.2);
+            --glass-active: rgba(230, 236, 242, 0.3);
+            --glass-text: #2E3B51;
+            --glass-text-hover: #7B90B5;
+            --input-bg: rgba(255, 255, 255, 0.82);
+            --input-border: rgba(123, 144, 181, 0.2);
+            --input-text: #2E3B51;
+
+            /* 辅助色：米色 #CBBAA8 (30%) */
+            --base-2: #CBBAA8;
+            --text-primary: #2E3B51;
+
+            /* 点缀色：蓝色 #7B90B5 和深蓝色 #2E3B51 (10%) */
+            --accent-1: #7B90B5;
+            --accent-2: #2E3B51;
+            --text-secondary: #7B90B5;
+        }
+
+        :root[data-theme="theme4"] {
+            /* 主题四：暖沙黄昏 - 改为浅橙色系 */
+            --base-1: #FFF5E6;    /* 主色：浅橙色 (60%) */
+            --base-2: #FFE8CC;    /* 辅助色：浅橙黄 (30%) */
+            --accent-1: #E6A35C;  /* 点缀色：中橙色 (5%) */
+            --accent-2: #B3743C;  /* 点缀色：深橙色 (5%) */
+            --text-primary: #5E473C;
+            --text-secondary: #B3743C;
+            --glass-bg: rgba(255, 245, 230, 0.88);
+            --glass-border: rgba(230, 163, 92, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(179, 116, 60, 0.12);
+            --glass-hover: rgba(255, 232, 204, 0.2);
+            --glass-active: rgba(255, 232, 204, 0.3);
+            --glass-text: #5E473C;
+            --glass-text-hover: #B3743C;
+            --input-bg: rgba(255, 255, 255, 0.82);
+            --input-border: rgba(230, 163, 92, 0.2);
+            --input-text: #5E473C;
+        }
+
+        :root[data-theme="theme5"] {
+            --base-1: #FAF7F0;
+            --base-2: #D8D2C2;
+            --accent-1: #B17457;
+            --accent-2: #4A4947;
+            --text-primary: #4A4947;
+            --text-secondary: #B17457;
+            --glass-bg: rgba(250, 247, 240, 0.8);
+            --glass-border: rgba(177, 116, 87, 0.2);
+            --glass-shadow: 0 4px 20px -10px rgba(74, 73, 71, 0.15);
+            --glass-hover: rgba(177, 116, 87, 0.1);
+            --glass-active: rgba(177, 116, 87, 0.2);
+            --glass-text: #4A4947;
+            --glass-text-hover: #B17457;
+            --input-bg: rgba(255, 255, 255, 0.7);
+            --input-border: rgba(177, 116, 87, 0.3);
+            --input-text: #4A4947;
+        }
+
+        :root[data-theme="theme6"] {
+            /* 主题六：春意盎然 - 改为浅绿色系 */
+            --base-1: #F0F8E6;    /* 主色：浅绿色 (60%) */
+            --base-2: #E6F0D2;    /* 辅助色：浅黄绿 (30%) */
+            --accent-1: #88B588;  /* 点缀色：中绿色 (5%) */
+            --accent-2: #4A6B4A;  /* 点缀色：深绿色 (5%) */
+            --text-primary: #4A6B4A;
+            --text-secondary: #88B588;
+            --glass-bg: rgba(240, 248, 230, 0.88);
+            --glass-border: rgba(136, 181, 136, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(74, 107, 74, 0.12);
+            --glass-hover: rgba(230, 240, 210, 0.2);
+            --glass-active: rgba(230, 240, 210, 0.3);
+            --glass-text: #4A6B4A;
+            --glass-text-hover: #88B588;
+            --input-bg: rgba(255, 255, 255, 0.82);
+            --input-border: rgba(136, 181, 136, 0.2);
+            --input-text: #4A6B4A;
+        }
+
+        :root[data-theme="theme7"] {
+            /* 主题七：晨雾灰 - 改为浅紫色系 */
+            --base-1: #F5F0F8;    /* 主色：浅紫色 (60%) */
+            --base-2: #EDE6F2;    /* 辅助色：浅灰紫 (30%) */
+            --accent-1: #A39FCE;  /* 点缀色：中紫色 (5%) */
+            --accent-2: #7875A3;  /* 点缀色：深紫色 (5%) */
+            --text-primary: #4F4C6B;
+            --text-secondary: #7875A3;
+            --glass-bg: rgba(245, 240, 248, 0.88);
+            --glass-border: rgba(163, 159, 206, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(120, 117, 163, 0.12);
+            --glass-hover: rgba(237, 230, 242, 0.2);
+            --glass-active: rgba(237, 230, 242, 0.3);
+            --glass-text: #4F4C6B;
+            --glass-text-hover: #7875A3;
+            --input-bg: rgba(255, 255, 255, 0.82);
+            --input-border: rgba(163, 159, 206, 0.2);
+            --input-text: #4F4C6B;
         }
 
         .main-content {
@@ -56,28 +307,64 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
+        /* 更新按钮样式 */
+        button, .primary-btn, .danger-btn, .back-btn {
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border);
+            color: var(--glass-text) !important;
+            transition: all 0.3s ease;
+        }
+
+        button:hover, .primary-btn:hover, .danger-btn:hover, .back-btn:hover {
+            background: var(--glass-hover) !important;
+            color: var(--glass-text-hover) !important;
+        }
+
+        button:active, .primary-btn:active, .danger-btn:active, .back-btn:active {
+            background: var(--glass-active) !important;
+            transform: translateY(0);
+        }
+
         .entry-table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
-            background: white;
-            border-radius: 8px;
+            background: var(--glass-bg) !important;
+            color: var(--text-primary);
+            border-left: 6px solid var(--accent-1);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            box-shadow: var(--glass-shadow);
         }
 
         .entry-table th, 
         .entry-table td {
-            border: 1px solid #ddd;
+            border: 1px solid var(--glass-border);
             padding: 12px;
             vertical-align: top;
         }
 
         .entry-table th {
-            background: var(--primary-color);
-            color: #FFFFFF;
+            background: var(--glass-hover) !important;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--glass-text);
             font-weight: bold;
             width: 100px;
+        }
+
+        .entry-table td {
+            border-bottom: 1px solid var(--glass-border);
+            transition: background-color 0.3s ease;
+            color: var(--glass-text);
+        }
+
+        .entry-table tr:hover td {
+            background: var(--glass-hover);
         }
 
         .sidebar {
@@ -97,6 +384,13 @@
             margin: 10px 0;
             scrollbar-width: thin;  /* Firefox滚动条宽度 */
             scrollbar-color: rgba(100, 100, 100, 0.5) transparent; /* Firefox滚动条颜色 */
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--glass-shadow);
         }
 
         /* Webkit浏览器滚动条美化 */
@@ -128,24 +422,28 @@
 
         .keyword-tag {
             display: inline-block;
-            background: var(--secondary-color);
-            color: var(--background);
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border);
+            color: var(--glass-text);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 20px;
             padding: 6px 12px;
             margin: 4px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: var(--glass-shadow);
             font-weight: 500;
         }
 
         .keyword-tag:hover {
-            background: var(--secondary-color);
-            color: white;
+            background: var(--glass-hover) !important;
+            color: var(--glass-text-hover);
         }
 
         .keyword-tag.active {
-            background: var(--primary-color);
-            color: white !important;
+            background: var(--accent-1-15) !important;
+            border-color: var(--accent-1);
+            color: var(--glass-text-hover);
         }
 
         .pagination {
@@ -154,6 +452,13 @@
             margin-top: 20px;
             justify-content: center;
             flex-wrap: wrap;
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: var(--glass-shadow);
         }
 
         .pagination-info {
@@ -161,23 +466,24 @@
             text-align: center;
             margin: 10px 0;
             font-size: 0.9em;
-            color: #666;
+            color: var(--glass-text);
         }
 
         .page-btn {
-            padding: 6px 12px;
-            border: 1px solid #ddd;
-            background: var(--secondary-color);
-            cursor: pointer;
-            border-radius: 4px;
-            color: var(--background);
-            font-weight: 500;
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border);
+            color: var(--glass-text);
+        }
+
+        .page-btn:hover {
+            background: var(--glass-hover) !important;
+            color: var(--glass-text-hover);
         }
 
         .page-btn.active {
-            background: var(--primary-color);
-            color: white;
-            font-weight: bold;
+            background: var(--accent-1-15) !important;
+            border-color: var(--accent-1);
+            color: var(--glass-text-hover);
         }
 
         .form-popup {
@@ -185,15 +491,16 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #FFFFFF;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
             width: 700px;
             max-width: 90%;
             display: none;
             z-index: 1000;
-            color: #1A1A1A;
+            color: var(--text-primary);
         }
 
         .category-manager {
@@ -201,15 +508,16 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #FFFFFF;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            background: var(--glass-bg) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
             z-index: 1001;
             width: 80%;
             max-width: 500px;
             display: none;
-            color: #1A1A1A;
+            color: var(--text-primary);
         }
 
         .back-btn {
@@ -233,13 +541,13 @@
         }
 
         .primary-btn {
-            background: var(--primary-color);
+            background: var(--accent-1);
             color: #FFFFFF;
             font-weight: bold;
         }
 
         .danger-btn {
-            background: #dc3545;
+            background: var(--accent-2);
             color: #FFFFFF;
             font-weight: bold;
         }
@@ -442,18 +750,19 @@
 
         /* 日志相关样式优化 */
         .log-item {
-            transition: all 0.3s;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border);
+            color: var(--text-primary);
             padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #eee;
+            margin-bottom: 20px;
+            box-shadow: var(--glass-shadow);
         }
         
         .log-item:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background: var(--glass-hover) !important;
             transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
         }
         
         .log-header {
@@ -490,10 +799,12 @@
         .log-stats {
             display: flex;
             gap: 15px;
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--glass-bg) !important;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            color: var(--text-primary);
         }
         
         .stat-item {
@@ -505,7 +816,7 @@
         .stat-value {
             font-size: 1.4em;
             font-weight: bold;
-            color: var(--primary-color);
+            color: var(--accent-1);
         }
         
         .stat-label {
@@ -550,6 +861,11 @@
 </head>
 <body>
     <script>
+        // 添加特性检测
+        if (!CSS.supports('backdrop-filter', 'blur(1px)')) {
+            document.body.classList.add('no-blur-effect');
+        }
+
         // 添加主题切换功能
         function setThemeByDay() {
             const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -582,6 +898,37 @@
 
         // 启动主题自动更新
         scheduleThemeUpdate();
+
+        // 主题切换相关函数
+        function toggleThemeOptions() {
+            const options = document.getElementById('themeOptions');
+            options.classList.toggle('show');
+        }
+
+        function changeTheme(themeName) {
+            document.documentElement.setAttribute('data-theme', themeName);
+            localStorage.setItem('selectedTheme', themeName);
+            toggleThemeOptions();
+        }
+
+        // 初始化主题
+        function initTheme() {
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        }
+
+        // 页面加载时初始化主题
+        document.addEventListener('DOMContentLoaded', initTheme);
+
+        // 点击其他地方关闭主题选择器
+        document.addEventListener('click', (e) => {
+            const themeSelector = document.querySelector('.theme-selector');
+            if (!themeSelector.contains(e.target)) {
+                document.getElementById('themeOptions').classList.remove('show');
+            }
+        });
     </script>
     <div class="container">
         <div class="header">
@@ -590,6 +937,77 @@
                 返回课题列表
             </button>
             <h1 id="projectTitle">加载中...</h1>
+            <div class="theme-selector">
+                <button onclick="toggleThemeOptions()">
+                    <span class="material-icons">palette</span>
+                    主题
+                </button>
+                <div class="theme-options" id="themeOptions">
+                    <div class="theme-option" onclick="changeTheme('theme1')">
+                        <div class="theme-preview">
+                            <div style="background: #FFF7F1"></div>
+                            <div style="background: #FFE4C9"></div>
+                            <div style="background: #E78895"></div>
+                            <div style="background: #BED1CF"></div>
+                        </div>
+                        <span>主题一</span>
+                    </div>
+                    <div class="theme-option" onclick="changeTheme('theme2')">
+                        <div class="theme-preview">
+                            <div style="background: #F8F4E8"></div>
+                            <div style="background: #F0E6D2"></div>
+                            <div style="background: #8B7355"></div>
+                            <div style="background: #6B5B4D"></div>
+                        </div>
+                        <span>主题二</span>
+                    </div>
+                    <div class="theme-option" onclick="changeTheme('theme3')">
+                        <div class="theme-preview">
+                            <div style="background: #F0F4F8"></div>
+                            <div style="background: #E6ECF2"></div>
+                            <div style="background: #7B90B5"></div>
+                            <div style="background: #2E3B51"></div>
+                        </div>
+                        <span>主题三</span>
+                    </div>
+                    <div class="theme-option" onclick="changeTheme('theme4')">
+                        <div class="theme-preview">
+                            <div style="background: #FFF5E6"></div>
+                            <div style="background: #FFE8CC"></div>
+                            <div style="background: #E6A35C"></div>
+                            <div style="background: #B3743C"></div>
+                        </div>
+                        <span>主题四</span>
+                    </div>
+                    <div class="theme-option" onclick="changeTheme('theme5')">
+                        <div class="theme-preview">
+                            <div style="background: #FAF7F0"></div>
+                            <div style="background: #D8D2C2"></div>
+                            <div style="background: #B17457"></div>
+                            <div style="background: #4A4947"></div>
+                        </div>
+                        <span>主题五</span>
+                    </div>
+                    <div class="theme-option" onclick="changeTheme('theme6')">
+                        <div class="theme-preview">
+                            <div style="background: #F0F8E6"></div>
+                            <div style="background: #E6F0D2"></div>
+                            <div style="background: #88B588"></div>
+                            <div style="background: #4A6B4A"></div>
+                        </div>
+                        <span>主题六</span>
+                    </div>
+                    <div class="theme-option" onclick="changeTheme('theme7')">
+                        <div class="theme-preview">
+                            <div style="background: #F5F0F8"></div>
+                            <div style="background: #EDE6F2"></div>
+                            <div style="background: #A39FCE"></div>
+                            <div style="background: #7875A3"></div>
+                        </div>
+                        <span>主题七</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="main-content">
