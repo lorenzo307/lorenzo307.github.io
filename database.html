@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>史料数据库</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"> <!-- 恢复 Quill CSS -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
     <!-- Firebase SDK -->
@@ -1316,6 +1316,100 @@
             align-items: flex-start; /* 顶部对齐 */
             margin-bottom: 10px;
         }
+
+        /* --- Quill 编辑器主题化样式 --- */
+        .ql-toolbar.ql-snow {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px 8px 0 0;
+            padding: 8px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .ql-container.ql-snow {
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            border-top: none; /* 工具栏已有上边框 */
+            border-radius: 0 0 8px 8px;
+            color: var(--input-text);
+            font-family: 'Noto Serif SC', serif; /* 保持和页面一致 */
+        }
+
+        /* 编辑区域 */
+        .ql-editor {
+             min-height: 250px; /* 设置最小高度 */
+             padding: 12px 15px;
+        }
+        .ql-editor.ql-blank::before {
+             color: var(--glass-border); /* 占位符颜色 */
+             font-style: normal;
+             left: 15px;
+        }
+
+        /* 工具栏按钮和下拉框 */
+        .ql-snow .ql-picker-label, 
+        .ql-snow .ql-picker-options,
+        .ql-snow .ql-formats button {
+            color: var(--glass-text) !important;
+            background: transparent !important; /* 按钮背景透明 */
+            border: 1px solid transparent; /* 默认无边框 */
+            transition: all 0.2s ease;
+             border-radius: 4px; /* 轻微圆角 */
+             padding: 3px 5px; /* 调整按钮内边距 */
+        }
+        .ql-snow .ql-formats button:hover,
+        .ql-snow .ql-picker-label:hover {
+            background: var(--glass-hover) !important;
+            color: var(--glass-text-hover) !important;
+            border-color: var(--glass-active);
+        }
+        .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+             background: var(--glass-active) !important;
+             border-color: var(--glass-active);
+        }
+        .ql-snow .ql-picker-options {
+             background: var(--glass-bg) !important;
+             border: 1px solid var(--glass-border) !important;
+             border-radius: 0 0 8px 8px;
+             box-shadow: var(--glass-shadow);
+             padding: 5px;
+        }
+        .ql-snow .ql-picker-item {
+            color: var(--glass-text) !important;
+             transition: background 0.2s ease;
+             border-radius: 4px;
+        }
+        .ql-snow .ql-picker-item:hover {
+            background: var(--glass-hover);
+        }
+        .ql-snow .ql-picker-item.ql-selected {
+            background: var(--accent-1-15); /* 选中项背景 */
+            color: var(--glass-text-hover) !important;
+        }
+        
+        /* 图标颜色 */
+        .ql-snow .ql-stroke {
+             stroke: var(--glass-text);
+        }
+         .ql-snow .ql-fill {
+             fill: var(--glass-text);
+         }
+         .ql-snow button:hover .ql-stroke, 
+         .ql-snow .ql-picker-label:hover .ql-stroke {
+             stroke: var(--glass-text-hover);
+         }
+          .ql-snow button:hover .ql-fill, 
+          .ql-snow .ql-picker-label:hover .ql-fill {
+             fill: var(--glass-text-hover);
+         }
+          .ql-snow .ql-active .ql-stroke {
+              stroke: var(--accent-1);
+          }
+           .ql-snow .ql-active .ql-fill {
+              fill: var(--accent-1);
+          }
+        /* --- 结束 Quill 主题化样式 --- */
+
     </style>
     
     <!-- 响应式布局调整 -->
@@ -1746,12 +1840,12 @@
 
                 <div class="form-row">
                     <label>原文摘抄：</label>
-                    <div id="editor-container"></div>
+                    <div id="editor-container"></div> <!-- 恢复 ID -->
                 </div>
 
                 <div class="form-row">
                     <label>分析：</label>
-                    <div id="analysis-editor-container"></div>
+                     <div id="analysis-editor-container"></div> <!-- 恢复 ID -->
                 </div>
 
                 <div class="form-row">
@@ -1808,7 +1902,7 @@
 
                 <div class="form-row">
                     <label>内容：</label>
-                    <div id="log-editor-container"></div>
+                    <div id="log-editor-container"></div> <!-- 恢复 ID -->
                 </div>
 
                 <div class="action-buttons">
@@ -1848,7 +1942,8 @@
         </div>
     </div>
 
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script> <!-- 恢复 Quill JS -->
+    <!-- <script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/super-build/ckeditor.js"></script> --> <!-- 移除 CKEditor JS -->
     <script>
         // Firebase初始化
         const firebaseConfig = {
@@ -1938,7 +2033,7 @@
                 
                 showLoading('正在加载数据...'); // 显示加载提示
                 initDataListeners();
-                initTimeTracking();
+                // initTimeTracking(); // 暂时注释掉，函数未定义
                 restoreCachedSessions();
              
             } else {
@@ -1951,8 +2046,8 @@
         // 全局变量
         let entries = [];
         let categories = { main: {} };
-        let quill = null;
-        let logQuill = null;
+        let quill = null; // 恢复 Quill 实例
+        let logQuill = null; // 恢复 Quill 实例
         let currentPage = 1;
         let editingId = null;
         let editingLogId = null;
@@ -2124,240 +2219,168 @@
             document.getElementById('entriesPerPage').textContent = size;
         }
 
-        // 编辑器初始化
+        // --- 恢复 Quill 初始化和相关样式代码 ---
         function initQuill() {
-            if (!quill) {
-                const Font = Quill.import('formats/font');
-                Font.whitelist = ['宋体', '楷体', '仿宋', '黑体'];
-                Quill.register(Font, true);
+             // --- 将 Font 和 Size 定义移到函数开头 ---
+             const Font = Quill.import('formats/font');
+             // 更新字体白名单
+             Font.whitelist = ['SimSun', 'STFangsong', 'KaiTi', 'STZhongsong', 'Times New Roman', 'Arial']; // 添加 STZhongsong
+             Quill.register(Font, true);
 
-                // 自定义字号
-                const Size = Quill.import('attributors/style/size');
-                Size.whitelist = [
-                    '10px', '12px', '14px', '16px', '18px', '20px', 
-                    '24px', '28px', '32px', '36px', '48px', '72px'
-                ];
-                Quill.register(Size, true);
+             const Size = Quill.import('attributors/style/size');
+             Size.whitelist = Size.whitelist || [
+                 '10px', '12px', '14px', '16px', '18px', '20px', 
+                 '24px', '28px', '32px', '36px', '48px', '72px'
+             ];
+             Quill.register(Size, true);
+             // --- 结束移动 ---
 
-                quill = new Quill('#editor-container', {
-                    modules: {
-                        toolbar: [
-                            [{ 'font': ['宋体', '楷体', '仿宋', '黑体'] }],
-                            [{ 'size': ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px', '72px'] }],
-                            ['bold', 'italic', 'underline'],
-                            [{ 'color': [] }, { 'background': [] }],
-                            ['blockquote', 'code-block'],
-                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                            ['link', 'image'],
-                            ['clean']
-                        ]
-                    },
-                    theme: 'snow'
-                });
-            }
-            
-            // 新增分析编辑器初始化
-            if (!window.analysisQuill) {
-                window.analysisQuill = new Quill('#analysis-editor-container', {
-                    modules: {
-                        toolbar: [
-                            [{ 'font': ['宋体', '楷体', '仿宋', '黑体'] }],
-                            [{ 'size': ['10px', '12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px', '36px', '48px', '72px'] }],
-                            ['bold', 'italic', 'underline'],
-                            [{ 'color': [] }, { 'background': [] }],
-                            ['blockquote', 'code-block'],
-                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                            ['link', 'image'],
-                            ['clean']
-                        ]
-                    },
-                    theme: 'snow'
-                });
-                
-                // 设置固定高度
-                analysisQuill.container.style.height = '300px';
-                analysisQuill.container.style.overflowY = 'auto';
-            }
+             if (!quill) {
+                 /* // 原来的定义位置 (移除)
+                 const Font = Quill.import('formats/font');
+                 Font.whitelist = ['宋体', '楷体', '仿宋', '黑体', 'Arial', 'Courier New', 'Times New Roman']; 
+                 Quill.register(Font, true);
+
+                 const Size = Quill.import('attributors/style/size');
+                 Size.whitelist = [
+                     '10px', '12px', '14px', '16px', '18px', '20px', 
+                     '24px', '28px', '32px', '36px', '48px', '72px'
+                 ];
+                 Quill.register(Size, true);
+                 */
+
+                 quill = new Quill('#editor-container', {
+                     modules: {
+                         toolbar: [
+                             [{ 'font': Font.whitelist }], // 使用扩展后的字体列表
+                             [{ 'size': Size.whitelist }],
+                             [{ 'header': [1, 2, 3, 4, 5, 6, false] }], // 添加更多标题级别
+                             ['bold', 'italic', 'underline', 'strike'], // 添加删除线
+                             [{ 'script': 'sub'}, { 'script': 'super' }], // 添加上下标
+                             [{ 'color': [] }, { 'background': [] }], // 颜色和背景色
+                             ['blockquote', 'code-block'],
+                             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                             [{ 'indent': '-1'}, { 'indent': '+1' }], // 缩进
+                             [{ 'align': [] }], // 对齐方式
+                             ['link', 'image', 'video'], // 链接、图片、视频
+                             ['clean'] // 清除格式
+                         ]
+                     },
+                     theme: 'snow'
+                 });
+                 console.log("Quill 实例 (原文) 已创建:", quill); // 添加日志
+             }
+             
+             if (!window.analysisQuill) {
+                 window.analysisQuill = new Quill('#analysis-editor-container', {
+                      modules: {
+                          toolbar: [
+                             [{ 'font': Font.whitelist }],
+                             [{ 'size': Size.whitelist }],
+                              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                              ['bold', 'italic', 'underline', 'strike'],
+                              [{ 'script': 'sub'}, { 'script': 'super' }],
+                              [{ 'color': [] }, { 'background': [] }],
+                              ['blockquote', 'code-block'],
+                              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                              [{ 'indent': '-1'}, { 'indent': '+1' }],
+                              [{ 'align': [] }],
+                              ['link', 'image', 'video'],
+                              ['clean']
+                          ]
+                      },
+                     theme: 'snow'
+                 });
+                 console.log("Quill 实例 (分析) 已创建:", window.analysisQuill); // 添加日志
+                 analysisQuill.container.style.height = '300px';
+                 analysisQuill.container.style.overflowY = 'auto';
+             }
+         }
+
+         const fontStyle = document.createElement('style');
+         fontStyle.textContent = `
+             /* 更新字体样式 */
+             .ql-font-SimSun { font-family: SimSun, "宋体", serif !important; }
+             .ql-font-STFangsong { font-family: STFangsong, "华文仿宋", FangSong, "仿宋", serif !important; }
+             .ql-font-KaiTi { font-family: KaiTi, "楷体", serif !important; }
+             .ql-font-STZhongsong { font-family: STZhongsong, "华文中宋", SimSun, serif !important; } /* 添加华文中宋 */
+             .ql-font-TimesNewRoman { font-family: "Times New Roman", Times, serif !important; }
+             .ql-font-Arial { font-family: Arial, Helvetica, sans-serif !important; }
+             /* 移除不再需要的字体 */
+             /* .ql-font-仿宋 { font-family: FangSong, "仿宋", serif !important; } */
+             /* .ql-font-黑体 { font-family: SimHei, "黑体", sans-serif !important; } */
+             /* .ql-font-Courier New { font-family: Courier New, Courier, monospace !important; } */
+             
+             /* 更新字体选择器预览样式 */
+             .ql-picker.ql-font .ql-picker-item[data-value="SimSun"]::before { font-family: SimSun, "宋体", serif !important; content: "宋体" !important; }
+             .ql-picker.ql-font .ql-picker-item[data-value="STFangsong"]::before { font-family: STFangsong, "华文仿宋", FangSong, serif !important; content: "华文仿宋" !important; }
+             .ql-picker.ql-font .ql-picker-item[data-value="KaiTi"]::before { font-family: KaiTi, "楷体", serif !important; content: "楷体" !important; }
+             .ql-picker.ql-font .ql-picker-item[data-value="STZhongsong"]::before { font-family: STZhongsong, "华文中宋", SimSun, serif !important; content: "华文中宋" !important; } /* 添加 */
+             .ql-picker.ql-font .ql-picker-item[data-value="Times New Roman"]::before { font-family: "Times New Roman", Times, serif !important; content: "Times New Roman" !important; }
+             .ql-picker.ql-font .ql-picker-item[data-value="Arial"]::before { font-family: Arial, Helvetica, sans-serif !important; content: "Arial" !important; }
+             /* 移除旧样式 */
+             /* .ql-picker.ql-font .ql-picker-item[data-value="仿宋"]::before { ... } */
+             /* .ql-picker.ql-font .ql-picker-item[data-value="黑体"]::before { ... } */
+             /* .ql-picker.ql-font .ql-picker-item[data-value="Courier New"]::before { ... } */
+
+             /* 更新字体选择器标签样式 (当前选中字体) */
+             .ql-picker.ql-font .ql-picker-label[data-value="SimSun"]::before { font-family: SimSun, "宋体", serif !important; content: "宋体" !important; }
+             .ql-picker.ql-font .ql-picker-label[data-value="STFangsong"]::before { font-family: STFangsong, "华文仿宋", FangSong, serif !important; content: "华文仿宋" !important; }
+             .ql-picker.ql-font .ql-picker-label[data-value="KaiTi"]::before { font-family: KaiTi, "楷体", serif !important; content: "楷体" !important; }
+             .ql-picker.ql-font .ql-picker-label[data-value="STZhongsong"]::before { font-family: STZhongsong, "华文中宋", SimSun, serif !important; content: "华文中宋" !important; } /* 添加 */
+             .ql-picker.ql-font .ql-picker-label[data-value="Times New Roman"]::before { font-family: "Times New Roman", Times, serif !important; content: "Times New Roman" !important; }
+             .ql-picker.ql-font .ql-picker-label[data-value="Arial"]::before { font-family: Arial, Helvetica, sans-serif !important; content: "Arial" !important; }
+             /* 移除旧样式 */
+             /* .ql-picker.ql-font .ql-picker-label[data-value="仿宋"]::before { ... } */
+             /* .ql-picker.ql-font .ql-picker-label[data-value="黑体"]::before { ... } */
+             /* .ql-picker.ql-font .ql-picker-label[data-value="Courier New"]::before { ... } */
+
+              /* 字号样式 (保持不变) */
+              .ql-size-10px { font-size: 10px !important; }
+              /* ... (其他字号样式) ... */
+              .ql-size-72px { font-size: 72px !important; }
+              .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before { font-size: 10px !important; }
+              /* ... (其他字号选择器样式) ... */
+              .ql-picker.ql-size .ql-picker-item[data-value="72px"]::before { font-size: 72px !important; }
+              .ql-picker.ql-size .ql-picker-label[data-value="10px"]::before { font-size: 10px !important; }
+              /* ... (其他字号选择器标签样式) ... */
+              .ql-picker.ql-size .ql-picker-label[data-value="72px"]::before { font-size: 72px !important; }
+         `;
+         document.head.appendChild(fontStyle);
+        // --- 结束恢复 ---
+
+        // --- 恢复 CKEditor 初始化函数 (注释掉) ---
+        /*
+        async function initCKEditor(elementId, existingEditorInstance) {
+             // ... (CKEditor code) ...
         }
-
-        // 添加字体和字号样式
-        const fontStyle = document.createElement('style');
-        fontStyle.textContent = `
-            /* 字体样式 */
-            .ql-font-宋体 {
-                font-family: SimSun, "宋体", serif !important;
-            }
-            .ql-font-楷体 {
-                font-family: KaiTi, "楷体", serif !important;
-            }
-            .ql-font-仿宋 {
-                font-family: FangSong, "仿宋", serif !important;
-            }
-            .ql-font-黑体 {
-                font-family: SimHei, "黑体", sans-serif !important;
-            }
-            
-            /* 字体选择器样式 */
-            .ql-picker.ql-font .ql-picker-item[data-value="宋体"]::before {
-                font-family: SimSun, "宋体", serif !important;
-            }
-            .ql-picker.ql-font .ql-picker-item[data-value="楷体"]::before {
-                font-family: KaiTi, "楷体", serif !important;
-            }
-            .ql-picker.ql-font .ql-picker-item[data-value="仿宋"]::before {
-                font-family: FangSong, "仿宋", serif !important;
-            }
-            .ql-picker.ql-font .ql-picker-item[data-value="黑体"]::before {
-                font-family: SimHei, "黑体", sans-serif !important;
-            }
-            
-            .ql-picker.ql-font .ql-picker-label[data-value="宋体"]::before {
-                font-family: SimSun, "宋体", serif !important;
-            }
-            .ql-picker.ql-font .ql-picker-label[data-value="楷体"]::before {
-                font-family: KaiTi, "楷体", serif !important;
-            }
-            .ql-picker.ql-font .ql-picker-label[data-value="仿宋"]::before {
-                font-family: FangSong, "仿宋", serif !important;
-            }
-            .ql-picker.ql-font .ql-picker-label[data-value="黑体"]::before {
-                font-family: SimHei, "黑体", sans-serif !important;
-            }
-
-            /* 字号样式 */
-            .ql-size-10px {
-                font-size: 10px !important;
-            }
-            .ql-size-12px {
-                font-size: 12px !important;
-            }
-            .ql-size-14px {
-                font-size: 14px !important;
-            }
-            .ql-size-16px {
-                font-size: 16px !important;
-            }
-            .ql-size-18px {
-                font-size: 18px !important;
-            }
-            .ql-size-20px {
-                font-size: 20px !important;
-            }
-            .ql-size-24px {
-                font-size: 24px !important;
-            }
-            .ql-size-28px {
-                font-size: 28px !important;
-            }
-            .ql-size-32px {
-                font-size: 32px !important;
-            }
-            .ql-size-36px {
-                font-size: 36px !important;
-            }
-            .ql-size-48px {
-                font-size: 48px !important;
-            }
-            .ql-size-72px {
-                font-size: 72px !important;
-            }
-
-            /* 字号选择器样式 */
-            .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before {
-                font-size: 10px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="12px"]::before {
-                font-size: 12px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="14px"]::before {
-                font-size: 14px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="16px"]::before {
-                font-size: 16px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="18px"]::before {
-                font-size: 18px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="20px"]::before {
-                font-size: 20px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="24px"]::before {
-                font-size: 24px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="28px"]::before {
-                font-size: 28px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="32px"]::before {
-                font-size: 32px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="36px"]::before {
-                font-size: 36px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="48px"]::before {
-                font-size: 48px !important;
-            }
-            .ql-picker.ql-size .ql-picker-item[data-value="72px"]::before {
-                font-size: 72px !important;
-            }
-
-            /* 字号选择器标签样式 */
-            .ql-picker.ql-size .ql-picker-label[data-value="10px"]::before {
-                font-size: 10px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="12px"]::before {
-                font-size: 12px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="14px"]::before {
-                font-size: 14px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="16px"]::before {
-                font-size: 16px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="18px"]::before {
-                font-size: 18px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="20px"]::before {
-                font-size: 20px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="24px"]::before {
-                font-size: 24px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="28px"]::before {
-                font-size: 28px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="32px"]::before {
-                font-size: 32px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="36px"]::before {
-                font-size: 36px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="48px"]::before {
-                font-size: 48px !important;
-            }
-            .ql-picker.ql-size .ql-picker-label[data-value="72px"]::before {
-                font-size: 72px !important;
-            }
-        `;
-        document.head.appendChild(fontStyle);
+        */
+        // --- 结束恢复 ---
 
         // 表单操作
-        function showForm() {
+        function showForm() { // 移除 async
             const form = document.getElementById('entry-form');
             form.style.display = 'block';
             form.classList.remove('closing'); // 确保移除关闭动画类
-            initQuill();
-            updateSubCats();
+            initQuill(); // 恢复
+             // --- 移除 CKEditor 初始化 ---
+            // entryContentEditor = await initCKEditor('entry-content-editor', entryContentEditor);
+            // entryAnalysisEditor = await initCKEditor('entry-analysis-editor', entryAnalysisEditor);
+             updateSubCats();
         }
 
-        function hideForm() {
+        function hideForm() { // 移除 async
             const form = document.getElementById('entry-form');
             form.classList.add('closing'); // 添加关闭动画类
+            // --- 移除 CKEditor 销毁 ---
+            //  if (entryContentEditor) { ... }
+            //  if (entryAnalysisEditor) { ... }
             setTimeout(() => { // 等待动画结束后再隐藏和重置
                 form.style.display = 'none';
                 document.querySelector('#entry-form form').reset(); // 更精确的选择器
-            if (quill) quill.root.innerHTML = '';
-            if (window.analysisQuill) window.analysisQuill.root.innerHTML = '';
-            editingId = null;
+                 if (quill) quill.root.innerHTML = ''; // 恢复
+                 if (window.analysisQuill) window.analysisQuill.root.innerHTML = ''; // 恢复
+                 editingId = null;
                 form.classList.remove('closing'); // 动画结束后移除类
             }, 200); // 动画时长 0.2s = 200ms
         }
@@ -3151,8 +3174,20 @@
                 document.querySelector('[name="sub-cat"]').value = entry.subCat || '';
             }, 100);
             document.querySelector('[name="title"]').value = entry.title || '';
-            quill.root.innerHTML = entry.content || '';
-            window.analysisQuill.root.innerHTML = entry.analysis || '';
+            // 添加检查确保 quill 实例存在
+             if (quill && quill.root) {
+                 quill.root.innerHTML = entry.content || ''; // 恢复
+             } else {
+                 console.error("Quill (原文) 实例未准备好，无法设置内容。");
+             }
+             // 添加检查确保 analysisQuill 实例存在
+             if (window.analysisQuill && window.analysisQuill.root) {
+                 window.analysisQuill.root.innerHTML = entry.analysis || ''; // 恢复
+             } else {
+                 console.error("Quill (分析) 实例未准备好，无法设置内容。");
+             }
+            // if (entryContentEditor) entryContentEditor.setData(entry.content || ''); // 移除
+            // if (entryAnalysisEditor) entryAnalysisEditor.setData(entry.analysis || ''); // 移除
             document.querySelector('[name="links"]').value = (entry.links || []).join(', ');
             document.querySelector('[name="keywords"]').value = (entry.keywords || []).join(', ');
             showForm();
@@ -3519,25 +3554,49 @@
         // 日志相关功能
         // 初始化日志编辑器
         function initLogQuill() {
-            if (!logQuill) {
-                logQuill = new Quill('#log-editor-container', {
-                    modules: {
-                        toolbar: [
-                            ['bold', 'italic', 'underline'],
-                            [{ 'color': [] }, { 'background': [] }],
-                            ['blockquote', 'code-block'],
-                            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                            ['link', 'image'],
-                            ['clean']
-                        ]
-                    },
-                    theme: 'snow'
-                });
-            }
+             if (!logQuill) {
+                 // --- 使用与 initQuill 相同的字体和字号配置 ---
+                 const Font = Quill.import('formats/font');
+                 // 确保 whitelist 与 initQuill 一致
+                 Font.whitelist = Font.whitelist || ['SimSun', 'STFangsong', 'KaiTi', 'STZhongsong', 'Times New Roman', 'Arial']; // 添加 STZhongsong
+                 Quill.register(Font, true);
+
+                 const Size = Quill.import('attributors/style/size');
+                 Size.whitelist = Size.whitelist || [
+                     '10px', '12px', '14px', '16px', '18px', '20px',
+                     '24px', '28px', '32px', '36px', '48px', '72px'
+                 ];
+                 Quill.register(Size, true);
+                 // --- 结束配置 ---
+
+                 logQuill = new Quill('#log-editor-container', {
+                     modules: {
+                         // --- 更新为增强工具栏 --- 
+                         toolbar: [
+                             [{ 'font': Font.whitelist }],
+                             [{ 'size': Size.whitelist }],
+                             [{ 'header': [1, 2, 3, false] }], // 日志可能不需要所有标题级别
+                             ['bold', 'italic', 'underline', 'strike'],
+                             [{ 'script': 'sub'}, { 'script': 'super' }],
+                             [{ 'color': [] }, { 'background': [] }],
+                             ['blockquote', 'code-block'],
+                             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                             [{ 'indent': '-1'}, { 'indent': '+1' }],
+                             [{ 'align': [] }],
+                             ['link', 'image'], // 日志可能不需要视频
+                             ['clean']
+                         ]
+                         // --- 结束更新 ---
+                     },
+                     theme: 'snow'
+                 });
+                 // 添加最小高度，确保编辑器区域可见
+                 logQuill.container.querySelector('.ql-editor').style.minHeight = '200px'; 
+             }
         }
 
         // 显示日志表单
-        function showLogForm() {
+        function showLogForm() { // 移除 async
             const form = document.getElementById('log-form');
             const viewer = document.getElementById('log-viewer');
             form.style.display = 'block';
@@ -3548,25 +3607,28 @@
             } else {
                viewer.style.display = 'none';
             }
-            initLogQuill();
+            initLogQuill(); // 恢复
+            // logContentEditor = await initCKEditor('log-content-editor', logContentEditor); // 移除
             
             const today = new Date().toISOString().split('T')[0];
             document.querySelector('#log-form [name="log-date"]').value = today;
-            
             document.querySelector('#log-form [name="log-title"]').value = '';
-            logQuill.root.innerHTML = '';
+            logQuill.root.innerHTML = ''; // 恢复
+            // if (logContentEditor) logContentEditor.setData(''); // 移除
             editingLogId = null;
         }
 
         // 隐藏日志表单
-        function hideLogForm() {
+        function hideLogForm() { // 移除 async
             const form = document.getElementById('log-form');
             form.classList.add('closing');
+            // --- 移除 CKEditor 销毁 ---
+            //  if (logContentEditor) { ... }
             setTimeout(() => {
                 form.style.display = 'none';
-                // document.querySelector('#log-form form').reset(); // 重置可能清除默认日期
-            if (logQuill) logQuill.root.innerHTML = '';
-            editingLogId = null;
+                // document.querySelector('#log-form form').reset();
+                 if (logQuill) logQuill.root.innerHTML = ''; // 恢复
+                 editingLogId = null;
                 form.classList.remove('closing');
             }, 200);
         }
@@ -3719,7 +3781,8 @@
                 const newLog = {
                     date: formData.get('log-date'),
                     title: formData.get('log-title'),
-                    content: logQuill.root.innerHTML,
+                    content: logQuill.root.innerHTML, // 恢复
+                    // content: logContentEditor ? logContentEditor.getData() : '', // 移除
                     updatedAt: firebase.database.ServerValue.TIMESTAMP
                 };
 
@@ -3760,7 +3823,8 @@
             // 填充表单数据
             document.querySelector('[name="log-date"]').value = log.date || '';
             document.querySelector('[name="log-title"]').value = log.title || '';
-            logQuill.root.innerHTML = log.content || '';
+            logQuill.root.innerHTML = log.content || ''; // 恢复
+            // if (logContentEditor) logContentEditor.setData(log.content || ''); // 移除
             
             // 显示表单
             document.getElementById('log-form').style.display = 'block';
