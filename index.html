@@ -198,9 +198,80 @@
         #searchInput::placeholder {
             color: rgba(0, 0, 0, 0.5);
         }
+
+        .recycle-bin-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            padding: 25px;
+            width: 800px;
+            max-width: 90%;
+            max-height: 80vh;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+        }
+        .recycle-bin-popup h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .recycle-bin-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+         .deleted-project-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .deleted-project-table th,
+        .deleted-project-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .deleted-project-table th {
+            background-color: rgba(0,0,0,0.05);
+            font-weight: 600;
+        }
+        .recycle-bin-popup .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding-top: 15px;
+        }
     </style>
 </head>
 <body>
+    <!-- 加载提示 -->
+    <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center; color: white; font-size: 1.2em; flex-direction: column;">
+        <div id="loading-message">加载中...</div>
+         <style>
+            .spinner {
+                border: 4px solid rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                border-top: 4px solid #fff;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin-top: 15px;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+        <div class="spinner"></div>
+    </div>
 
     <!-- 用户状态栏 -->
     <div id="userBar" class="hidden">
@@ -226,7 +297,10 @@
     <div id="contentContainer" class="hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:25px;">
             <h1 style="margin:0">研究项目管理</h1>
-            <button onclick="createProject()" class="btn-primary">+ 新建项目</button>
+            <div>
+                <button onclick="createProject()" class="btn-primary" style="margin-right: 10px;">+ 新建项目</button>
+                <button onclick="showRecycleBin()" class="btn-text">回收站</button>
+            </div>
         </div>
         <div style="margin-bottom:20px; display:flex; gap:10px">
             <input type="text" id="searchInput" placeholder="搜索项目名称" style="flex:1; max-width:300px">
@@ -245,6 +319,19 @@
             </div>
         </div>
         <div id="projectList"></div>
+    </div>
+
+    <!-- 项目回收站弹窗 -->
+    <div id="project-recycle-bin" class="recycle-bin-popup" style="display: none;">
+        <h2>项目回收站 (保留180天)</h2>
+        <div class="recycle-bin-content">
+            <div id="deleted-projects-container"></div>
+            <!-- 可以添加分页 (如果需要) -->
+        </div>
+        <div class="action-buttons">
+            <button class="btn-danger" onclick="emptyProjectRecycleBin()">清空回收站</button>
+            <button class="btn-cancel" onclick="hideRecycleBin()">关闭</button>
+        </div>
     </div>
 
     <script>
@@ -291,6 +378,29 @@
                 authContainer.classList.remove('hidden');
             }
         });
+
+        // --- 新增加载提示函数 ---
+        function showLoading(message = '加载中...') {
+            const overlay = document.getElementById('loading-overlay');
+            // 确保 loading-overlay 存在
+            if (!overlay) {
+                console.warn("loading-overlay 元素未找到，无法显示加载提示。");
+                return;
+            }
+            const msgElement = document.getElementById('loading-message');
+            if (msgElement) {
+                msgElement.textContent = message;
+            }
+            overlay.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+        // --- 结束加载提示函数 ---
 
         async function handleLogin() {
             const email = document.getElementById('emailInput').value;
@@ -445,13 +555,187 @@
         }
 
         async function deleteProject(projectId) {
-            if (!confirm('确定要永久删除这个项目吗？')) return;
+            // 获取项目名称用于确认
+            const projectToDelete = projects.find(p => p.id === projectId);
+            const projectName = projectToDelete ? projectToDelete.name : `ID: ${projectId}`;
+
+            if (!confirm(`确定要删除项目 "${projectName}" 吗？删除后可在回收站保留180天。`)) return;
+            
+            showLoading('正在删除项目...'); // 显示加载提示
             try {
-                await db.ref(getUserPath(`projects/${projectId}`)).remove();
-                alert('项目已删除');
+                // 1. 从 projects 节点获取项目数据
+                const projectRef = db.ref(getUserPath(`projects/${projectId}`));
+                const snapshot = await projectRef.once('value');
+                if (!snapshot.exists()) {
+                    throw new Error("找不到要删除的项目数据。");
+                }
+                const projectData = snapshot.val();
+
+                // 2. 添加删除时间戳
+                projectData.deletedAt = firebase.database.ServerValue.TIMESTAMP;
+
+                // 3. 构建多路径更新：从 projects 删除，添加到 projects_trash
+                const updates = {};
+                updates[`projects/${projectId}`] = null; // 从 projects 删除
+                updates[`projects_trash/${projectId}`] = projectData; // 添加到回收站
+
+                // 4. 执行更新
+                await db.ref(getUserPath()).update(updates);
+                
+                // 注意：loadProjects() 会自动被 Firebase 的 'on('value')' 触发，无需手动调用
+                // loadProjects(); 
+                alert('项目已移至回收站');
             } catch (error) {
+                console.error("删除项目失败:", error);
                 alert('删除失败: ' + error.message);
+            } finally {
+                 hideLoading(); // 隐藏加载提示
             }
+        }
+
+        /*********************
+         * 回收站功能
+         *********************/
+        let deletedProjects = []; // 存储从数据库加载的已删除项目
+
+        async function showRecycleBin() {
+            showLoading('正在加载回收站...');
+            try {
+                const trashRef = db.ref(getUserPath('projects_trash'));
+                const snapshot = await trashRef.once('value');
+                const trashData = snapshot.val() || {};
+
+                // 计算180天前的时间戳
+                const cutoffDate = Date.now() - 180 * 24 * 60 * 60 * 1000;
+
+                deletedProjects = Object.values(trashData).filter(project => 
+                    project.deletedAt && project.deletedAt > cutoffDate // 只保留180天内且有时间戳的
+                ).sort((a, b) => b.deletedAt - a.deletedAt); // 按删除时间降序排序
+
+                renderDeletedProjects();
+                document.getElementById('project-recycle-bin').style.display = 'flex'; // 显示弹窗
+            } catch (error) {
+                console.error("加载回收站失败:", error);
+                alert('加载回收站失败: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function hideRecycleBin() {
+            document.getElementById('project-recycle-bin').style.display = 'none';
+        }
+
+        function renderDeletedProjects() {
+            const container = document.getElementById('deleted-projects-container');
+            if (deletedProjects.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">回收站为空</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="deleted-project-table">
+                    <thead>
+                        <tr>
+                            <th>项目名称</th>
+                            <th>删除时间</th>
+                            <th style="width: 180px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${deletedProjects.map(project => `
+                            <tr>
+                                <td>${project.name || '未命名项目'}</td>
+                                <td>${project.deletedAt ? new Date(project.deletedAt).toLocaleString() : '未知'}</td>
+                                <td>
+                                    <button class="btn-text" onclick="restoreProject('${project.id}')">恢复</button>
+                                    <button class="btn-danger" onclick="deleteProjectPermanently('${project.id}')">彻底删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        async function restoreProject(projectId) {
+             showLoading('正在恢复项目...');
+             try {
+                 const projectData = deletedProjects.find(p => p.id === projectId);
+                 if (!projectData) throw new Error("在回收站中找不到项目数据。");
+                 
+                 // 移除删除时间戳
+                 delete projectData.deletedAt;
+
+                 // 构建多路径更新
+                 const updates = {};
+                 updates[`projects/${projectId}`] = projectData; // 添加回 projects
+                 updates[`projects_trash/${projectId}`] = null; // 从 trash 删除
+
+                 await db.ref(getUserPath()).update(updates);
+
+                 // 从本地列表中移除并重新渲染回收站
+                 deletedProjects = deletedProjects.filter(p => p.id !== projectId);
+                 renderDeletedProjects();
+                 // 主列表会自动更新
+
+                 alert('项目已恢复');
+             } catch (error) {
+                 console.error("恢复项目失败:", error);
+                 alert('恢复失败: ' + error.message);
+             } finally {
+                 hideLoading();
+             }
+        }
+
+        async function deleteProjectPermanently(projectId) {
+            const projectToDelete = deletedProjects.find(p => p.id === projectId);
+            const projectName = projectToDelete ? projectToDelete.name : `ID: ${projectId}`;
+            
+            if (!confirm(`确定要永久删除项目 "${projectName}" 吗？此操作无法撤销！`)) return;
+
+            showLoading('正在永久删除项目...');
+            try {
+                await db.ref(getUserPath(`projects_trash/${projectId}`)).remove();
+                
+                // 从本地列表中移除并重新渲染回收站
+                deletedProjects = deletedProjects.filter(p => p.id !== projectId);
+                renderDeletedProjects();
+
+                alert('项目已永久删除');
+            } catch (error) {
+                console.error("永久删除项目失败:", error);
+                alert('永久删除失败: ' + error.message);
+            } finally {
+                 hideLoading();
+            }
+        }
+        
+        async function emptyProjectRecycleBin() {
+             if (!confirm('确定要清空回收站中所有项目吗？此操作无法撤销！')) return;
+             
+             showLoading('正在清空回收站...');
+             try {
+                 // 优化：仅删除符合180天条件的数据，而不是整个 trash 节点
+                 const updates = {};
+                 deletedProjects.forEach(project => {
+                     updates[project.id] = null;
+                 });
+                 
+                 if (Object.keys(updates).length > 0) {
+                     await db.ref(getUserPath('projects_trash')).update(updates);
+                     deletedProjects = []; // 清空本地列表
+                     renderDeletedProjects(); // 刷新回收站视图
+                     alert('回收站已清空');
+                 } else {
+                      alert('回收站已经是空的。');
+                 }
+             } catch (error) {
+                 console.error("清空回收站失败:", error);
+                 alert('清空回收站失败: ' + error.message);
+             } finally {
+                 hideLoading();
+             }
         }
 
         /*********************
