@@ -209,7 +209,7 @@
     </div>
 
     <!-- 认证模块 -->
-    <div id="authContainer">
+    <div id="authContainer" class="hidden">
         <h2 style="text-align:center; margin-bottom:25px; color:#333">研究数据库登录</h2>
         <div class="auth-form">
             <input type="email" id="emailInput" placeholder="电子邮箱" required>
@@ -233,6 +233,16 @@
             <button onclick="applyFilter()" class="btn-text">筛选</button>
             <button onclick="resetFilter()" class="btn-cancel">重置</button>
             <button onclick="syncFirebaseData()" class="btn-text">同步数据</button>
+            <div style="display:inline-block;margin-left:10px">
+                <select id="pageSize" onchange="changePageSize(this.value)" style="padding: 8px; border-radius: 8px; background: rgba(255, 255, 255, 0.9); border: 1px solid rgba(0, 0, 0, 0.1); color: #333;">
+                    <option value="5">每页5条</option>
+                    <option value="10" selected>每页10条</option>
+                    <option value="15">每页15条</option>
+                    <option value="20">每页20条</option>
+                    <option value="30">每页30条</option>
+                    <option value="50">每页50条</option>
+                </select>
+            </div>
         </div>
         <div id="projectList"></div>
     </div>
@@ -257,7 +267,7 @@
         // 全局变量
         let projects = [];
         let currentPage = 1;
-        const itemsPerPage = 10;
+        let itemsPerPage = 10;
         let currentFilter = '';
 
         /*********************
@@ -409,7 +419,7 @@
             pagination.className = 'pagination';
             pagination.innerHTML = `
                 <button ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(-1)">上一页</button>
-                <span>第 ${currentPage} 页 / 共 ${totalPages} 页</span>
+                <span>第 ${currentPage} 页 / 共 ${totalPages} 页 (共 ${filteredProjects.length} 项，每页 ${itemsPerPage} 项)</span>
                 <button ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(1)">下一页</button>
             `;
 
@@ -462,6 +472,13 @@
 
         function changePage(step) {
             currentPage = Math.max(1, currentPage + step);
+            renderProjects();
+        }
+
+        // 新增页面条数改变函数
+        function changePageSize(size) {
+            itemsPerPage = parseInt(size);
+            currentPage = 1;
             renderProjects();
         }
 

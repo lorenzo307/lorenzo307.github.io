@@ -356,12 +356,14 @@
 
         /* 更新按钮样式 */
         button, .primary-btn, .danger-btn, .back-btn {
+            font-family: 'Fangzheng Shusong', '方正书宋', 'Noto Serif SC', serif; /* 添加方正书宋 */
             background: var(--glass-bg) !important;
             border: 2px solid var(--glass-border);
             color: var(--glass-text) !important;
             transition: all 0.3s ease;
             border-radius: 8px;
             padding: 8px 16px;
+            font-weight: 500; /* 调整字重 */
         }
 
         button:hover, .primary-btn:hover, .danger-btn:hover, .back-btn:hover {
@@ -507,6 +509,19 @@
             border-radius: 12px;
             padding: 16px;
             box-shadow: var(--glass-shadow);
+            
+            /* 动画相关 */
+            display: grid; /* 改为 grid 布局 */
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* 自动填充列 */
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease; /* 平滑过渡 */
+        }
+        
+        #keyword-cloud.loaded {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         /* Webkit浏览器滚动条美化 */
@@ -549,6 +564,17 @@
             transition: all 0.3s ease;
             box-shadow: var(--glass-shadow);
             font-weight: 500;
+            /* 动画相关 */
+            opacity: 0;
+            transform: translateY(10px);
+            animation: tagAppear 0.3s ease forwards;
+        }
+        
+        @keyframes tagAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .keyword-tag:hover {
@@ -621,7 +647,7 @@
             display: none;
             z-index: 1000;
             color: var(--text-primary);
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: 'Fangzheng Shusong', '方正书宋', 'Segoe UI', Arial, sans-serif; /* 添加方正书宋 */
             overflow-y: auto;
         }
 
@@ -1174,6 +1200,122 @@
             padding-top: 10px;
             border-top: 1px solid var(--glass-border);
         }
+
+        /* 新增：侧边栏操作按钮样式 */
+        .sidebar-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 两列布局 */
+            gap: 10px; /* 按钮间距 */
+            padding: 15px;
+        }
+
+        .sidebar-actions h3 {
+            grid-column: 1 / -1; /* 标题占满两列 */
+            margin: 0 0 15px 0;
+            text-align: center;
+            color: var(--text-primary);
+            font-size: 1.1em;
+        }
+
+        .sidebar-actions button {
+            width: 100%; /* 按钮宽度占满列 */
+            padding: 10px 5px; /* 调整内边距 */
+            font-size: 0.9em; /* 调整字体大小 */
+        }
+
+        /* 弹窗动画 */
+        .form-popup, .category-manager {
+            /* 保持原有样式 */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            /* ... 其他样式 ... */
+            
+            /* 添加动画 */
+            animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            transform-origin: center;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* 关闭动画 */
+        .form-popup.closing, .category-manager.closing {
+            animation: popOut 0.2s ease-in forwards; /* 使用 forwards 保持最后状态 */
+        }
+
+        @keyframes popOut {
+            from {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+        }
+
+        /* 视图容器样式 */
+        #entries-container {
+            position: relative;
+            min-height: 500px; /* 防止切换时高度塌陷 */
+            overflow: hidden; /* 隐藏切换时的溢出 */ /* <-- 这个可能是问题吗？ */
+        }
+
+        /* 视图切换基础样式 */
+        .list-view, .detail-view {
+            width: 100%; /* 确保视图宽度一致 */
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* 动画过渡 */
+        }
+
+        /* 详细视图默认和进入状态 - 使用相对定位 */
+        .detail-view {
+            position: relative; /* 改为 relative 使其在正常文档流中 */
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* 列表视图离开状态 (移出屏幕左侧) */
+        .list-view.leaving {
+            opacity: 0;
+            transform: translateX(-20px);
+            position: absolute; /* 离开时绝对定位防止影响布局 */
+            top: 0; /* 确保定位基准 */
+            left: 0;
+            width: 100%; /* 保持宽度 */
+        }
+
+        /* 详细视图离开状态 (移出屏幕左侧) */
+        .detail-view.leaving {
+            opacity: 0;
+            transform: translateX(-20px);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+        
+        /* 列表视图进入状态 (从右侧进入) */
+        .list-view.entering {
+            opacity: 1;
+            transform: translateX(0);
+            position: relative; /* 确保在文档流中 */
+        }
+
+        .entry-item .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start; /* 顶部对齐 */
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -1331,20 +1473,17 @@
             <div class="action-buttons">
                 <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="flex:1">
                 <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
-                <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
-                <button class="primary-btn" onclick="showLogViewer()">工作日志</button>
-                <button class="primary-btn" onclick="showRecycleBin()">回收站</button>
                 <div style="display:inline-block;margin-left:10px">
-                    <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
+                    <!-- 移除了 导出Excel 按钮 -->
                 </div>
                 <div style="display:inline-block;margin-left:10px">
-                    <button class="primary-btn" onclick="importExcel()">导入Excel</button>
+                    <!-- 移除了 导入Excel 按钮 -->
                 </div>
                 <div style="display:inline-block;margin-left:10px">
-                    <button class="primary-btn" onclick="scanDuplicates()">扫描重复条目</button>
+                    <!-- 移除了 扫描重复条目 按钮 -->
                 </div>
                 <div style="display:inline-block;margin-left:10px">
-                    <button class="primary-btn" onclick="migrateLegacyData()" title="修复历史数据中的缺失字段">修复数据</button>
+                    <!-- 移除了 修复数据 按钮 -->
                 </div>
                 <div style="display:inline-block;margin-left:10px">
                     <button class="primary-btn" onclick="toggleBulkMode()">批量操作</button>
@@ -1391,7 +1530,7 @@
             <!-- 高级检索面板 -->
             <div class="advanced-search">
                 <button class="primary-btn" onclick="toggleAdvancedSearch()">高级检索 ▽</button>
-                <div class="advanced-panel" style="display:none">
+                <div class="advanced-panel" style="max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s ease-out, opacity 0.2s ease-out, margin-top 0.3s ease-out, margin-bottom 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out;">
                     <div class="search-row">
                         <label>时间范围：</label>
                         <input type="date" id="startDate">
@@ -1433,6 +1572,17 @@
             <h3>关键词索引</h3>
             <div id="keyword-cloud"></div>
             
+            <!-- 新增：侧边栏操作按钮 -->
+            <div class="sidebar-actions glass-container" style="margin-top: 20px;">
+                <h3>数据管理</h3>
+                <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
+                <button class="primary-btn" onclick="showLogViewer()">工作日志</button>
+                <button class="primary-btn" onclick="showRecycleBin()">回收站</button>
+                <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
+                <button class="primary-btn" onclick="importExcel()">导入Excel</button>
+                <button class="primary-btn" onclick="scanDuplicates()">扫描重复</button>
+                <button class="primary-btn" onclick="migrateLegacyData()" title="修复历史数据中的缺失字段">修复数据</button>
+            </div>
            
         <!-- 史料表单弹窗 -->
         <div id="entry-form" class="form-popup">
@@ -1593,9 +1743,24 @@
                 window.location.href = "index.html";
                 return;
             }
-            const projectId = localStorage.getItem('currentProject') || 
-                              new URLSearchParams(window.location.search).get('project') || 
-                              'default';
+            // 优先从 URL 参数获取 projectId
+            const urlParams = new URLSearchParams(window.location.search);
+            let projectId = urlParams.get('project');
+
+            // 如果 URL 参数没有，再尝试从 localStorage 获取 (作为备选)
+            if (!projectId) {
+                projectId = localStorage.getItem('currentProject');
+            }
+            
+            // 如果都没有，使用 'default' (或者可以报错提示)
+            if (!projectId) {
+                console.error("无法确定项目 ID！");
+                projectId = 'default'; // 或者 return; 阻止后续操作
+            }
+
+            // 保存当前项目 ID 到 localStorage，以便某些情况下可以恢复状态
+            localStorage.setItem('currentProject', projectId);
+
             return `users/${user.uid}/projects/${projectId}/${subPath}`;
         }
 
@@ -2019,27 +2184,41 @@
 
         // 表单操作
         function showForm() {
-            document.getElementById('entry-form').style.display = 'block';
+            const form = document.getElementById('entry-form');
+            form.style.display = 'block';
+            form.classList.remove('closing'); // 确保移除关闭动画类
             initQuill();
             updateSubCats();
         }
 
         function hideForm() {
-            document.getElementById('entry-form').style.display = 'none';
-            document.querySelector('form').reset();
+            const form = document.getElementById('entry-form');
+            form.classList.add('closing'); // 添加关闭动画类
+            setTimeout(() => { // 等待动画结束后再隐藏和重置
+                form.style.display = 'none';
+                document.querySelector('#entry-form form').reset(); // 更精确的选择器
             if (quill) quill.root.innerHTML = '';
             if (window.analysisQuill) window.analysisQuill.root.innerHTML = '';
             editingId = null;
+                form.classList.remove('closing'); // 动画结束后移除类
+            }, 200); // 动画时长 0.2s = 200ms
         }
 
         // 分类管理
         function showCategoryManager() {
-            document.getElementById('category-manager').style.display = 'block';
+            const manager = document.getElementById('category-manager');
+            manager.style.display = 'block';
+            manager.classList.remove('closing');
             renderCategoryManager();
         }
 
         function hideCategoryManager() {
-            document.getElementById('category-manager').style.display = 'none';
+            const manager = document.getElementById('category-manager');
+            manager.classList.add('closing');
+            setTimeout(() => {
+                manager.style.display = 'none';
+                manager.classList.remove('closing');
+            }, 200);
         }
 
         function renderCategoryManager() {
@@ -2263,13 +2442,75 @@
             
             // 渲染列表 - 根据视图模式选择渲染函数
             const container = document.getElementById('entries-container');
-            container.innerHTML = currentViewMode === 'list' ? 
-                renderListView(currentPageEntries) : 
+            const isList = currentViewMode === 'list';
+
+            // 创建新视图的容器
+            const newViewContainer = document.createElement('div');
+            newViewContainer.className = isList ? 'list-view' : 'detail-view'; // 添加基础类
+            newViewContainer.innerHTML = isList ?
+                renderListView(currentPageEntries) :
                 renderDetailView(currentPageEntries);
-            
+            // 设置初始不可见状态，准备动画
+            newViewContainer.style.opacity = 0;
+            newViewContainer.style.transform = `translateX(${isList ? '20px' : '-20px'})`; // 列表从右进，详情从左进
+
+            // 获取当前的视图容器 (如果存在)
+            const currentView = container.querySelector('.list-view, .detail-view');
+
+            // 如果已有视图，且视图类型发生了变化，则执行切换动画
+            if (currentView && currentView.classList.contains(isList ? 'list-view' : 'detail-view') === false) {
+                // 1. 给当前视图添加 'leaving' 动画类
+                currentView.classList.add('leaving');
+                currentView.classList.remove('entering'); // 确保移除 entering
+                // 设置离开动画的目标状态
+                currentView.style.opacity = 0;
+                currentView.style.transform = `translateX(${currentView.classList.contains('list-view') ? '-20px' : '20px'})`; // 列表向左出，详情向右出
+
+                // 2. 添加新视图到容器（初始状态已在上面设置）
+                container.appendChild(newViewContainer);
+
+                // 3. 使用微小的延迟确保浏览器渲染离开状态，然后触发进入动画
+                requestAnimationFrame(() => {
+                     requestAnimationFrame(() => { // Double requestAnimationFrame for robustness
+                        // 应用进入状态
+                        newViewContainer.classList.add('entering'); // 添加 entering 类（如果需要）
+                        newViewContainer.style.opacity = 1;
+                        newViewContainer.style.transform = 'translateX(0)';
+                     });
+                });
+
+                // 4. 在旧视图动画结束后彻底移除它
+                setTimeout(() => {
+                    if (currentView && container.contains(currentView)) { // 再次检查以防万一
+                       currentView.remove();
+                    }
+                }, 400); // 动画时长 0.4s
+
+            } else if (!currentView) {
+                // 如果没有旧视图（首次加载），直接添加并设置动画进入状态
+                container.innerHTML = ''; // 清空容器
+                container.appendChild(newViewContainer);
+                // 使用微小延迟触发首次加载动画
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                       newViewContainer.classList.add('entering'); // 添加 entering 类
+                       newViewContainer.style.opacity = 1;
+                       newViewContainer.style.transform = 'translateX(0)';
+                    });
+                });
+            } else {
+                 // 如果视图类型未改变（例如，只是分页或筛选），则直接替换内容，不加动画
+                 container.innerHTML = '';
+                 container.appendChild(newViewContainer);
+                 //确保新视图可见
+                 newViewContainer.style.opacity = 1;
+                 newViewContainer.style.transform = 'translateX(0)';
+                 // newViewContainer.classList.add('entering'); // 保持 entering 状态可能不需要，因为没有动画
+            }
+
             // 更新分页
             updatePagination(totalPages);
-            
+
             // 在批量模式下更新选择计数
             if (bulkModeActive) {
                 updateSelectedCount();
@@ -2300,10 +2541,10 @@
                             <span class="entry-id">${entry.id}</span>
                             <span class="entry-date">${entry.date}</span>
                             <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
-                        </div>
+                                </div>
                         <div class="entry-actions">
-                            <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
-                            <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
+                                <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
+                                <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
                         </div>
                     </div>
                     <div class="entry-footer">
@@ -2416,9 +2657,19 @@
             try {
                 // 数据格式预验证
                 if (!Array.isArray(entries) || entries.length === 0) {
-                    throw new Error('导出数据格式异常');
+                    showAlert('没有选择任何有效条目进行导出', 'warning');
+                    // 修改：即使没有选择条目，也允许仅导出分类结构
+                    if (confirm('未选择任何条目。是否仅导出分类结构？')) {
+                       // 继续执行，但只创建分类表
+                    } else {
+                       return; // 用户取消
+                    }
                 }
                 
+                const wb = XLSX.utils.book_new();
+
+                // 仅当有条目选择时，才创建史料数据表
+                if (entries.length > 0) {
                 // 数据安全处理
                 const validatedEntries = entries.map(entry => ({
                     ...entry,
@@ -2427,7 +2678,7 @@
                 }));
 
                 const data = validatedEntries.map(entry => ({
-                    ID: entry.id || '',  // 添加ID字段
+                        ID: entry.id || '',
                     日期: entry.date || '',
                     主分类: entry.mainCat || '',
                     子分类: entry.subCat || '',
@@ -2437,13 +2688,56 @@
                     相关链接: (entry.links || []).join('; '),
                     关键词: (entry.keywords || []).join('; ')
                 }));
-
-                const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.json_to_sheet(data);
                 XLSX.utils.book_append_sheet(wb, ws, "史料数据");
-                XLSX.writeFile(wb, `史料导出_${new Date().toISOString().slice(0,10)}.xlsx`);
+                }
+
+                // 生成分类数据工作表
+                const categoriesData = [];
+                if (categories && categories.main) { // 添加检查确保categories.main存在
+                    Object.entries(categories.main).forEach(([mainCode, mainData]) => {
+                        // 确保 mainData 和 mainData.sub 存在
+                        if (mainData && Array.isArray(mainData.sub)) {
+                            mainData.sub.forEach(sub => {
+                                // 安全地分割子分类代码和名称
+                                const parts = typeof sub === 'string' ? sub.split('-') : [];
+                                const subCode = parts[0] || '';
+                                const subName = parts.slice(1).join('-') || ''; // 处理名称中可能含有的-
+                                
+                                categoriesData.push({
+                                    '主类代码': mainCode,
+                                    '主类名称': mainData.name || '', // 提供默认值
+                                    '子类代码': subCode,
+                                    '子类名称': subName
+                                });
+                            });
+                        } else if (mainData) { // 如果没有子分类，也导出主分类信息
+                           categoriesData.push({
+                               '主类代码': mainCode,
+                               '主类名称': mainData.name || '',
+                               '子类代码': '',
+                               '子类名称': ''
+                           });
+                        }
+                    });
+                }
                 
-                showAlert(`成功导出 ${entries.length} 条记录`, 'success');
+                // 只有当有分类数据时才添加工作表
+                if (categoriesData.length > 0) {
+                   const categoriesSheet = XLSX.utils.json_to_sheet(categoriesData);
+                   XLSX.utils.book_append_sheet(wb, categoriesSheet, "分类结构");
+                } else {
+                   showAlert('没有分类数据可导出', 'info');
+                }
+
+                // 只有当至少有一个工作表时才生成文件
+                if (wb.SheetNames.length > 0) {
+                XLSX.writeFile(wb, `史料导出_${new Date().toISOString().slice(0,10)}.xlsx`);
+                   showAlert(`成功导出 ${entries.length} 条记录` + (categoriesData.length > 0 ? ' 及分类结构' : ''), 'success');
+                } else {
+                   showAlert('没有数据或分类可导出', 'warning');
+                }
+                
             } catch (error) {
                 console.error('导出失败:', error);
                 showAlert(`导出失败：${error.message}`, 'error');
@@ -2540,19 +2834,32 @@
         }
 
         function updateKeywords() {
-            const keywords = [...new Set(entries.flatMap(e => e.keywords))];
-            document.getElementById('keyword-cloud').innerHTML = `
+            const cloud = document.getElementById('keyword-cloud');
+            if (!cloud) return; // 添加检查
+            cloud.classList.remove('loaded'); // 先移除类，重置动画状态
+            
+            const keywords = [...new Set(entries.flatMap(e => e.keywords || []))]; // 确保keywords存在
+            
+            // 更新关键词云内容
+            cloud.innerHTML = `
                 <span class="keyword-tag ${!currentFilterKeyword ? 'active' : ''}" 
+                      style="animation-delay: 0ms;" /* 第一个标签立即显示 */
                       onclick="resetFilter()">
                     全部 (${entries.length})
                 </span>
-                ${keywords.map(k => `
+                ${keywords.map((k, index) => `
                     <span class="keyword-tag ${currentFilterKeyword === k ? 'active' : ''}" 
+                          style="animation-delay: ${(index + 1) * 50}ms;" /* 设置延迟 */
                           onclick="filterByKeyword('${k}')">
                         ${k} (${countKeyword(k)})
                     </span>
                 `).join('')}
             `;
+            
+            // 触发加载动画
+            setTimeout(() => {
+                cloud.classList.add('loaded');
+            }, 50); // 短暂延迟后添加类以触发transition
         }
 
         function countKeyword(keyword) {
@@ -2568,14 +2875,40 @@
                 showAlert('日期为必填项！', 'warning');
                 return;
             }
-            if (!categories.main[formData.get('main-cat')]) {
-                showAlert('请先创建主分类', 'warning');
+            // 修改：移除对主分类必须存在的硬性校验，改为自动创建
+            const mainCode = formData.get('main-cat');
+            if (!mainCode) {
+                showAlert('主分类为必填项！', 'warning');
                 return;
             }
+            const subCat = formData.get('sub-cat'); // 子分类可能为空
 
             try {
                 const entryRef = db.ref(getProjectPath('entries'));
                 const user = auth.currentUser;
+
+                // 新增：保存前验证或创建分类
+                // 如果主类不存在则自动创建
+                if (!categories.main[mainCode]) {
+                    const newMainCatData = { name: `导入主类-${mainCode}`, sub: [] };
+                    await db.ref(getProjectPath(`categories/main/${mainCode}`)).set(newMainCatData);
+                    categories.main[mainCode] = newMainCatData; // 更新本地缓存
+                    showAlert(`自动创建了新的主分类: ${mainCode}`, 'info');
+                    updateCategorySelectors(); // 更新下拉列表
+                }
+
+                // 如果子类不存在（且子类不为空）则自动创建
+                if (subCat && !categories.main[mainCode].sub.includes(subCat)) {
+                    const [subCode, subName] = subCat.split('-');
+                    // 如果子类名称为空，给一个默认名称
+                    const newSubCat = subName ? subCat : `${subCode}-导入子类-${subCode}`;
+                    
+                    const newSubList = [...categories.main[mainCode].sub, newSubCat];
+                    await db.ref(getProjectPath(`categories/main/${mainCode}/sub`)).set(newSubList);
+                    categories.main[mainCode].sub = newSubList; // 更新本地缓存
+                    showAlert(`自动创建了新的子分类: ${newSubCat}`, 'info');
+                    updateSubCats(); // 更新子分类下拉列表
+                }
                 
                 // 获取原始数据（如果是编辑状态）
                 let originalEntry = null;
@@ -2767,10 +3100,48 @@
         // 切换高级搜索面板
         function toggleAdvancedSearch() {
             const panel = document.querySelector('.advanced-panel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            const button = panel.previousElementSibling; // 获取触发按钮
             
-            // 动态加载标签
-            if(panel.style.display === 'block' && !document.getElementById('tag-selector').children.length) {
+            // 检查面板当前是否可见或正在展开
+            if (panel.style.maxHeight && panel.style.maxHeight !== '0px') {
+                // 隐藏面板
+                panel.style.maxHeight = '0px';
+                panel.style.opacity = '0';
+                // 恢复外边距和内边距（如果需要平滑过渡）
+                panel.style.marginTop = '0'; 
+                panel.style.marginBottom = '0';
+                panel.style.paddingTop = '0';
+                panel.style.paddingBottom = '0';
+                button.textContent = '高级检索 ▽'; // 更新按钮文本
+            } else {
+                // 显示面板
+                // 先让元素可见以便计算高度，但保持其在屏幕外或透明
+                panel.style.display = 'block'; // 临时改为 block 以计算高度
+                panel.style.visibility = 'hidden'; // 保持不可见
+                panel.style.maxHeight = 'none'; // 临时取消高度限制
+                
+                const scrollHeight = panel.scrollHeight; // 获取内容实际高度
+                
+                // 恢复初始隐藏状态，准备动画
+                panel.style.maxHeight = '0px';
+                panel.style.visibility = 'visible'; // 恢复可见性
+                panel.style.display = ''; // 移除临时的 block
+                
+                // 触发重绘，确保动画生效
+                void panel.offsetWidth;
+                
+                // 设置目标高度和样式以启动动画
+                panel.style.maxHeight = scrollHeight + 'px';
+                panel.style.opacity = '1';
+                // 添加外边距和内边距（如果设计需要）
+                panel.style.marginTop = '15px'; 
+                panel.style.marginBottom = '15px';
+                panel.style.paddingTop = '15px';
+                panel.style.paddingBottom = '15px';
+                button.textContent = '高级检索 △'; // 更新按钮文本
+                
+                // 动态加载标签 (如果需要)
+                if (!document.getElementById('tag-selector').children.length) {
                 const allTags = [...new Set(entries.flatMap(e => e.keywords || []))];
                 document.getElementById('tag-selector').innerHTML = allTags.map(tag => `
                     <label class="tag-checkbox">
@@ -2778,6 +3149,7 @@
                         ${tag}
                     </label>
                 `).join('');
+                }
             }
         }
 
@@ -2942,38 +3314,62 @@
 
         // 显示日志表单
         function showLogForm() {
-            document.getElementById('log-form').style.display = 'block';
-            document.getElementById('log-viewer').style.display = 'none';
+            const form = document.getElementById('log-form');
+            const viewer = document.getElementById('log-viewer');
+            form.style.display = 'block';
+            form.classList.remove('closing');
+            if(viewer.style.display === 'block') { // 如果查看器可见，添加关闭动画
+               viewer.classList.add('closing');
+               setTimeout(() => viewer.style.display = 'none', 200);
+            } else {
+               viewer.style.display = 'none';
+            }
             initLogQuill();
             
-            // 设置默认日期为今天
             const today = new Date().toISOString().split('T')[0];
-            document.querySelector('[name="log-date"]').value = today;
+            document.querySelector('#log-form [name="log-date"]').value = today;
             
-            // 清空表单
-            document.querySelector('[name="log-title"]').value = '';
+            document.querySelector('#log-form [name="log-title"]').value = '';
             logQuill.root.innerHTML = '';
             editingLogId = null;
         }
 
         // 隐藏日志表单
         function hideLogForm() {
-            document.getElementById('log-form').style.display = 'none';
-            document.querySelector('form').reset();
+            const form = document.getElementById('log-form');
+            form.classList.add('closing');
+            setTimeout(() => {
+                form.style.display = 'none';
+                // document.querySelector('#log-form form').reset(); // 重置可能清除默认日期
             if (logQuill) logQuill.root.innerHTML = '';
             editingLogId = null;
+                form.classList.remove('closing');
+            }, 200);
         }
 
         // 显示日志查看器
         function showLogViewer() {
-            document.getElementById('log-viewer').style.display = 'block';
-            document.getElementById('log-form').style.display = 'none';
+            const viewer = document.getElementById('log-viewer');
+            const form = document.getElementById('log-form');
+            viewer.style.display = 'block';
+            viewer.classList.remove('closing');
+            if(form.style.display === 'block') { // 如果表单可见，添加关闭动画
+               form.classList.add('closing');
+               setTimeout(() => form.style.display = 'none', 200);
+            } else {
+               form.style.display = 'none';
+            }
             loadLogs();
         }
 
         // 隐藏日志查看器
         function hideLogViewer() {
-            document.getElementById('log-viewer').style.display = 'none';
+            const viewer = document.getElementById('log-viewer');
+            viewer.classList.add('closing');
+            setTimeout(() => {
+                viewer.style.display = 'none';
+                viewer.classList.remove('closing');
+            }, 200);
         }
 
         // 加载日志数据
@@ -3182,7 +3578,7 @@
 
         // 添加日志分页相关函数
         // 变量已在全局作用域声明，这里不再重复声明
-        
+
         function updateLogPagination(totalPages) {
             document.getElementById('currentLogPage').textContent = currentLogPage;
             document.getElementById('totalLogPages').textContent = totalPages;
@@ -3283,6 +3679,7 @@
                 const recycleBin = document.getElementById('recycle-bin');
                 if (recycleBin) {
                     recycleBin.style.display = 'block';
+                    recycleBin.classList.remove('closing');
                     console.log('回收站弹窗显示成功');
                 } else {
                     console.error('找不到回收站元素');
@@ -3477,7 +3874,16 @@
         // 添加全局函数，确保回收站能够关闭
         window.closeRecycleBin = function() {
             console.log('关闭回收站 - 全局函数被调用');
-            document.getElementById('recycle-bin').style.display = 'none';
+            const recycleBin = document.getElementById('recycle-bin');
+            if (recycleBin) {
+                recycleBin.classList.add('closing');
+                setTimeout(() => {
+                   recycleBin.style.display = 'none'; 
+                   recycleBin.classList.remove('closing');
+                }, 200);
+            } else {
+                 console.error('找不到回收站元素!');
+            }
         }
 
         function formatDuration(seconds) {
@@ -3561,50 +3967,6 @@
 
         let activeTimer = null;
         let startTimestamp = null;
-
-        // 修改开始记录函数
-        function startWorkSession() {
-            startTimestamp = Date.now();
-            
-            if (activeTimer) clearInterval(activeTimer);
-            
-            activeTimer = setInterval(() => {
-                const duration = Date.now() - startTimestamp;
-                updateLiveTimer(duration);
-            }, 1000);
-            
-            document.getElementById('live-timer-container').classList.add('active');
-        }
-
-        // 修改停止记录函数 
-        function stopWorkSession() {
-            if (activeTimer) {
-                clearInterval(activeTimer);
-                activeTimer = null;
-                
-                const duration = Date.now() - startTimestamp;
-                saveWorklog(duration);
-                
-                updateLiveTimer(0);
-                document.getElementById('live-timer-container').classList.remove('active');
-            }
-        }
-
-        // 实时更新函数
-        function updateLiveTimer(milliseconds) {
-            const totalSeconds = Math.floor(milliseconds / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-
-            // 智能格式显示
-            let displayText = '';
-            if (hours > 0) displayText += `${hours}小时 `;
-            if (minutes > 0 || hours > 0) displayText += `${minutes}分 `;
-            displayText += `${seconds}秒`;
-
-            document.getElementById('current-duration').textContent = displayText;
-        }
 
         // 页面可见性监听（防止后台标签页计时不准确）
         document.addEventListener('visibilitychange', () => {
@@ -3734,22 +4096,104 @@
                     
                     // 读取Excel文件内容
                     const reader = new FileReader();
-                    reader.onload = async (e) => {
+                    reader.onload = async (event) => { // Renamed parameter to avoid conflict
                         try {
-                            const data = e.target.result;
-                            const workbook = XLSX.read(data, { type: 'array' });
-                            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                            const rowData = XLSX.utils.sheet_to_json(firstSheet);
+                            const fileData = event.target.result; // Use renamed parameter
+                            const workbook = XLSX.read(fileData, { type: 'array' });
                             
-                            if (rowData.length === 0) {
-                                showAlert('Excel文件中没有找到有效数据', 'warning');
+                            // 新增：处理分类结构表
+                            if (workbook.SheetNames.includes("分类结构")) {
+                                console.log("发现分类结构表，开始处理...");
+                                const categoriesSheet = workbook.Sheets["分类结构"];
+                                const importedCategoriesData = XLSX.utils.sheet_to_json(categoriesSheet);
+                                
+                                const tempCategories = { main: {} };
+                                importedCategoriesData.forEach(row => {
+                                    try {
+                                        // 智能编码处理与验证
+                                        const mainCodeRaw = row['主类代码']?.toString() || '';
+                                        const subCodeRaw = row['子类代码']?.toString() || '';
+                                        const mainName = row['主类名称'] || '';
+                                        const subName = row['子类名称'] || '';
+
+                                        // 跳过无效行
+                                        if (!mainCodeRaw || !mainName) {
+                                           console.warn("跳过无效分类行:", row); 
                                 return;
                             }
 
-                            // 确认导入
-                            if (!confirm(`找到${rowData.length}条记录，是否导入？\n注意：匹配的条目ID将被更新，不匹配的将创建新条目。`)) {
+                                        const mainCode = mainCodeRaw.replace(/[^a-zA-Z0-9]/g, '').substring(0, 2).toUpperCase();
+                                        const subCode = subCodeRaw.replace(/[^a-zA-Z0-9]/g, '').substring(0, 1).toUpperCase();
+
+                                        if (!mainCode) return; // 主类代码不能为空
+                                        
+                                        if (!tempCategories.main[mainCode]) {
+                                            tempCategories.main[mainCode] = {
+                                                name: mainName.substring(0, 20), // 截断名称
+                                                sub: []
+                                            };
+                                        }
+                                        
+                                        // 仅当子类代码和名称都存在时才添加子类
+                                        if (subCode && subName) {
+                                            const subEntry = `${subCode}-${subName.substring(0, 20)}`;
+                                            if (!tempCategories.main[mainCode].sub.includes(subEntry)) {
+                                                tempCategories.main[mainCode].sub.push(subEntry);
+                                            }
+                                        }
+                                    } catch(catError) {
+                                       console.error('处理分类行时出错:', row, catError);
+                                    }
+                                });
+
+                                // 合并到现有分类 (使用 update 避免完全覆盖)
+                                let updates = {};
+                                let newCategoryCount = 0;
+                                Object.entries(tempCategories.main).forEach(([code, data]) => {
+                                    if (!categories.main[code]) {
+                                        // 完全是新主类
+                                        updates[`main/${code}`] = data;
+                                        categories.main[code] = data; // 更新本地缓存
+                                        newCategoryCount++;
+                                    } else {
+                                        // 主类已存在，合并子类
+                                        let existingSubs = new Set(categories.main[code].sub || []);
+                                        let subsToAdd = [];
+                                        data.sub.forEach(sub => {
+                                            if (!existingSubs.has(sub)) {
+                                                subsToAdd.push(sub);
+                                            }
+                                        });
+                                        if (subsToAdd.length > 0) {
+                                            const newSubList = [...(categories.main[code].sub || []), ...subsToAdd];
+                                            updates[`main/${code}/sub`] = newSubList;
+                                            categories.main[code].sub = newSubList; // 更新本地缓存
+                                            newCategoryCount++;
+                                        }
+                                        // 可选：如果主类名称不同，是否更新？(当前不更新)
+                                        // if (categories.main[code].name !== data.name) { ... }
+                                    }
+                                });
+                                
+                                // 保存到数据库
+                                if (Object.keys(updates).length > 0) {
+                                   await db.ref(getProjectPath('categories')).update(updates);
+                                   updateCategorySelectors(); // 更新下拉列表
+                                   showAlert(`${newCategoryCount}个分类已导入或更新`, 'success');
+                                   console.log("分类结构已更新:", updates);
+                                } else {
+                                   console.log("没有新的分类信息需要导入。");
+                                }
+                            }
+                            
+                            // 获取史料数据
+                            const firstSheetName = workbook.SheetNames.find(name => name !== "分类结构") || workbook.SheetNames[0];
+                            if (!firstSheetName) {
+                               showAlert('未找到有效的史料数据工作表', 'error');
                                 return;
                             }
+                            const firstSheet = workbook.Sheets[firstSheetName];
+                            const rowData = XLSX.utils.sheet_to_json(firstSheet);
 
                             // 处理数据导入
                             await processImportData(rowData);
@@ -3997,13 +4441,13 @@
                             }
                             
                             try {
-                                // 生成新ID
+                            // 生成新ID
                                 console.log("生成新条目ID");
-                                const newId = await generateID(entry);
-                                entry.id = newId;
-                                entry.createdAt = firebase.database.ServerValue.TIMESTAMP;
-                                batch[newId] = entry;
-                                newCount++;
+                            const newId = await generateID(entry);
+                            entry.id = newId;
+                            entry.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                            batch[newId] = entry;
+                            newCount++;
                                 importResults.new.push({
                                     title: entry.title,
                                     id: newId
@@ -4066,7 +4510,7 @@
                     });
                     
                     try {
-                        await entriesRef.update(batch);
+                    await entriesRef.update(batch);
                         showAlert(`导入完成: 新增${newCount}条, 更新${updateCount}条, 识别恢复${identifiedCount}条, 失败${errorCount}条`, 'success');
                         // 显示导入结果详情
                         showImportResults(importResults, newCount, updateCount, identifiedCount, errorCount);
@@ -4082,7 +4526,7 @@
                 showAlert(`批量导入失败: ${error.message}`, 'error');
             }
         }
-
+        
         // 显示导入结果详情
         function showImportResults(results, newCount, updateCount, identifiedCount, errorCount) {
             // 创建对话框元素
@@ -4232,14 +4676,14 @@
                 // 创建内容指纹 (标题+内容)
                 if (entry.content) {
                     // 1. 精确内容匹配 (标题 + 内容)
-                    const contentFingerprint = (entry.title + entry.content).replace(/\s+/g, '');
-                    
-                    // 如果指纹非空
-                    if (contentFingerprint.length > 0) {
-                        if (!contentMap[contentFingerprint]) {
-                            contentMap[contentFingerprint] = [entry.id];
-                        } else {
-                            contentMap[contentFingerprint].push(entry.id);
+                const contentFingerprint = (entry.title + entry.content).replace(/\s+/g, '');
+                
+                // 如果指纹非空
+                if (contentFingerprint.length > 0) {
+                    if (!contentMap[contentFingerprint]) {
+                        contentMap[contentFingerprint] = [entry.id];
+                    } else {
+                        contentMap[contentFingerprint].push(entry.id);
                         }
                     }
                 }
@@ -4437,7 +4881,7 @@
                 button.textContent = '删除选中项以外的重复条目';
             }
         }
-
+        
         // 切换视图模式
         function changeViewMode(mode) {
             currentViewMode = mode;
@@ -4623,10 +5067,6 @@
     }
     </style>
 
-    <!-- 实时计时器 -->
-    <div id="live-timer-container" class="live-timer">
-        <span>当前工作持续时间：</span>
-        <span id="current-duration">0秒</span>
-    </div>
+   
 </body>
 </html>
