@@ -1317,6 +1317,114 @@
             margin-bottom: 10px;
         }
     </style>
+    
+    <!-- 响应式布局调整 -->
+    <style>
+        @media (max-width: 992px) { /* 平板和较小笔记本 */
+            .container {
+                grid-template-columns: 1fr; /* 改为单栏布局 */
+                gap: 16px; /* 减小间距 */
+            }
+
+            .sidebar {
+                grid-row: 2; /* 将侧边栏移到主内容下方 */
+                margin-top: 16px;
+            }
+
+            .header {
+                padding: 12px 16px; /* 调整内边距 */
+            }
+
+            .header h1 {
+                 font-size: 1.5em; /* 调整标题大小 */
+            }
+            
+            .form-popup, .category-manager, #log-viewer, #recycle-bin {
+                width: 90%; /* 弹窗宽度适应屏幕 */
+                max-width: 600px; /* 限制最大宽度 */
+            }
+        }
+
+        @media (max-width: 768px) { /* 小型平板和大型手机 */
+            body {
+                padding: 20px 10px; /* 调整页面边距 */
+            }
+
+            .header {
+                flex-wrap: wrap; /* 允许头部元素换行 */
+                gap: 10px;
+                 justify-content: center; /* 换行后居中 */
+            }
+
+            .main-content .action-buttons {
+                flex-wrap: wrap; /* 允许操作按钮换行 */
+                gap: 8px;
+            }
+            
+            .main-content .action-buttons input[type="text"] {
+                min-width: 150px; /* 保证搜索框有最小宽度 */
+            }
+
+            /* 使表格可以水平滚动 */
+            .entry-table-container, /* 需要在HTML中包裹表格 */
+            #deleted-entries-container, /* 回收站表格容器 */
+            .deleted-project-table-container /* index.html 回收站 */
+            {
+                 overflow-x: auto;
+                 -webkit-overflow-scrolling: touch; /* iOS 滚动优化 */
+                 margin-bottom: 10px; /* 与下方元素保持距离 */
+            }
+            
+            .entry-table {
+                 min-width: 600px; /* 给表格一个最小宽度，触发滚动 */
+            }
+            .deleted-project-table {
+                 min-width: 500px; 
+            }
+
+            .pagination {
+                 flex-direction: column; /* 堆叠分页元素 */
+                 align-items: center;
+            }
+        }
+
+        @media (max-width: 576px) { /* 手机 */
+             .header h1 {
+                 font-size: 1.3em;
+                 order: -1; /* 将标题移到最前 */
+                 width: 100%;
+                 text-align: center;
+             }
+             .header .back-btn {
+                 font-size: 0.9em;
+             }
+             .theme-selector {
+                  margin-left: 0; /* 移除左边距 */
+             }
+            
+             .form-popup, .category-manager, #log-viewer, #recycle-bin {
+                padding: 15px;
+            }
+            .form-popup h2, .category-manager h3 {
+                 font-size: 1.3em;
+                 margin-bottom: 15px;
+            }
+            .form-row label {
+                 font-size: 1em;
+            }
+            input, textarea, select {
+                 padding: 10px 12px;
+                 font-size: 0.95em;
+            }
+             #editor-container, #analysis-editor-container, #log-editor-container {
+                 height: 250px; /* 减小编辑器高度 */
+             }
+             .sidebar-actions button {
+                 font-size: 0.85em;
+                 padding: 8px 4px;
+             }
+        }
+    </style>
 </head>
 <body>
     <!-- 加载提示 -->
@@ -1582,7 +1690,10 @@
                 </div>
             </div>
             
-            <div id="entries-container"></div>
+            <!-- 史料条目列表 -->
+            <div id="entries-container-wrapper"> <!-- 新增容器 -->
+                <div id="entries-container"></div>
+            </div>
             <div class="pagination">
                 <div class="pagination-info">
                     第<span id="currentPage">1</span>页，共<span id="totalPages">1</span>页，每页<span id="entriesPerPage"></span>条
@@ -2582,43 +2693,45 @@
 
         // 渲染目录视图 (使用div结构以兼容批量操作)
         function renderListView(entries) {
-            return entries.map(entry => {
-                const elementClass = `entry-item ${bulkModeActive ? 'bulk-mode' : ''} ${selectedAll || selectedEntryIds.has(entry.id) ? 'selected' : ''}`;
-                let entryContent = '';
+             // --- 恢复到之前的逻辑：直接返回 div 元素 --- 
+             return entries.map(entry => {
+                 const elementClass = `entry-item ${bulkModeActive ? 'bulk-mode' : ''} ${selectedAll || selectedEntryIds.has(entry.id) ? 'selected' : ''}`;
+                 let entryContent = '';
 
-                // 批量模式复选框
-                if (bulkModeActive) {
-                    entryContent += `
-                        <div class="select-entry-container">
-                            <input type="checkbox" class="select-entry" 
-                                   ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''} 
-                                   onchange="handleEntrySelection('${entry.id}', this.checked)">
-                        </div>`;
-                }
+                 // 批量模式复选框
+                 if (bulkModeActive) {
+                     entryContent += `
+                         <div class="select-entry-container">
+                             <input type="checkbox" class="select-entry" 
+                                    ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''} 
+                                    onchange="handleEntrySelection('${entry.id}', this.checked)">
+                         </div>`;
+                 }
 
-                // 简化的条目内容
-                entryContent += `
-                    <div class="entry-header">
-                        <h3 class="entry-title">${entry.title}</h3>
-                        <div class="entry-meta">
-                            <span class="entry-id">${entry.id}</span>
-                            <span class="entry-date">${entry.date}</span>
-                            <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
-                                </div>
-                        <div class="entry-actions">
-                                <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
-                                <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
-                        </div>
-                    </div>
-                    <div class="entry-footer">
-                        <div class="entry-keywords">
-                            ${(entry.keywords || []).map(kw => `<span class="keyword-tag" onclick="filterByKeyword('${kw}')">${kw}</span>`).join('')}
-                        </div>
-                    </div>
-                `;
+                 // 简化的条目内容
+                 entryContent += `
+                     <div class="entry-header">
+                         <h3 class="entry-title">${entry.title}</h3>
+                         <div class="entry-meta">
+                             <span class="entry-id">${entry.id}</span>
+                             <span class="entry-date">${entry.date}</span>
+                             <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
+                                 </div>
+                         <div class="entry-actions">
+                                 <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
+                                 <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
+                         </div>
+                     </div>
+                     <div class="entry-footer">
+                         <div class="entry-keywords">
+                             ${(entry.keywords || []).map(kw => `<span class="keyword-tag" onclick="filterByKeyword('${kw}')">${kw}</span>`).join('')}
+                         </div>
+                     </div>
+                 `;
 
-                return `<div class="${elementClass}" data-id="${entry.id}">${entryContent}</div>`;
-            }).join('');
+                 return `<div class="${elementClass}" data-id="${entry.id}">${entryContent}</div>`;
+             }).join('');
+             // --- 恢复结束 ---
         }
 
         // 渲染详细视图
@@ -3840,7 +3953,7 @@
             const pageEntries = deletedEntries.slice(start, end);
             
             // 渲染表格
-            container.innerHTML = `
+            const tableHtml = `
                 <table class="entry-table">
                     <thead>
                         <tr>
@@ -3865,7 +3978,9 @@
                     </tbody>
                 </table>
             `;
-            
+             // 将包裹后的表格 HTML 放入容器
+             container.innerHTML = `<div class="entry-table-container">${tableHtml}</div>`;
+           
             // 更新分页
             updateRecyclePagination(totalPages);
         }
@@ -5040,7 +5155,7 @@
     <!-- 回收站弹窗 -->
     <div id="recycle-bin" class="form-popup" style="width: 90%; display: none; z-index: 9999 !important;">
         <h2>回收站（保留最近50天）</h2>
-        <div class="glass-container">
+        <div class="glass-container entry-table-container"> <!-- 添加类 -->
             <div id="deleted-entries-container"></div>
             <div class="pagination" id="recycle-pagination"></div>
         </div>
