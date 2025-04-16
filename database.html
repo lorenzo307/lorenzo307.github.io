@@ -4146,7 +4146,29 @@
                                     }
                                 });
 
-                                // 合并到现有分类 (使用 update 避免完全覆盖)
+                                // --- 修改开始 ---
+                                // 直接使用导入的分类数据覆盖 Firebase 和本地缓存
+                                if (Object.keys(tempCategories.main).length > 0) {
+                                    await db.ref(getProjectPath('categories')).set(tempCategories); // 使用 set 覆盖
+                                    categories = tempCategories; // 完全替换本地缓存
+                                    updateCategorySelectors(); // 更新下拉列表
+                                    showAlert(`分类结构已从Excel文件导入并覆盖`, 'success');
+                                    console.log("分类结构已从 Excel 文件导入并覆盖:", tempCategories);
+                                } else {
+                                    // 如果Excel中没有分类数据，可以选择清空或保留原有数据
+                                    if (confirm("Excel文件中未找到有效的分类结构。是否要清空现有的分类？")) {
+                                        await db.ref(getProjectPath('categories')).set({ main: {} }); // 清空
+                                        categories = { main: {} };
+                                        updateCategorySelectors();
+                                        showAlert('现有分类结构已清空', 'info');
+                                    } else {
+                                       console.log("保留现有分类结构。");
+                                    }
+                                }
+                                // --- 修改结束 ---
+
+                                // 原来的合并逻辑 (将被替换)
+                                /*
                                 let updates = {};
                                 let newCategoryCount = 0;
                                 Object.entries(tempCategories.main).forEach(([code, data]) => {
@@ -4184,6 +4206,7 @@
                                 } else {
                                    console.log("没有新的分类信息需要导入。");
                                 }
+                                */
                             }
                             
                             // 获取史料数据
