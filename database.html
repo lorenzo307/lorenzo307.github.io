@@ -215,29 +215,29 @@
         }
 
         :root[data-theme="theme3"] {
-            --base-1: #F0F4F8;
-            --base-2: #E6ECF2;
-            --accent-1: #7B90B5;
-            --accent-2: #2E3B51;
-            --text-primary: #2E3B51;
-            --text-secondary: #7B90B5;
-            --glass-bg: rgba(240, 244, 248, 0.88);
-            --glass-border: rgba(123, 144, 181, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(46, 59, 81, 0.12);
-            --glass-hover: rgba(230, 236, 242, 0.2);
-            --glass-active: rgba(230, 236, 242, 0.3);
-            --glass-text: #2E3B51;
-            --glass-text-hover: #7B90B5;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(123, 144, 181, 0.2);
-            --input-text: #2E3B51;
-            --danger-bg: #D32F2F;
+            --base-1: #f8fbff;
+            --base-2: #EFF5FC;
+            --accent-1: #7b90b5;
+            --accent-2: #A3B8D9;
+            --text-primary: #2b6168;
+            --text-secondary: #9e3d28;
+            --glass-bg: rgba(248, 251, 255, 0.92);
+            --glass-border: rgba(92,199,210,0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(92, 199, 210,0.12);
+            --glass-hover: rgba(92, 199, 210,, 0.2);
+            --glass-active: rgba(92, 199, 210,, 0.3);
+            --glass-text: var(--text-primary);
+            --glass-text-hover: #14363a;
+            --input-bg: rgba(255, 255, 255, 0.92);
+            --input-border: rgba(92, 199, 210, 0.25);
+            --input-text: #2b6168;
+            --danger-bg: #F44336;
             --danger-hover: #D32F2F;
-            --cancel-bg: #607D8B;
-            --cancel-hover: #455A64;
-            --primary-bg: #7B90B5;
-            --primary-hover: #2E3B51;
-            --primary-active: #1C2C3B;
+            --cancel-bg: #B0BEC5;
+            --cancel-hover: #90A4AE;
+            --primary-bg: #5cc7d2;
+            --primary-hover: #4aa3ab;
+            --primary-active: #438868d;
             --table-header-bg: rgba(123, 144, 181, 0.25); /* 加深的表头背景 */
         }
 
@@ -294,40 +294,57 @@
         }
 
         :root[data-theme="theme6"] {
-            --base-1: #F0F8E6;
-            --base-2: #E6F0D2;
-            --accent-1: #88B588;
-            --accent-2: #4A6B4A;
-            --text-primary: #4A6B4A;
-            --text-secondary: #88B588;
-            --glass-bg: rgba(240, 248, 230, 0.88);
-            --glass-border: rgba(136, 181, 136, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(74, 107, 74, 0.12);
-            --glass-hover: rgba(230, 240, 210, 0.2);
-            --glass-active: rgba(230, 240, 210, 0.3);
-            --glass-text: #4A6B4A;
-            --glass-text-hover: #88B588;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(136, 181, 136, 0.2);
-            --input-text: #4A6B4A;
-            --danger-bg: #D32F2F;
+            --base-1: #f2f9f1;
+            --base-2: #E6F3E4;
+            
+            /* 强调色 */
+            --accent-1: #88b588;
+            --accent-2: #a8c9a8;
+            
+            /* 透明度扩展 */
+            --base-1-80: rgba(212, 210, 189, 0.8);
+            --accent-1-15: rgba(62, 168, 138, 0.15);
+            
+            /* 文字系统 */
+            --text-primary: #1f5849;
+            --text-secondary: #8f4a6a;
+            
+            /* 玻璃拟态组件 */
+            --glass-bg: rgba(242, 249, 241, 0.9);
+            --glass-border: rgba(62, 168, 138, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(62, 168, 138, 0.12);
+            --glass-hover: rgba(62, 168, 138, 0.2);
+            --glass-active: rgba(62, 168, 138, 0.3);
+            --glass-text: var(--text-primary);
+            --glass-text-hover: #0d3128;
+            
+            /* 输入控件 */
+            --input-bg: rgba(255, 255, 255, 0.85);
+            --input-border: rgba(62, 168, 138, 0.25);
+            --input-text: #1f5849;
+            
+            /* 功能按钮 */
+            --danger-bg: #F44336;
             --danger-hover: #D32F2F;
-            --cancel-bg: #4CAF50;
-            --cancel-hover: #388E3C;
-            --primary-bg: #88B588;
-            --primary-hover: #4CAF50;
-            --primary-active: #388E3C;
-            --table-header-bg: rgba(136, 181, 136, 0.25); /* 加深的表头背景 */
+            --danger-active: #B71C1C;
+            --cancel-bg: #B0BEC5;
+            --cancel-hover: #90A4AE;
+            --cancel-active: #78909C;
+            
+            /* 主操作按钮 */
+            --primary-bg: #3ea88a;
+            --primary-hover: #328670;
+            --primary-active: #256955;
         }
 
         :root[data-theme="theme7"] {
-            --base-1: #F5F0F8;
-            --base-2: #EDE6F2;
-            --accent-1: #A39FCE;
-            --accent-2: #7875A3;
+            --base-1: #F9F7FD;
+            --base-2: #f1ecf7;
+            --accent-1: #9E9BC9;
+            --accent-2: #B9B6DF;
             --text-primary: #4F4C6B;
             --text-secondary: #7875A3;
-            --glass-bg: rgba(245, 240, 248, 0.88);
+            --glass-bg: rgba(249, 247, 253, 0.95);
             --glass-border: rgba(163, 159, 206, 0.15);
             --glass-shadow: 0 4px 20px -10px rgba(120, 117, 163, 0.12);
             --glass-hover: rgba(237, 230, 242, 0.2);
