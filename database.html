@@ -2441,6 +2441,12 @@
             lastSaveTimestamp = Date.now();
             startAutoSaveSystem();
             
+            // 如果是新建条目，清理可能存在的旧草稿绑定
+            if (!editingId) {
+                localStorage.removeItem('lastDraftId');
+                entryDraft = null;
+            }
+            
             // 新增草稿检查
             checkDraft();
         }
@@ -2552,8 +2558,22 @@
                     updatedAt: now.getTime()
                 };
                 
-                if (!entryDraft) entryDraft = `AUTO_${now.getTime()}`;
-                await db.ref(getProjectPath(`drafts/${entryDraft}`)).set(draftData);
+                // 优化草稿路径：编辑模式按条目ID存储，新建模式独立存储
+                const draftPath = editingId ? 
+                    `drafts/${editingId}` :  // 编辑模式：按条目ID存储
+                    `drafts/NEW_${Date.now()}`; // 新建模式：独立存储
+                
+                // 如果是新建条目，生成新的草稿ID
+                if (!editingId) {
+                    entryDraft = `NEW_${Date.now()}`;
+                    // 保存最新草稿ID到localStorage
+                    localStorage.setItem('lastDraftId', entryDraft);
+                } else {
+                    // 编辑模式使用条目ID作为草稿ID
+                    entryDraft = editingId;
+                }
+                
+                await db.ref(getProjectPath(draftPath)).set(draftData);
                 
                 // 更新最后保存时间戳
                 lastSaveTimestamp = Date.now();
@@ -5422,27 +5442,77 @@
 
         // 新增 checkDraft 函数
         async function checkDraft() {
-            // 检查是否有最近的草稿
-            const draftsRef = db.ref(getProjectPath('drafts'));
-            const snapshot = await draftsRef.once('value');
-            const drafts = snapshot.val() || {};
-            
-            // 查找最新的草稿
-            if (Object.keys(drafts).length > 0) {
-                const latestDraft = Object.entries(drafts)
-                    .map(([id, draft]) => ({ id, ...draft }))
-                    .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+            // 编辑模式：只检查当前条目的草稿
+            if (editingId) {
+                const draftRef = db.ref(getProjectPath(`drafts/${editingId}`));
+                const snapshot = await draftRef.once('value');
                 
-                const saveTime = new Date(latestDraft.updatedAt).toLocaleString();
-                if (latestDraft && confirm(`检测到未提交的草稿（最后保存：${saveTime}），是否恢复？`)) {
-                    populateForm(latestDraft);
-                    entryDraft = latestDraft.id;
+                if (snapshot.exists()) {
+                    const draft = snapshot.val();
+                    const saveTime = new Date(draft.updatedAt).toLocaleString();
+                    if (confirm(`检测到本条未提交的修改（最后保存：${saveTime}），是否恢复？`)) {
+                        populateForm(draft);
+                        entryDraft = editingId; // 绑定到当前编辑ID
+                        
+                        // 初始化保存时间显示
+                        document.getElementById('last-save-time').innerHTML = `
+                            <span class="material-icons">history</span>
+                            已恢复草稿：${saveTime}
+                        `;
+                    }
+                }
+            } 
+            // 新建模式：检查最新的新建草稿
+            else {
+                // 先检查是否有localStorage中保存的草稿ID
+                const lastDraftId = localStorage.getItem('lastDraftId');
+                if (lastDraftId) {
+                    const draftRef = db.ref(getProjectPath(`drafts/${lastDraftId}`));
+                    const snapshot = await draftRef.once('value');
                     
-                    // 初始化保存时间显示
-                    document.getElementById('last-save-time').innerHTML = `
-                        <span class="material-icons">history</span>
-                        已恢复草稿：${saveTime}
-                    `;
+                    if (snapshot.exists()) {
+                        const draft = snapshot.val();
+                        const saveTime = new Date(draft.updatedAt).toLocaleString();
+                        if (confirm(`检测到未提交的新建草稿（最后保存：${saveTime}），是否恢复？`)) {
+                            populateForm(draft);
+                            entryDraft = lastDraftId;
+                            
+                            // 初始化保存时间显示
+                            document.getElementById('last-save-time').innerHTML = `
+                                <span class="material-icons">history</span>
+                                已恢复草稿：${saveTime}
+                            `;
+                            return;
+                        }
+                    }
+                }
+                
+                // 如果没有指定草稿ID或该草稿不存在，查找最新的新建草稿
+                const draftsRef = db.ref(getProjectPath('drafts'));
+                const snapshot = await draftsRef.orderByKey()
+                    .startAt('NEW_')
+                    .endAt('NEW_\uf8ff')
+                    .limitToLast(1)
+                    .once('value');
+                
+                const drafts = snapshot.val() || {};
+                
+                if (Object.keys(drafts).length > 0) {
+                    const draftId = Object.keys(drafts)[0];
+                    const draft = drafts[draftId];
+                    
+                    const saveTime = new Date(draft.updatedAt).toLocaleString();
+                    if (confirm(`检测到未提交的新建草稿（最后保存：${saveTime}），是否恢复？`)) {
+                        populateForm(draft);
+                        entryDraft = draftId;
+                        localStorage.setItem('lastDraftId', draftId);
+                        
+                        // 初始化保存时间显示
+                        document.getElementById('last-save-time').innerHTML = `
+                            <span class="material-icons">history</span>
+                            已恢复草稿：${saveTime}
+                        `;
+                    }
                 }
             }
         }
