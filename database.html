@@ -1962,17 +1962,6 @@
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script> <!-- 恢复 Quill JS -->
     <!-- <script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/super-build/ckeditor.js"></script> --> <!-- 移除 CKEditor JS -->
     <script>
-        // 页面加载状态检查
-        let pageLoaded = false;
-        let firebaseInitialized = false;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            pageLoaded = true;
-            if (firebaseInitialized) {
-                initializeApp();
-            }
-        });
-
         // Firebase初始化
         const firebaseConfig = {
             apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
@@ -1987,135 +1976,6 @@
         const app = firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        firebaseInitialized = true;
-        
-        if (pageLoaded) {
-            initializeApp();
-        }
-
-        // 应用初始化函数
-        function initializeApp() {
-            console.log('开始初始化应用...');
-            
-            // 初始化全局变量
-            window.entries = [];
-            window.categories = { main: {} };
-            window.currentPage = 1;
-            window.ENTRIES_PER_PAGE = 10;
-            window.searchQuery = '';
-            window.advancedFilter = {
-                startDate: null,
-                endDate: null,
-                tags: [],
-                keywords: [],
-                keywordLogic: 'OR'
-            };
-
-            // 初始化UI组件
-            initializeUIComponents();
-            
-            // 设置认证状态监听
-            auth.onAuthStateChanged(handleAuthStateChange);
-        }
-
-        // 初始化UI组件
-        function initializeUIComponents() {
-            // 初始化编辑器
-            if (typeof Quill !== 'undefined') {
-                window.quill = new Quill('#editor-container', {
-                    theme: 'snow',
-                    placeholder: '请输入内容...'
-                });
-                
-                window.logQuill = new Quill('#log-editor-container', {
-                    theme: 'snow',
-                    placeholder: '请输入日志内容...'
-                });
-            }
-        }
-
-        // 处理认证状态变化
-        async function handleAuthStateChange(user) {
-            console.log('认证状态变更', new Date().toISOString());
-            
-            if (window.isInitializing) {
-                console.log('初始化进行中，跳过');
-                return;
-            }
-            
-            window.isInitializing = true;
-            
-            try {
-                if (user) {
-                    await handleUserAuthenticated(user);
-                } else {
-                    handleUserSignedOut();
-                }
-            } catch (error) {
-                console.error('认证处理失败:', error);
-                handleAuthError(error);
-            }
-        }
-
-        // 处理用户认证成功
-        async function handleUserAuthenticated(user) {
-            try {
-                const projectId = new URLSearchParams(window.location.search).get('project') || 
-                                localStorage.getItem('currentProject');
-                
-                if (!projectId) {
-                    throw new Error('缺失项目ID参数');
-                }
-
-                showLoading('正在验证课题访问权限...');
-                
-                const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
-                const projectSnapshot = await projectRef.once('value');
-                
-                if (!projectSnapshot.exists()) {
-                    throw new Error('指定课题不存在或无访问权限');
-                }
-
-                // 保存会话信息
-                localStorage.setItem('currentProject', projectId);
-                localStorage.setItem('currentSession', JSON.stringify({
-                    projectId,
-                    timestamp: Date.now()
-                }));
-
-                // 初始化页面
-                const projectName = projectSnapshot.val().name || '未命名课题';
-                document.title = `${projectName} - 史料数据库`;
-                document.getElementById('projectTitle').textContent = projectName;
-                
-                showLoading('正在加载数据...');
-                await initDataListeners();
-                await restoreCachedSessions();
-                
-            } catch (error) {
-                throw error;
-            } finally {
-                window.isInitializing = false;
-            }
-        }
-
-        // 处理用户退出
-        function handleUserSignedOut() {
-            console.log('用户未登录，跳转到登录页');
-            clearInterval(window.trackingInterval);
-            localStorage.removeItem('currentSession');
-            window.location.replace('index.html');
-        }
-
-        // 处理认证错误
-        function handleAuthError(error) {
-            console.error('认证错误:', error);
-            hideLoading();
-            showAlert(error.message, 'error');
-            setTimeout(() => {
-                window.location.replace('index.html');
-            }, 2000);
-        }
 
         // 全局数据监听器
         let unsubscribeEntries = null;
@@ -2123,242 +1983,88 @@
 
         // 获取项目路径
         function getProjectPath(subPath = "") {
-            const projectId = new URLSearchParams(window.location.search).get('project') || 
-                             localStorage.getItem('currentProject');
-            
-            // 新增校验逻辑
+            const user = auth.currentUser;
+            if (!user) {
+                alert("用户未登录，即将跳转");
+                window.location.href = "index.html";
+                return;
+            }
+            // 优先从 URL 参数获取 projectId
+            const urlParams = new URLSearchParams(window.location.search);
+            let projectId = urlParams.get('project');
+
+            // 如果 URL 参数没有，再尝试从 localStorage 获取 (作为备选)
             if (!projectId) {
-                showAlert("项目ID缺失，请从课题列表重新进入", 'error');
-                setTimeout(() => location.href = 'index.html', 2000);
-                throw new Error("Invalid project ID");
+                projectId = localStorage.getItem('currentProject');
             }
             
-            return `users/${auth.currentUser.uid}/projects/${projectId}/${subPath}`;
+            // 如果都没有，使用 'default' (或者可以报错提示)
+            if (!projectId) {
+                console.error("无法确定项目 ID！");
+                projectId = 'default'; // 或者 return; 阻止后续操作
+            }
+
+            // 保存当前项目 ID 到 localStorage，以便某些情况下可以恢复状态
+            localStorage.setItem('currentProject', projectId);
+
+            return `users/${user.uid}/projects/${projectId}/${subPath}`;
         }
 
         // 初始化数据监听
-        async function initDataListeners() {
-            console.log('初始化数据监听开始', new Date().toISOString());
-            
-            // 取消现有监听器
-            if(typeof unsubscribeEntries === 'function') {
-                unsubscribeEntries();
-                unsubscribeEntries = null;
-            }
-            if(typeof unsubscribeCategories === 'function') {
-                unsubscribeCategories();
-                unsubscribeCategories = null;
-            }
-            
-            return new Promise((resolve, reject) => {
-                let timeout = setTimeout(() => {
-                    hideLoading();
-                    reject(new Error("数据加载超时，请检查网络连接"));
-                }, 15000);
-
-                const errorHandler = (error) => {
-                    clearTimeout(timeout);
-                    console.error('监听失败:', error);
-                    if (error.name === 'ReferenceError') {
-                        if (!window.advancedFilter) {
-                            window.advancedFilter = {
-                                startDate: null,
-                                endDate: null,
-                                tags: [],
-                                keywords: [],
-                                keywordLogic: 'OR'
-                            };
-                        }
-                        setTimeout(() => {
-                            renderEntries();
-                            resolve();
-                        }, 100);
-                    } else {
-                        reject(error);
-                    }
-                    hideLoading();
-                };
-
-                let initialEntriesLoaded = false;
-                let initialCategoriesLoaded = false;
-
-                const checkAllDataLoaded = () => {
-                    if (initialEntriesLoaded && initialCategoriesLoaded) {
-                        clearTimeout(timeout);
-                        hideLoading();
-                        console.log('所有数据加载完成', new Date().toISOString());
-                        if (typeof VirtualScroll !== 'undefined') {
-                            initializeVirtualScroll();
-                        }
-                        resolve();
-                    }
-                };
-
-                try {
-                    const entriesPath = getProjectPath('entries');
-                    const categoriesPath = getProjectPath('categories');
-                    
-                    console.log('设置条目监听路径:', entriesPath);
-                    console.log('设置分类监听路径:', categoriesPath);
-
-                    unsubscribeEntries = db.ref(entriesPath).on('value', 
-                        (snapshot) => {
-                            try {
-                                console.log('收到条目数据更新');
-                                const entriesData = snapshot.val();
-                                if (entriesData) {
-                                    entries = Object.values(entriesData).map(entry => ({
+        function initDataListeners() {
+            let initialEntriesLoaded = false; // 添加标志位
+            unsubscribeEntries = db.ref(getProjectPath('entries')).on('value', (snapshot) => {
+                entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
+                    // 为可能缺失的字段提供默认值
                     links: [],
                     keywords: [],
                     analysis: '',
-                                        ...entry
-                                    }));
-                                    console.log('处理后的条目数量:', entries.length);
-                                } else {
-                                    entries = [];
-                                    console.log('没有条目数据');
-                                }
-                                
+                    ...entry // 原始数据会覆盖默认值
+                })) : [];
+                renderEntries();
                 if (!initialEntriesLoaded) {
+                    hideLoading(); // 首次加载完成隐藏提示
                     initialEntriesLoaded = true;
-                                    checkAllDataLoaded();
-                                }
-                                
-                                renderEntries();
-                            } catch (err) {
-                                console.error('处理条目数据时出错:', err);
-                                errorHandler(err);
-                            }
-                        }, 
-                        errorHandler
-                    );
+                }
+            });
 
-                    unsubscribeCategories = db.ref(categoriesPath).on('value',
-                        (snapshot) => {
-                            try {
-                                console.log('收到分类数据更新');
+            unsubscribeCategories = db.ref(getProjectPath('categories')).on('value', (snapshot) => {
                 categories = snapshot.val() || { main: {} };
-                                console.log('分类数据:', categories);
-                                
-                                if (!initialCategoriesLoaded) {
-                                    initialCategoriesLoaded = true;
-                                    checkAllDataLoaded();
-                                }
-                                
                 updateCategorySelectors();
                 renderEntries();
-                            } catch (err) {
-                                console.error('处理分类数据时出错:', err);
-                                errorHandler(err);
-                            }
-                        },
-                        errorHandler
-                    );
-                } catch (error) {
-                    console.error('设置数据监听时出错:', error);
-                    errorHandler(error);
-                }
             });
         }
 
         // 认证状态监听
         auth.onAuthStateChanged(async user => {
-            console.log('认证状态变更', new Date().toISOString());
-            
-            // 防止重复初始化
-            if (window.isInitializing) {
-                console.log('初始化进行中，跳过');
-                return;
-            }
-            
-            window.isInitializing = true;
-            
-            try {
             if (user) {
-                    // 获取项目ID
-                    const projectId = new URLSearchParams(window.location.search).get('project') || 
-                                    localStorage.getItem('currentProject');
-                    
-                    if (!projectId) {
-                        console.error('缺失项目ID参数');
-                        showAlert("请从课题列表选择要访问的课题", 'error');
-                        window.isInitializing = false;
-                        setTimeout(() => {
-                            window.location.replace('index.html');
-                        }, 2000);
-                        return;
-                    }
-
-                    showLoading('正在验证课题访问权限...');
-                    
-                    try {
-                        // 验证项目存在性和访问权限
+                const projectId = new URLSearchParams(window.location.search).get('project');
+                
+                // 从Firebase实时数据库获取项目名称
                 const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
-                        const projectSnapshot = await projectRef.once('value');
-                        
-                        if (!projectSnapshot.exists()) {
-                            throw new Error("指定课题不存在或无访问权限");
-                        }
-
-                        // 保存当前项目ID
-                        localStorage.setItem('currentProject', projectId);
-                        
-                        // 保存会话信息
-                        localStorage.setItem('currentSession', JSON.stringify({
-                            projectId,
-                            timestamp: Date.now()
-                        }));
-
-                        const projectName = projectSnapshot.val().name || '未命名课题';
+                const snapshot = await projectRef.once('value');
+                const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
+                
                 document.title = `${projectName} - 史料数据库`;
                 document.getElementById('projectTitle').textContent = projectName;
                 
-                        showLoading('正在加载数据...');
-                        
-                        // 初始化全局变量
-                        window.advancedFilter = {
-                            startDate: null,
-                            endDate: null,
-                            tags: [],
-                            keywords: [],
-                            keywordLogic: 'OR'
-                        };
-                        
-                        await initDataListeners();
-                        await restoreCachedSessions();
-                        
-                        window.isInitializing = false;
-                    } catch (error) {
-                        console.error('项目验证失败:', error);
-                        window.isInitializing = false;
-                        showAlert(error.message, 'error');
-                        setTimeout(() => {
-                            window.location.replace('index.html');
-                        }, 2000);
-                    }
+                showLoading('正在加载数据...'); // 显示加载提示
+                initDataListeners();
+                // initTimeTracking(); // 暂时注释掉，函数未定义
+                restoreCachedSessions();
+             
             } else {
-                    console.log('用户未登录，跳转到登录页');
-                    window.isInitializing = false;
+                window.location.href = 'index.html';
                 clearInterval(trackingInterval);
                 localStorage.removeItem('currentSession');
-                    window.location.replace('index.html');
-                }
-            } catch (error) {
-                console.error('初始化失败:', error);
-                window.isInitializing = false;
-                hideLoading();
-                showAlert(error.message, 'error');
-                setTimeout(() => {
-                    window.location.replace('index.html');
-                }, 2000);
             }
         });
 
         // 全局变量
         let entries = [];
         let categories = { main: {} };
-        let quill = null;
-        let logQuill = null;
+        let quill = null; // 恢复 Quill 实例
+        let logQuill = null; // 恢复 Quill 实例
         let currentPage = 1;
         let editingId = null;
         let editingLogId = null;
@@ -2370,83 +2076,25 @@
         let filteredLogs = [];
         let currentLogPage = 1;
         let currentLogFilterDate = null;
-        let saveDraftTimeout = null;
-
-        // 添加高级筛选相关变量
         let advancedFilter = {
             startDate: null,
             endDate: null,
             tags: [],
             keywords: [],
-            keywordLogic: 'OR'
+            keywordLogic: 'AND'
         };
-
-        // 节流函数
-        function throttle(func, wait) {
-            let timeout;
-            return function() {
-                if (!timeout) {
-                    timeout = setTimeout(() => {
-                        func.apply(this, arguments);
-                        timeout = null;
-                    }, wait);
-                }
-            };
-        }
-
-        // 自动保存草稿
-        const saveDraft = throttle(function() {
-            const draftData = {
-                date: document.querySelector('[name="date"]').value,
-                mainCat: document.querySelector('[name="main-cat"]').value,
-                subCat: document.querySelector('[name="sub-cat"]').value,
-                title: document.querySelector('[name="title"]').value,
-                content: quill ? quill.root.innerHTML : '',
-                analysis: window.analysisQuill ? window.analysisQuill.root.innerHTML : '',
-                links: document.querySelector('[name="links"]').value,
-                keywords: document.querySelector('[name="keywords"]').value
-            };
-            
-            localStorage.setItem('entryDraft', JSON.stringify(draftData));
-            console.log('自动保存成功');
-        }, 2000);
-
-        // 绑定自动保存事件
-        function bindAutoSave() {
-            const inputs = [
-                '[name="date"]', 
-                '[name="main-cat"]', 
-                '[name="sub-cat"]',
-                '[name="title"]',
-                '[name="links"]',
-                '[name="keywords"]'
-            ];
-            
-            inputs.forEach(selector => {
-                document.querySelector(selector).addEventListener('input', saveDraft);
-            });
-            
-            if (quill) {
-                quill.on('text-change', saveDraft);
-            }
-            if (window.analysisQuill) {
-                window.analysisQuill.on('text-change', saveDraft);
-            }
-        }
         
         // --- 新增加载提示函数 ---
         function showLoading(message = '加载中...') {
-            console.log('显示加载提示:', message);
             const overlay = document.getElementById('loading-overlay');
             const msgElement = document.getElementById('loading-message');
             if (overlay && msgElement) {
                 msgElement.textContent = message;
-                overlay.style.display = 'flex';
+                overlay.style.display = 'flex'; // 使用 flex 居中
             }
         }
 
         function hideLoading() {
-            console.log('关闭加载提示', new Date().toISOString());
             const overlay = document.getElementById('loading-overlay');
             if (overlay) {
                 overlay.style.display = 'none';
@@ -2727,2889 +2375,31 @@
         // --- 结束恢复 ---
 
         // 表单操作
-        function showForm() {
+        function showForm() { // 移除 async
             const form = document.getElementById('entry-form');
             form.style.display = 'block';
-            form.classList.remove('closing');
-            initQuill();
+            form.classList.remove('closing'); // 确保移除关闭动画类
+            initQuill(); // 恢复
+             // --- 移除 CKEditor 初始化 ---
+            // entryContentEditor = await initCKEditor('entry-content-editor', entryContentEditor);
+            // entryAnalysisEditor = await initCKEditor('entry-analysis-editor', entryAnalysisEditor);
              updateSubCats();
-            
-            // 加载草稿数据
-            const draft = JSON.parse(localStorage.getItem('entryDraft'));
-            if (draft && !editingId) { // 只在新建条目时恢复草稿
-                const restore = confirm('检测到未保存的编辑内容，是否恢复？');
-                if (restore) {
-                    document.querySelector('[name="date"]').value = draft.date || '';
-                    document.querySelector('[name="main-cat"]').value = draft.mainCat || '';
-                    updateSubCats();
-                    setTimeout(() => {
-                        document.querySelector('[name="sub-cat"]').value = draft.subCat || '';
-                    }, 100);
-                    document.querySelector('[name="title"]').value = draft.title || '';
-                    if (quill) quill.root.innerHTML = draft.content || '';
-                    if (window.analysisQuill) window.analysisQuill.root.innerHTML = draft.analysis || '';
-                    document.querySelector('[name="links"]').value = draft.links || '';
-                    document.querySelector('[name="keywords"]').value = draft.keywords || '';
-                }
-            }
-            
-            // 绑定自动保存
-            bindAutoSave();
         }
 
-        function hideForm() {
+        function hideForm() { // 移除 async
             const form = document.getElementById('entry-form');
-            form.classList.add('closing');
-            
-            setTimeout(() => {
+            form.classList.add('closing'); // 添加关闭动画类
+            // --- 移除 CKEditor 销毁 ---
+            //  if (entryContentEditor) { ... }
+            //  if (entryAnalysisEditor) { ... }
+            setTimeout(() => { // 等待动画结束后再隐藏和重置
                 form.style.display = 'none';
-                document.querySelector('#entry-form form').reset();
-                if (quill) quill.root.innerHTML = '';
-                if (window.analysisQuill) window.analysisQuill.root.innerHTML = '';
-                
-                // 仅在编辑现有条目时清除草稿
-                if (editingId) {
-                    localStorage.removeItem('entryDraft');
-                }
-                
+                document.querySelector('#entry-form form').reset(); // 更精确的选择器
+                 if (quill) quill.root.innerHTML = ''; // 恢复
+                 if (window.analysisQuill) window.analysisQuill.root.innerHTML = ''; // 恢复
                  editingId = null;
-                form.classList.remove('closing');
-            }, 200);
-        }
-
-        // 分类管理
-        function showCategoryManager() {
-            const manager = document.getElementById('category-manager');
-            manager.style.display = 'block';
-            manager.classList.remove('closing');
-            renderCategoryManager();
-        }
-
-        function hideCategoryManager() {
-            const manager = document.getElementById('category-manager');
-            manager.classList.add('closing');
-            setTimeout(() => {
-                manager.style.display = 'none';
-                manager.classList.remove('closing');
-            }, 200);
-        }
-
-        function renderCategoryManager() {
-            const container = document.getElementById('main-categories');
-            container.innerHTML = Object.entries(categories.main)
-                .map(([code, data]) => `
-                    <div class="category-item">
-                        <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
-                        <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
-                        <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
-                    </div>
-                    ${data.sub.map(sub => `
-                        <div class="category-item" style="margin-left:20px">
-                            <input value="${sub.split('-')[1]}" 
-                                   onchange="updateSubCategory('${code}', '${sub}', this.value)">
-                            <button class="danger-btn" 
-                                    onclick="removeSubCategory('${code}', '${sub}')">删除</button>
-                        </div>
-                    `).join('')}
-                `).join('');
-        }
-
-        // 分类操作
-        function addMainCategory() {
-            const code = prompt("请输入主类代码（2位大写字母）：");
-            // 验证：必须是2位大写字母
-            if (code && /^[A-Z]{2}$/.test(code)) {
-                categories.main[code] = { name: '新分类', sub: [] };
-                renderCategoryManager();
-            } else {
-                alert("主类代码格式错误，请输入2位大写字母。");
-            }
-        }
-
-        function removeMainCategory(code) {
-            if (confirm("确定要删除这个主类及其所有子类吗？")) {
-                delete categories.main[code];
-                renderCategoryManager();
-            }
-        }
-
-        function addSubCategory(mainCode) {
-            const subCode = prompt("请输入子类代码（小写字母）：");
-            // 验证：必须是小写字母
-            if (subCode && /^[a-z]+$/.test(subCode)) {
-                const subName = prompt("请输入子类名称：");
-                if (subName) { // 确保子类名称不为空
-                   categories.main[mainCode].sub.push(`${subCode}-${subName}`);
-                   renderCategoryManager();
-                }
-            } else {
-                 alert("子类代码格式错误，请输入小写字母。");
-            }
-        }
-
-        function removeSubCategory(mainCode, subCode) {
-            categories.main[mainCode].sub = categories.main[mainCode].sub.filter(
-                sc => sc !== subCode
-            );
-            renderCategoryManager();
-        }
-
-        async function updateMainCategory(code, newName) {
-            const oldCode = code; // 保存旧代码用于查找条目
-            
-            // 查询可能影响的条目数量
-            const entriesRef = db.ref(getProjectPath('entries'));
-            const snapshot = await entriesRef.once('value');
-            const entriesData = snapshot.val() || {};
-            const affectedEntries = Object.values(entriesData).filter(entry => entry.mainCat === oldCode).length;
-            
-            // 提示用户
-            const newCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的主类代码（2位大写字母）：`, code);
-            
-            // 验证新代码格式
-            if (newCode && /^[A-Z]{2}$/.test(newCode)) {
-                 if (newCode !== oldCode) {
-                     if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
-                         return;
-                     }
-                     
-                     // 更新分类数据
-                     categories.main[newCode] = {...categories.main[oldCode]};
-                     categories.main[newCode].name = newName;
-                     delete categories.main[oldCode];
-                     
-                     // 更新所有相关条目
-                     const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
-                         if (entry.mainCat === oldCode) {
-                             // 删除旧条目
-                             await entriesRef.child(id).remove();
-                             // 创建新条目
-                             entry.mainCat = newCode;
-                             entry.id = await generateID(entry); // 重新生成ID
-                             await entriesRef.child(entry.id).set(entry);
-                         }
-                     });
-                     
-                     await Promise.all(updatePromises);
-                     renderCategoryManager();
-                     
-                     // 提示更新成功
-                     if (affectedEntries > 0) {
-                         alert(`主类代码已从 ${oldCode} 更新为 ${newCode}，共更新了 ${affectedEntries} 个条目的编号。`);
-                     } else {
-                         alert(`主类代码已从 ${oldCode} 更新为 ${newCode}。`);
-                     }
-                 } else {
-                     // 仅修改名称
-                     categories.main[oldCode].name = newName;
-                     renderCategoryManager();
-                 }
-            } else {
-                alert("新主类代码格式错误，请输入2位大写字母。");
-            }
-        }
-
-        async function updateSubCategory(mainCode, oldSub, newName) {
-            const [oldSubCode] = oldSub.split('-');
-            
-            // 查询可能影响的条目数量
-            const entriesRef = db.ref(getProjectPath('entries'));
-            const snapshot = await entriesRef.once('value');
-            const entriesData = snapshot.val() || {};
-            const affectedEntries = Object.values(entriesData).filter(entry => 
-                entry.mainCat === mainCode && entry.subCat === oldSub
-            ).length;
-            
-            // 提示用户
-            const newSubCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的子类代码（小写字母）：`, oldSubCode);
-            
-            // 验证新子类代码格式
-            if (newSubCode && /^[a-z]+$/.test(newSubCode)) {
-                const index = categories.main[mainCode].sub.indexOf(oldSub);
-                const newSub = `${newSubCode}-${newName}`;
-                
-                // 检查代码是否真的变更
-                if (oldSubCode !== newSubCode) {
-                    if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
-                        return;
-                    }
-                    
-                    // 更新分类数据
-                    categories.main[mainCode].sub[index] = newSub;
-                    
-                    // 更新所有相关条目
-                    const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
-                        if (entry.mainCat === mainCode && entry.subCat === oldSub) {
-                            // 删除旧条目
-                            await entriesRef.child(id).remove();
-                            // 创建新条目
-                            entry.subCat = newSub;
-                            entry.id = await generateID(entry); // 重新生成ID
-                            await entriesRef.child(entry.id).set(entry);
-                        }
-                    });
-                    
-                    await Promise.all(updatePromises);
-                    
-                    // 提示更新成功
-                    if (affectedEntries > 0) {
-                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}，共更新了 ${affectedEntries} 个条目的编号。`);
-                    } else {
-                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}。`);
-                    }
-                } else {
-                    // 仅修改名称，不更改代码
-                    categories.main[mainCode].sub[index] = `${oldSubCode}-${newName}`;
-                }
-                
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>史料数据库</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"> <!-- 恢复 Quill CSS -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
-    
-    <style>
-        /* 更新根变量 */
-        :root {
-            --base-1: #FFF7F1;  /* 浅米背景色 */
-            --base-2: #FFE4C9;  /* 奶油橘辅助色 */
-            --accent-1: #E78895;  /* 珊瑚红主强调色 */
-            --accent-2: #BED1CF;  /* 灰蓝绿次强调色 */
-            --base-1-80: rgba(255, 247, 241, 0.8);
-            --accent-1-15: rgba(231, 136, 149, 0.15);
-            --text-primary: #8C454F;  /* 珊瑚红深色变体 */
-            --text-secondary: #4F6B68;  /* 灰蓝绿深色变体 */
-            --glass-bg: rgba(255, 247, 241, 0.88);
-            --glass-border: rgba(231, 136, 149, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(231, 136, 149, 0.12);
-            --glass-hover: rgba(231, 136, 149, 0.2);
-            --glass-active: rgba(231, 136, 149, 0.3);
-            --glass-text: var(--text-primary);
-            --glass-text-hover: #1b0000;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(231, 136, 149, 0.2);
-            --input-text: #8C454F;
-            --danger-bg: #F44336;
-            --danger-hover: #D32F2F;
-            --cancel-bg: #B0BEC5;
-            --cancel-hover: #90A4AE;
-        }
-
-        /* 暗色模式变量 */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --base-1: #1A120B;  /* 深褐底色 */
-                --base-2: #362312;  /* 深咖啡色 */
-                --text-primary: #FFB5C2;  /* 浅珊瑚色 */
-                --text-secondary: #BED1CF;  /* 灰蓝绿 */
-                --glass-bg: rgba(26, 18, 11, 0.8);
-                --glass-border: rgba(255, 255, 255, 0.1);
-                --glass-hover: rgba(255, 255, 255, 0.15);
-                --glass-active: rgba(255, 255, 255, 0.2);
-                --glass-text: #FFB5C2;
-                --glass-text-hover: #ffffff;
-                --input-bg: rgba(255, 255, 255, 0.12);
-                --input-border: rgba(255, 255, 255, 0.2);
-                --input-text: #FFB5C2;
-                --danger-bg: #D32F2F;
-                --danger-hover: #B71C1C;
-                --cancel-bg: #607D8B;
-                --cancel-hover: #455A64;
-            }
-        }
-
-        /* 更新body背景 */
-        body {
-            font-family: 'Noto Serif SC', serif;
-            margin: 0;
-            padding: 40px 20px;
-            background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 24px;
-        }
-
-        /* 更新导航栏样式 */
-        .header {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            background: var(--base-1-80) !important;
-            backdrop-filter: blur(12px) saturate(180%);
-            -webkit-backdrop-filter: blur(12px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            box-shadow: var(--glass-shadow);
-            padding: 16px 24px;
-            position: relative;
-            z-index: 100;
-        }
-
-        /* 添加主题选择器样式 */
-        .theme-selector {
-            position: relative;
-            margin-left: 16px;
-        }
-
-        .theme-selector button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            cursor: pointer;
-        }
-
-        .theme-selector .theme-options {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 8px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            padding: 8px;
-            display: none;
-            min-width: 200px;
-            box-shadow: var(--glass-shadow);
-        }
-
-        .theme-selector .theme-options.show {
-            display: block;
-        }
-
-        .theme-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.3s;
-        }
-
-        .theme-option:hover {
-            background: var(--glass-hover);
-        }
-
-        .theme-preview {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .theme-preview div {
-            flex: 1;
-        }
-
-        /* 添加主题变量 */
-        :root[data-theme="theme1"] {
-            --base-1: #FFF7F1;
-            --base-2: #FFE4C9;
-            --accent-1: #E78895;
-            --accent-2: #BED1CF;
-            --text-primary: #8C454F;
-            --text-secondary: #4F6B68;
-            --glass-bg: rgba(255, 247, 241, 0.88);
-            --glass-border: rgba(231, 136, 149, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(231, 136, 149, 0.12);
-            --glass-hover: rgba(231, 136, 149, 0.2);
-            --glass-active: rgba(231, 136, 149, 0.3);
-            --glass-text: #8C454F;
-            --glass-text-hover: #1b0000;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(231, 136, 149, 0.2);
-            --input-text: #8C454F;
-            --danger-bg: #F44336;
-            --danger-hover: #D32F2F;
-            --cancel-bg: #B0BEC5;
-            --cancel-hover: #90A4AE;
-            --primary-bg: #E78895;
-            --primary-hover: #D32F2F;
-            --primary-active: #C2185B;
-        }
-
-        :root[data-theme="theme2"] {
-            --base-1: #F8F4E8;
-            --base-2: #F0E6D2;
-            --accent-1: #8B7355;
-            --accent-2: #6B5B4D;
-            --text-primary: #4A3B32;
-            --text-secondary: #6B5B4D;
-            --glass-bg: rgba(248, 244, 232, 0.88);
-            --glass-border: rgba(139, 115, 85, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(107, 91, 77, 0.12);
-            --glass-hover: rgba(240, 230, 210, 0.2);
-            --glass-active: rgba(240, 230, 210, 0.3);
-            --glass-text: #4A3B32;
-            --glass-text-hover: #6B5B4D;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(139, 115, 85, 0.2);
-            --input-text: #4A3B32;
-            --danger-bg: #E53935;
-            --danger-hover: #D32F2F;
-            --cancel-bg: #8D6E63;
-            --cancel-hover: #6D4C41;
-            --primary-bg: #8B7355;
-            --primary-hover: #6B4C3B;
-            --primary-active: #5D4037;
-            --table-header-bg: rgba(139, 115, 85, 0.25); /* 加深的表头背景 */
-        }
-
-        :root[data-theme="theme3"] {
-            --base-1: #f8fbff;
-            --base-2: #EFF5FC;
-            --accent-1: #7b90b5;
-            --accent-2: #A3B8D9;
-            --text-primary: #2b6168;
-            --text-secondary: #9e3d28;
-            --glass-bg: rgba(248, 251, 255, 0.92);
-            --glass-border: rgba(92,199,210,0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(92, 199, 210,0.12);
-            --glass-hover: rgba(92, 199, 210,, 0.2);
-            --glass-active: rgba(92, 199, 210,, 0.3);
-            --glass-text: var(--text-primary);
-            --glass-text-hover: #14363a;
-            --input-bg: rgba(255, 255, 255, 0.92);
-            --input-border: rgba(92, 199, 210, 0.25);
-            --input-text: #2b6168;
-            --danger-bg: #F44336;
-            --danger-hover: #D32F2F;
-            --cancel-bg: #B0BEC5;
-            --cancel-hover: #90A4AE;
-            --primary-bg: #5cc7d2;
-            --primary-hover: #4aa3ab;
-            --primary-active: #438868d;
-            --table-header-bg: rgba(123, 144, 181, 0.25); /* 加深的表头背景 */
-        }
-
-        :root[data-theme="theme4"] {
-            --base-1: #FFF5E6;
-            --base-2: #FFE8CC;
-            --accent-1: #E6A35C;
-            --accent-2: #B3743C;
-            --text-primary: #5E473C;
-            --text-secondary: #B3743C;
-            --glass-bg: rgba(255, 245, 230, 0.88);
-            --glass-border: rgba(230, 163, 92, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(179, 116, 60, 0.12);
-            --glass-hover: rgba(255, 232, 204, 0.2);
-            --glass-active: rgba(255, 232, 204, 0.3);
-            --glass-text: #5E473C;
-            --glass-text-hover: #B3743C;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(230, 163, 92, 0.2);
-            --input-text: #5E473C;
-            --danger-bg: #D32F2F;
-            --danger-hover: #D32F2F;
-            --cancel-bg: #6D4C41;
-            --cancel-hover: #5D4037;
-            --primary-bg: #E6A35C;
-            --primary-hover: #D47A43;
-            --primary-active: #B3743C;
-        }
-
-        :root[data-theme="theme5"] {
-            --base-1: #FAF7F0;
-            --base-2: #D8D2C2;
-            --accent-1: #B17457;
-            --accent-2: #4A4947;
-            --text-primary: #4A4947;
-            --text-secondary: #B17457;
-            --glass-bg: rgba(250, 247, 240, 0.8);
-            --glass-border: rgba(177, 116, 87, 0.2);
-            --glass-shadow: 0 4px 20px -10px rgba(74, 73, 71, 0.15);
-            --glass-hover: rgba(177, 116, 87, 0.1);
-            --glass-active: rgba(177, 116, 87, 0.2);
-            --glass-text: #4A4947;
-            --glass-text-hover: #B17457;
-            --input-bg: rgba(255, 255, 255, 0.7);
-            --input-border: rgba(177, 116, 87, 0.3);
-            --input-text: #4A4947;
-            --danger-bg: #D32F2F;
-            --danger-hover: #D32F2F;
-            --cancel-bg: #78909C;
-            --cancel-hover: #607D8B;
-            --primary-bg: #B17457;
-            --primary-hover: #8E5D4B;
-            --primary-active: #6E4B3B;
-        }
-
-        :root[data-theme="theme6"] {
-            --base-1: #f2f9f1;
-            --base-2: #E6F3E4;
-            
-            /* 强调色 */
-            --accent-1: #88b588;
-            --accent-2: #a8c9a8;
-            
-            /* 透明度扩展 */
-            --base-1-80: rgba(212, 210, 189, 0.8);
-            --accent-1-15: rgba(62, 168, 138, 0.15);
-            
-            /* 文字系统 */
-            --text-primary: #1f5849;
-            --text-secondary: #8f4a6a;
-            
-            /* 玻璃拟态组件 */
-            --glass-bg: rgba(242, 249, 241, 0.9);
-            --glass-border: rgba(62, 168, 138, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(62, 168, 138, 0.12);
-            --glass-hover: rgba(62, 168, 138, 0.2);
-            --glass-active: rgba(62, 168, 138, 0.3);
-            --glass-text: var(--text-primary);
-            --glass-text-hover: #0d3128;
-            
-            /* 输入控件 */
-            --input-bg: rgba(255, 255, 255, 0.85);
-            --input-border: rgba(62, 168, 138, 0.25);
-            --input-text: #1f5849;
-            
-            /* 功能按钮 */
-            --danger-bg: #F44336;
-            --danger-hover: #D32F2F;
-            --danger-active: #B71C1C;
-            --cancel-bg: #B0BEC5;
-            --cancel-hover: #90A4AE;
-            --cancel-active: #78909C;
-            
-            /* 主操作按钮 */
-            --primary-bg: #3ea88a;
-            --primary-hover: #328670;
-            --primary-active: #256955;
-        }
-
-        :root[data-theme="theme7"] {
-            --base-1: #F9F7FD;
-            --base-2: #f1ecf7;
-            --accent-1: #9E9BC9;
-            --accent-2: #B9B6DF;
-            --text-primary: #4F4C6B;
-            --text-secondary: #7875A3;
-            --glass-bg: rgba(249, 247, 253, 0.95);
-            --glass-border: rgba(163, 159, 206, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(120, 117, 163, 0.12);
-            --glass-hover: rgba(237, 230, 242, 0.2);
-            --glass-active: rgba(237, 230, 242, 0.3);
-            --glass-text: #4F4C6B;
-            --glass-text-hover: #7875A3;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(163, 159, 206, 0.2);
-            --input-text: #4F4C6B;
-            --danger-bg: #D32F2F;
-            --danger-hover: #D32F2F;
-            --cancel-bg: #8E24AA;
-            --cancel-hover: #7B1FA2;
-            --primary-bg: #A39FCE;
-            --primary-hover: #7B1FA2;
-            --primary-active: #6A1B9A;
-            --table-header-bg: rgba(163, 159, 206, 0.25); /* 加深的表头背景 */
-        }
-
-        .main-content {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 24px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        /* 更新按钮样式 */
-        button, .primary-btn, .danger-btn, .back-btn {
-            font-family: 'Fangzheng Shusong', '方正书宋', 'Noto Serif SC', serif; /* 添加方正书宋 */
-            background: var(--glass-bg) !important;
-            border: 2px solid var(--glass-border);
-            color: var(--glass-text) !important;
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-weight: 500; /* 调整字重 */
-        }
-
-        button:hover, .primary-btn:hover, .danger-btn:hover, .back-btn:hover {
-            background: var(--glass-hover) !important;
-            color: var(--glass-text-hover) !important;
-            border: 3px solid var(--glass-active);
-        }
-
-        button:active, .primary-btn:active, .danger-btn:active, .back-btn:active {
-            background: var(--glass-active) !important;
-            transform: translateY(1px);
-        }
-
-        /* 删除按钮样式 */
-        .danger-btn {
-            background: var(--danger-bg) !important;
-            color: #FFFFFF !important;
-            border: 2px solid var(--danger-hover) !important;
-        }
-
-        .danger-btn:hover {
-            background: var(--danger-hover) !important;
-            color: #FFFFFF !important;
-            border: 3px solid var(--danger-hover) !important;
-        }
-
-        .danger-btn:active {
-            background: var(--danger-hover) !important;
-            border: 3px solid var(--danger-hover) !important;
-        }
-
-        /* 取消按钮样式 */
-        .cancel-btn {
-            background: var(--cancel-bg) !important;
-            color: #FFFFFF !important;
-            border: 2px solid var(--cancel-hover) !important;
-        }
-
-        .cancel-btn:hover {
-            background: var(--cancel-hover) !important;
-            color: #FFFFFF !important;
-            border: 3px solid var(--cancel-hover) !important;
-        }
-
-        .cancel-btn:active {
-            background: var(--cancel-hover) !important;
-            border: 3px solid var(--cancel-hover) !important;
-        }
-
-        /* 输入框样式 */
-        input, textarea, select {
-            background: var(--input-bg) !important;
-            border: 1px solid var(--input-border) !important;
-            color: var(--input-text) !important;
-            transition: all 0.3s ease;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            border-color: var(--accent-1) !important;
-            box-shadow: 0 0 0 2px var(--accent-1-15) !important;
-            outline: none !important;
-        }
-
-        /* 玻璃拟态容器样式 */
-        .glass-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px) saturate(180%);
-            -webkit-backdrop-filter: blur(12px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            box-shadow: var(--glass-shadow);
-            padding: 16px;
-        }
-
-        .glass-container:hover {
-            background: var(--glass-hover);
-            border-color: var(--glass-active);
-        }
-
-        .entry-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: var(--glass-bg) !important;
-            color: var(--text-primary);
-            border-left: 6px solid var(--accent-1);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: var(--glass-shadow);
-        }
-
-        .entry-table th, 
-        .entry-table td {
-            border: 1px solid var(--glass-border);
-            padding: 12px;
-            vertical-align: top;
-        }
-
-        .entry-table th {
-            background: var(--table-header-bg) !important;
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border-bottom: 1px solid var(--glass-border);
-            color: var(--glass-text);
-            font-weight: bold;
-            width: 100px;
-        }
-
-        .entry-table td {
-            border-bottom: 1px solid var(--glass-border);
-            transition: background-color 0.3s ease;
-            color: var(--glass-text);
-        }
-
-        .entry-table tr:hover td {
-            background: var(--glass-hover);
-        }
-
-        .sidebar {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            height: fit-content;
-            color: #1A1A1A;
-        }
-
-        /* 关键词云样式优化 */
-        #keyword-cloud {
-            max-height: 350px; /* 设置最大高度 */
-            overflow-y: auto;  /* 启用垂直滚动 */
-            padding-right: 8px; /* 防止滚动条遮挡内容 */
-            margin: 10px 0;
-            scrollbar-width: thin;  /* Firefox滚动条宽度 */
-            scrollbar-color: rgba(100, 100, 100, 0.5) transparent; /* Firefox滚动条颜色 */
-            background: var(--glass-bg);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: var(--glass-shadow);
-            
-            /* 动画相关 */
-            display: grid; /* 改为 grid 布局 */
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* 自动填充列 */
-            gap: 8px;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: opacity 0.3s ease, transform 0.3s ease; /* 平滑过渡 */
-        }
-        
-        #keyword-cloud.loaded {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Webkit浏览器滚动条美化 */
-        #keyword-cloud::-webkit-scrollbar {
-            width: 8px;
-            background-color: transparent;
-        }
-
-        #keyword-cloud::-webkit-scrollbar-thumb {
-            background-color: rgba(100, 100, 100, 0.3);
-            border-radius: 4px;
-        }
-
-        #keyword-cloud::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(100, 100, 100, 0.6);
-        }
-
-        /* 移动端优化 */
-        @media (max-width: 768px) {
-            #keyword-cloud {
-                max-height: 250px;
-                scrollbar-width: none; /* Firefox隐藏滚动条 */
-            }
-            
-            #keyword-cloud::-webkit-scrollbar {
-                display: none; /* Chrome/Safari隐藏滚动条 */
-            }
-        }
-
-        .keyword-tag {
-            display: inline-block;
-            background: var(--glass-bg) !important;
-            border: 1px solid var(--glass-border);
-            color: var(--glass-text);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            border-radius: 20px;
-            padding: 6px 12px;
-            margin: 4px;
-            transition: all 0.3s ease;
-            box-shadow: var(--glass-shadow);
-            font-weight: 500;
-            /* 动画相关 */
-            opacity: 0;
-            transform: translateY(10px);
-            animation: tagAppear 0.3s ease forwards;
-        }
-        
-        @keyframes tagAppear {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .keyword-tag:hover {
-            background: var(--glass-hover) !important;
-            color: var(--glass-text-hover);
-        }
-
-        .keyword-tag.active {
-            background: var(--accent-1-15) !important;
-            border-color: var(--accent-1);
-            color: var(--glass-text-hover);
-        }
-
-        .pagination {
-            display: flex;
-            gap: 5px;
-            margin-top: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-            background: var(--glass-bg);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 12px;
-            box-shadow: var(--glass-shadow);
-        }
-
-        .pagination-info {
-            flex: 100%;
-            text-align: center;
-            margin: 10px 0;
-            font-size: 0.9em;
-            color: var(--glass-text);
-        }
-
-        .page-btn {
-            background: var(--glass-bg) !important;
-            border: 1px solid var(--glass-border);
-            color: var(--glass-text);
-        }
-
-        .page-btn:hover {
-            background: var(--glass-hover) !important;
-            color: var(--glass-text-hover);
-        }
-
-        .page-btn.active {
-            background: var(--accent-1-15) !important;
-            border-color: var(--accent-1);
-            color: var(--glass-text-hover);
-        }
-
-        /* 弹窗样式优化 */
-        .form-popup, .category-manager {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--glass-bg) !important;
-            backdrop-filter: blur(16px) saturate(180%);
-            -webkit-backdrop-filter: blur(16px) saturate(180%);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            padding: 24px;
-            width: 700px;
-            max-width: 90%;
-            max-height: 80vh;
-            display: none;
-            z-index: 1000;
-            color: var(--text-primary);
-            font-family: 'Fangzheng Shusong', '方正书宋', 'Segoe UI', Arial, sans-serif; /* 添加方正书宋 */
-            overflow-y: auto;
-        }
-
-        /* 优化滚动条样式 */
-        .form-popup::-webkit-scrollbar,
-        .category-manager::-webkit-scrollbar {
-            width: 8px;
-            background-color: transparent;
-        }
-
-        .form-popup::-webkit-scrollbar-thumb,
-        .category-manager::-webkit-scrollbar-thumb {
-            background-color: var(--glass-border);
-            border-radius: 4px;
-        }
-
-        .form-popup::-webkit-scrollbar-thumb:hover,
-        .category-manager::-webkit-scrollbar-thumb:hover {
-            background-color: var(--glass-active);
-        }
-
-        /* Firefox滚动条样式 */
-        .form-popup,
-        .category-manager {
-            scrollbar-width: thin;
-            scrollbar-color: var(--glass-border) transparent;
-        }
-
-        /* 表单内容区域样式 */
-        .form-content {
-            max-height: calc(80vh - 100px);
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-
-        /* 分类管理内容区域 */
-        .category-content {
-            max-height: calc(80vh - 100px);
-            overflow-y: auto;
-            padding-right: 8px;
-        }
-
-        /* 确保按钮固定在底部 */
-        .form-popup .action-buttons,
-        .category-manager .action-buttons {
-            position: sticky;
-            bottom: 0;
-            background: var(--glass-bg);
-            padding: 16px 0;
-            margin-top: 16px;
-            border-top: 1px solid var(--glass-border);
-        }
-
-        /* 表单标题样式 */
-        .form-popup h2, .category-manager h3 {
-            font-size: 1.5em;
-            font-weight: 600;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-            text-align: center;
-        }
-
-        /* 表单行样式 */
-        .form-row {
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .form-row label {
-            font-size: 1.1em;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-
-        /* 输入框样式 */
-        input[type="text"],
-        input[type="date"],
-        textarea,
-        select {
-            padding: 12px 16px;
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            background: var(--input-bg);
-            color: var(--input-text);
-            font-size: 1em;
-            transition: all 0.3s ease;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        input[type="text"]:focus,
-        input[type="date"]:focus,
-        textarea:focus,
-        select:focus {
-            border-color: var(--accent-1);
-            box-shadow: 0 0 0 2px var(--accent-1-15);
-            outline: none;
-        }
-
-        /* 占位符样式 */
-        input::placeholder,
-        textarea::placeholder {
-            color: var(--glass-border);
-            opacity: 0.7;
-        }
-
-        /* 按钮样式 */
-        .form-popup .action-buttons,
-        .category-manager .action-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-top: 24px;
-        }
-
-        .form-popup button,
-        .category-manager button {
-            padding: 10px 20px;
-            border: 2px solid var(--glass-border);
-            border-radius: 8px;
-            background: var(--glass-bg);
-            color: var(--glass-text);
-            font-weight: 500;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .form-popup button:hover,
-        .category-manager button:hover {
-            background: var(--glass-hover);
-            border-color: var(--glass-active);
-            transform: translateY(-1px);
-        }
-
-        /* 编辑器容器样式 */
-        #editor-container, #log-editor-container {
-            height: 300px;
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            background: var(--input-bg);
-            margin-bottom: 16px;
-        }
-
-        /* 编辑器工具栏样式 */
-        .ql-toolbar {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border) !important;
-            border-radius: 8px 8px 0 0;
-            padding: 8px;
-        }
-
-        .ql-toolbar button {
-            padding: 6px 12px;
-            border: 1px solid var(--glass-border);
-            border-radius: 4px;
-            background: var(--glass-bg);
-            color: var(--glass-text);
-            transition: all 0.2s ease;
-        }
-
-        .ql-toolbar button:hover {
-            background: var(--glass-hover);
-            border-color: var(--glass-active);
-        }
-
-        .ql-toolbar .ql-active {
-            background: var(--glass-active);
-            color: var(--glass-text-hover);
-        }
-
-        /* 编辑器内容区域 */
-        .ql-container {
-            border: 1px solid var(--glass-border) !important;
-            border-radius: 0 0 8px 8px;
-            background: var(--input-bg);
-        }
-
-        /* 分析编辑器样式 */
-        #analysis-editor-container {
-            height: 300px;
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            background: var(--input-bg);
-            overflow-y: auto;
-        }
-
-        .analysis-editor .ql-container {
-            height: calc(100% - 42px) !important;
-            border: none !important;
-        }
-
-        .analysis-editor .ql-toolbar {
-            position: sticky;
-            top: 0;
-            background: var(--glass-bg);
-            z-index: 1;
-        }
-
-        /* 确保滚动条样式统一 */
-        #analysis-editor-container::-webkit-scrollbar {
-            width: 8px;
-            background-color: transparent;
-        }
-
-        #analysis-editor-container::-webkit-scrollbar-thumb {
-            background-color: var(--glass-border);
-            border-radius: 4px;
-        }
-
-        #analysis-editor-container::-webkit-scrollbar-thumb:hover {
-            background-color: var(--glass-active);
-        }
-
-        /* 分类管理样式优化 */
-        .category-section {
-            margin-bottom: 24px;
-            padding: 16px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-        }
-
-        .category-section h4 {
-            font-size: 1.2em;
-            font-weight: 500;
-            margin-bottom: 16px;
-            color: var(--text-primary);
-        }
-
-        .category-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-            padding: 8px 12px;
-            background: var(--input-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-        }
-
-        .category-item input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid var(--glass-border);
-            border-radius: 6px;
-            background: var(--glass-bg);
-            color: var(--glass-text);
-        }
-
-        /* 日志查看器样式优化 */
-        .log-item {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .log-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .log-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .log-title {
-            font-size: 1.3em;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .log-date {
-            color: var(--text-secondary);
-            font-size: 0.9em;
-        }
-
-        .log-content {
-            line-height: 1.6;
-            color: var(--text-primary);
-        }
-
-        .log-actions {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .log-stats {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding: 16px;
-            background: var(--glass-bg) !important;
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
-            color: var(--text-primary);
-        }
-        
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .stat-value {
-            font-size: 1.4em;
-            font-weight: bold;
-            color: var(--accent-1);
-        }
-        
-        .stat-label {
-            font-size: 0.8em;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-        
-        .log-date-filter {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-        
-        .log-date-filter input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9em;
-        }
-        
-        .log-empty {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-
-        @keyframes pulse {
-            from { background-color: var(--accent-1-05) }
-            to { background-color: var(--accent-1-15) }
-        }
-
-        /* 批量操作栏样式 */
-        .bulk-actions-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            margin: 10px 0;
-            background: var(--glass-bg);
-            border-radius: 8px;
-            border: 1px solid var(--glass-border);
-        }
-
-        .bulk-select {
-            display: flex;
-            gap: 20px;
-        }
-
-        .bulk-select label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
-
-        .bulk-operations {
-            display: flex;
-            gap: 10px;
-        }
-
-        .bulk-info {
-            font-weight: bold;
-        }
-
-        .entry-item.bulk-mode {
-            position: relative;
-            padding-left: 35px;
-        }
-
-        .entry-item.bulk-mode .select-entry-container {
-            position: absolute;
-            left: 10px;
-            top: 15px;
-        }
-
-        .entry-item.bulk-mode .select-entry {
-            width: 18px;
-            height: 18px;
-        }
-
-        .entry-item.selected {
-            border-left: 4px solid var(--accent-1);
-            background-color: var(--accent-1-05);
-            /* animation: pulse 2s infinite alternate; */ /* 移除脉冲动画 */
-        }
-
-        /* 详细视图样式 */
-        .detail-view-container {
-            display: grid;
-            gap: 20px;
-        }
-
-        .detail-entry {
-            padding: 20px;
-            border-radius: 12px;
-            transition: transform 0.3s ease;
-        }
-
-        .detail-entry:hover {
-            transform: translateY(-3px);
-        }
-
-        /* 重用或调整 .entry-header, .entry-meta, .entry-actions */
-        .detail-entry .entry-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .detail-entry .entry-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 0.9em;
-            color: var(--text-secondary);
-        }
-
-        .detail-entry .entry-title {
-            color: var(--text-primary);
-            margin: 15px 0;
-            font-size: 1.4em;
-        }
-
-        .content-section, .analysis-section {
-            margin: 20px 0;
-            padding: 15px;
-            background: var(--input-bg);
-            border-radius: 8px;
-        }
-
-        .content-section h4, .analysis-section h4 {
-            margin-top: 0;
-            color: var(--accent-1);
-            font-size: 1.1em;
-        }
-
-        .entry-content, .entry-analysis {
-            line-height: 1.8;
-            color: var(--text-primary);
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .entry-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center; /* 垂直居中对齐 */
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid var(--glass-border);
-        }
-
-        .entry-links a {
-            color: var(--accent-1);
-            margin-left: 10px;
-            text-decoration: none;
-        }
-
-        .entry-links a:hover {
-            text-decoration: underline;
-        }
-
-        /* 确保分页在两种视图下都居中显示 */
-        .pagination {
-            justify-content: center;
-            margin-top: 30px; /* 增加与列表的间距 */
-        }
-
-        /* 确保选择容器在详细视图中位置正确 */
-        .detail-entry.bulk-mode .select-entry-container {
-            /* 使用与 entry-item.bulk-mode 相同或相似的定位 */
-            position: absolute;
-            left: 10px; /* 或根据需要调整 */
-            top: 20px;  /* 或根据需要调整 */
-            z-index: 1; /* 确保在内容之上 */
-        }
-
-        /* 增加对 entry-item 的基础样式，以适应列表视图 */
-        .entry-item {
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            background: var(--glass-bg);
-        }
-
-        .entry-item .entry-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start; /* 顶部对齐 */
-            margin-bottom: 10px;
-        }
-
-        .entry-item .entry-title {
-            margin: 0 0 5px 0;
-            font-size: 1.2em;
-            flex-grow: 1; /* 标题占据更多空间 */
-            margin-right: 15px;
-        }
-
-        .entry-item .entry-meta {
-            font-size: 0.85em;
-            color: var(--text-secondary);
-            flex-shrink: 0; /* 防止元信息被压缩 */
-            text-align: right; /* 右对齐 */
-        }
-
-        .entry-item .entry-meta span {
-            display: block; /* 每个信息项占一行 */
-            margin-bottom: 3px;
-        }
-
-        .entry-item .entry-actions {
-            display: flex;
-            gap: 8px;
-            margin-left: 15px; /* 与元信息分隔 */
-            flex-shrink: 0;
-        }
-
-        .entry-item .entry-footer {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid var(--glass-border);
-        }
-
-        /* 新增：侧边栏操作按钮样式 */
-        .sidebar-actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* 两列布局 */
-            gap: 10px; /* 按钮间距 */
-            padding: 15px;
-        }
-
-        .sidebar-actions h3 {
-            grid-column: 1 / -1; /* 标题占满两列 */
-            margin: 0 0 15px 0;
-            text-align: center;
-            color: var(--text-primary);
-            font-size: 1.1em;
-        }
-
-        .sidebar-actions button {
-            width: 100%; /* 按钮宽度占满列 */
-            padding: 10px 5px; /* 调整内边距 */
-            font-size: 0.9em; /* 调整字体大小 */
-        }
-
-        /* 弹窗动画 */
-        .form-popup, .category-manager {
-            /* 保持原有样式 */
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            /* ... 其他样式 ... */
-            
-            /* 添加动画 */
-            animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-            transform-origin: center;
-        }
-
-        @keyframes popIn {
-            from {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-        }
-
-        /* 关闭动画 */
-        .form-popup.closing, .category-manager.closing {
-            animation: popOut 0.2s ease-in forwards; /* 使用 forwards 保持最后状态 */
-        }
-
-        @keyframes popOut {
-            from {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-            to {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(0.8);
-            }
-        }
-
-        /* 视图容器样式 */
-        #entries-container {
-            position: relative;
-            min-height: 500px; /* 防止切换时高度塌陷 */
-            overflow: hidden; /* 隐藏切换时的溢出 */ /* <-- 这个可能是问题吗？ */
-        }
-
-        /* 视图切换基础样式 */
-        .list-view, .detail-view {
-            width: 100%; /* 确保视图宽度一致 */
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* 动画过渡 */
-        }
-
-        /* 详细视图默认和进入状态 - 使用相对定位 */
-        .detail-view {
-            position: relative; /* 改为 relative 使其在正常文档流中 */
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        /* 列表视图离开状态 (移出屏幕左侧) */
-        .list-view.leaving {
-            opacity: 0;
-            transform: translateX(-20px);
-            position: absolute; /* 离开时绝对定位防止影响布局 */
-            top: 0; /* 确保定位基准 */
-            left: 0;
-            width: 100%; /* 保持宽度 */
-        }
-
-        /* 详细视图离开状态 (移出屏幕左侧) */
-        .detail-view.leaving {
-            opacity: 0;
-            transform: translateX(-20px);
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-        }
-        
-        /* 列表视图进入状态 (从右侧进入) */
-        .list-view.entering {
-            opacity: 1;
-            transform: translateX(0);
-            position: relative; /* 确保在文档流中 */
-        }
-
-        .entry-item .entry-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start; /* 顶部对齐 */
-            margin-bottom: 10px;
-        }
-
-        /* --- Quill 编辑器主题化样式 --- */
-        .ql-toolbar.ql-snow {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px 8px 0 0;
-            padding: 8px;
-            box-shadow: var(--glass-shadow);
-        }
-
-        .ql-container.ql-snow {
-            background: var(--input-bg);
-            border: 1px solid var(--glass-border);
-            border-top: none; /* 工具栏已有上边框 */
-            border-radius: 0 0 8px 8px;
-            color: var(--input-text);
-            font-family: 'Noto Serif SC', serif; /* 保持和页面一致 */
-        }
-
-        /* 编辑区域 */
-        .ql-editor {
-             min-height: 250px; /* 设置最小高度 */
-             padding: 12px 15px;
-        }
-        .ql-editor.ql-blank::before {
-             color: var(--glass-border); /* 占位符颜色 */
-             font-style: normal;
-             left: 15px;
-        }
-
-        /* 工具栏按钮和下拉框 */
-        .ql-snow .ql-picker-label, 
-        .ql-snow .ql-picker-options,
-        .ql-snow .ql-formats button {
-            color: var(--glass-text) !important;
-            background: transparent !important; /* 按钮背景透明 */
-            border: 1px solid transparent; /* 默认无边框 */
-            transition: all 0.2s ease;
-             border-radius: 4px; /* 轻微圆角 */
-             padding: 3px 5px; /* 调整按钮内边距 */
-        }
-        .ql-snow .ql-formats button:hover,
-        .ql-snow .ql-picker-label:hover {
-            background: var(--glass-hover) !important;
-            color: var(--glass-text-hover) !important;
-            border-color: var(--glass-active);
-        }
-        .ql-snow .ql-picker.ql-expanded .ql-picker-label {
-             background: var(--glass-active) !important;
-             border-color: var(--glass-active);
-        }
-        .ql-snow .ql-picker-options {
-             background: var(--glass-bg) !important;
-             border: 1px solid var(--glass-border) !important;
-             border-radius: 0 0 8px 8px;
-             box-shadow: var(--glass-shadow);
-             padding: 5px;
-        }
-        .ql-snow .ql-picker-item {
-            color: var(--glass-text) !important;
-             transition: background 0.2s ease;
-             border-radius: 4px;
-        }
-        .ql-snow .ql-picker-item:hover {
-            background: var(--glass-hover);
-        }
-        .ql-snow .ql-picker-item.ql-selected {
-            background: var(--accent-1-15); /* 选中项背景 */
-            color: var(--glass-text-hover) !important;
-        }
-        
-        /* 图标颜色 */
-        .ql-snow .ql-stroke {
-             stroke: var(--glass-text);
-        }
-         .ql-snow .ql-fill {
-             fill: var(--glass-text);
-         }
-         .ql-snow button:hover .ql-stroke, 
-         .ql-snow .ql-picker-label:hover .ql-stroke {
-             stroke: var(--glass-text-hover);
-         }
-          .ql-snow button:hover .ql-fill, 
-          .ql-snow .ql-picker-label:hover .ql-fill {
-             fill: var(--glass-text-hover);
-         }
-          .ql-snow .ql-active .ql-stroke {
-              stroke: var(--accent-1);
-          }
-           .ql-snow .ql-active .ql-fill {
-              fill: var(--accent-1);
-          }
-        /* --- 结束 Quill 主题化样式 --- */
-
-    </style>
-    
-    <!-- 响应式布局调整 -->
-    <style>
-        @media (max-width: 992px) { /* 平板和较小笔记本 */
-            .container {
-                grid-template-columns: 1fr; /* 改为单栏布局 */
-                gap: 16px; /* 减小间距 */
-            }
-
-            .sidebar {
-                grid-row: 2; /* 将侧边栏移到主内容下方 */
-                margin-top: 16px;
-            }
-
-            .header {
-                padding: 12px 16px; /* 调整内边距 */
-            }
-
-            .header h1 {
-                 font-size: 1.5em; /* 调整标题大小 */
-            }
-            
-            .form-popup, .category-manager, #log-viewer, #recycle-bin {
-                width: 90%; /* 弹窗宽度适应屏幕 */
-                max-width: 600px; /* 限制最大宽度 */
-            }
-        }
-
-        @media (max-width: 768px) { /* 小型平板和大型手机 */
-            body {
-                padding: 20px 10px; /* 调整页面边距 */
-            }
-
-            .header {
-                flex-wrap: wrap; /* 允许头部元素换行 */
-                gap: 10px;
-                 justify-content: center; /* 换行后居中 */
-            }
-
-            .main-content .action-buttons {
-                flex-wrap: wrap; /* 允许操作按钮换行 */
-                gap: 8px;
-            }
-            
-            .main-content .action-buttons input[type="text"] {
-                min-width: 150px; /* 保证搜索框有最小宽度 */
-            }
-
-            /* 使表格可以水平滚动 */
-            .entry-table-container, /* 需要在HTML中包裹表格 */
-            #deleted-entries-container, /* 回收站表格容器 */
-            .deleted-project-table-container /* index.html 回收站 */
-            {
-                 overflow-x: auto;
-                 -webkit-overflow-scrolling: touch; /* iOS 滚动优化 */
-                 margin-bottom: 10px; /* 与下方元素保持距离 */
-            }
-            
-            .entry-table {
-                 min-width: 600px; /* 给表格一个最小宽度，触发滚动 */
-            }
-            .deleted-project-table {
-                 min-width: 500px; 
-            }
-
-            .pagination {
-                 flex-direction: column; /* 堆叠分页元素 */
-                 align-items: center;
-            }
-        }
-
-        @media (max-width: 576px) { /* 手机 */
-             .header h1 {
-                 font-size: 1.3em;
-                 order: -1; /* 将标题移到最前 */
-                 width: 100%;
-                 text-align: center;
-             }
-             .header .back-btn {
-                 font-size: 0.9em;
-             }
-             .theme-selector {
-                  margin-left: 0; /* 移除左边距 */
-             }
-            
-             .form-popup, .category-manager, #log-viewer, #recycle-bin {
-                padding: 15px;
-            }
-            .form-popup h2, .category-manager h3 {
-                 font-size: 1.3em;
-                 margin-bottom: 15px;
-            }
-            .form-row label {
-                 font-size: 1em;
-            }
-            input, textarea, select {
-                 padding: 10px 12px;
-                 font-size: 0.95em;
-            }
-             #editor-container, #analysis-editor-container, #log-editor-container {
-                 height: 250px; /* 减小编辑器高度 */
-             }
-             .sidebar-actions button {
-                 font-size: 0.85em;
-                 padding: 8px 4px;
-             }
-        }
-    </style>
-</head>
-<body>
-    <!-- 加载提示 -->
-    <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center; color: white; font-size: 1.2em; flex-direction: column;">
-        <div id="loading-message">加载中...</div>
-        <!-- 可以在这里添加一个 spinner 动画 -->
-         <style>
-            .spinner {
-                border: 4px solid rgba(255, 255, 255, 0.3);
-                border-radius: 50%;
-                border-top: 4px solid #fff;
-                width: 40px;
-                height: 40px;
-                animation: spin 1s linear infinite;
-                margin-top: 15px;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
-        <div class="spinner"></div>
-    </div>
-
-    <script>
-        // 添加特性检测
-        if (!CSS.supports('backdrop-filter', 'blur(1px)')) {
-            document.body.classList.add('no-blur-effect');
-        }
-
-        // 添加主题切换功能
-        function setThemeByDay() {
-            const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-            const today = new Date().getDay();
-            const theme = `theme-${days[today]}`;
-            
-            // 移除所有主题类
-            document.body.classList.remove(...days.map(day => `theme-${day}`));
-            // 添加当天的主题类
-            document.body.classList.add(theme);
-        }
-
-        // 页面加载时设置主题
-        document.addEventListener('DOMContentLoaded', setThemeByDay);
-
-        // 每天凌晨自动更新主题
-        function scheduleThemeUpdate() {
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
-            
-            const timeUntilMidnight = tomorrow - now;
-            
-            setTimeout(() => {
-                setThemeByDay();
-                scheduleThemeUpdate(); // 设置下一天的更新
-            }, timeUntilMidnight);
-        }
-
-        // 启动主题自动更新
-        scheduleThemeUpdate();
-
-        // 主题切换相关函数
-        function toggleThemeOptions() {
-            const options = document.getElementById('themeOptions');
-            options.classList.toggle('show');
-        }
-
-        function changeTheme(themeName) {
-            document.documentElement.setAttribute('data-theme', themeName);
-            localStorage.setItem('selectedTheme', themeName);
-            toggleThemeOptions();
-        }
-
-        // 初始化主题
-        function initTheme() {
-            const savedTheme = localStorage.getItem('selectedTheme');
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            }
-        }
-
-        // 页面加载时初始化主题
-        document.addEventListener('DOMContentLoaded', initTheme);
-
-        // 点击其他地方关闭主题选择器
-        document.addEventListener('click', (e) => {
-            const themeSelector = document.querySelector('.theme-selector');
-            if (!themeSelector.contains(e.target)) {
-                document.getElementById('themeOptions').classList.remove('show');
-            }
-        });
-    </script>
-    <div class="container">
-        <div class="header">
-            <button class="back-btn" onclick="location.href='index.html'">
-                <span class="material-icons">arrow_back</span>
-                返回课题列表
-            </button>
-            <h1 id="projectTitle">加载中...</h1>
-            <div class="theme-selector">
-                <button onclick="toggleThemeOptions()">
-                    <span class="material-icons">palette</span>
-                    主题
-                </button>
-                <div class="theme-options" id="themeOptions">
-                    <div class="theme-option" onclick="changeTheme('theme1')">
-                        <div class="theme-preview">
-                            <div style="background: #FFF7F1"></div>
-                            <div style="background: #FFE4C9"></div>
-                            <div style="background: #E78895"></div>
-                            <div style="background: #BED1CF"></div>
-                        </div>
-                        <span>主题一</span>
-                    </div>
-                    <div class="theme-option" onclick="changeTheme('theme2')">
-                        <div class="theme-preview">
-                            <div style="background: #F8F4E8"></div>
-                            <div style="background: #F0E6D2"></div>
-                            <div style="background: #8B7355"></div>
-                            <div style="background: #6B5B4D"></div>
-                        </div>
-                        <span>主题二</span>
-                    </div>
-                    <div class="theme-option" onclick="changeTheme('theme3')">
-                        <div class="theme-preview">
-                            <div style="background: #F0F4F8"></div>
-                            <div style="background: #E6ECF2"></div>
-                            <div style="background: #7B90B5"></div>
-                            <div style="background: #2E3B51"></div>
-                        </div>
-                        <span>主题三</span>
-                    </div>
-                    <div class="theme-option" onclick="changeTheme('theme4')">
-                        <div class="theme-preview">
-                            <div style="background: #FFF5E6"></div>
-                            <div style="background: #FFE8CC"></div>
-                            <div style="background: #E6A35C"></div>
-                            <div style="background: #B3743C"></div>
-                        </div>
-                        <span>主题四</span>
-                    </div>
-                    <div class="theme-option" onclick="changeTheme('theme5')">
-                        <div class="theme-preview">
-                            <div style="background: #FAF7F0"></div>
-                            <div style="background: #D8D2C2"></div>
-                            <div style="background: #B17457"></div>
-                            <div style="background: #4A4947"></div>
-                        </div>
-                        <span>主题五</span>
-                    </div>
-                    <div class="theme-option" onclick="changeTheme('theme6')">
-                        <div class="theme-preview">
-                            <div style="background: #F0F8E6"></div>
-                            <div style="background: #E6F0D2"></div>
-                            <div style="background: #88B588"></div>
-                            <div style="background: #4A6B4A"></div>
-                        </div>
-                        <span>主题六</span>
-                    </div>
-                    <div class="theme-option" onclick="changeTheme('theme7')">
-                        <div class="theme-preview">
-                            <div style="background: #F5F0F8"></div>
-                            <div style="background: #EDE6F2"></div>
-                            <div style="background: #A39FCE"></div>
-                            <div style="background: #7875A3"></div>
-                        </div>
-                        <span>主题七</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="main-content">
-            <div class="action-buttons">
-                <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="flex:1">
-                <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
-                <div style="display:inline-block;margin-left:10px">
-                    <!-- 移除了 导出Excel 按钮 -->
-                </div>
-                <div style="display:inline-block;margin-left:10px">
-                    <!-- 移除了 导入Excel 按钮 -->
-                </div>
-                <div style="display:inline-block;margin-left:10px">
-                    <!-- 移除了 扫描重复条目 按钮 -->
-                </div>
-                <div style="display:inline-block;margin-left:10px">
-                    <!-- 移除了 修复数据 按钮 -->
-                </div>
-                <div style="display:inline-block;margin-left:10px">
-                    <button class="primary-btn" onclick="toggleBulkMode()">批量操作</button>
-                </div>
-                <div style="display:inline-block;margin-left:10px">
-                    <select id="viewMode" onchange="changeViewMode(this.value)">
-                        <option value="list">目录视图</option>
-                        <option value="detail">详细视图</option>
-                    </select>
-                </div>
-                <div style="display:inline-block;margin-left:10px">
-                    <select id="pageSize" onchange="changePageSize(this.value)" style="padding:6px 12px">
-                        <option value="5">每页5条</option>
-                        <option value="10" selected>每页10条</option>
-                        <option value="15">每页15条</option>
-                        <option value="20">每页20条</option>
-                        <option value="30">每页30条</option>
-                        <option value="50">每页50条</option>
-                    </select>
-                </div>
-            </div>
-            
-            <!-- 批量操作栏 -->
-            <div id="bulk-actions-bar" class="bulk-actions-bar" style="display:none;">
-                <div class="bulk-select">
-                    <label>
-                        <input type="checkbox" id="select-page" onclick="toggleSelectAll(true)">
-                        选择当前页
-                    </label>
-                    <label>
-                        <input type="checkbox" id="select-all" onclick="toggleSelectAll(false)">
-                        选择全部
-                    </label>
-                </div>
-                <div class="bulk-operations">
-                    <button class="danger-btn" onclick="bulkDelete()">批量删除</button>
-                    <button class="primary-btn" id="export-selected-btn" onclick="exportSelectedEntries('excel')">导出选中项</button>
-                    <button class="primary-btn" onclick="toggleBulkMode()">退出批量操作</button>
-                </div>
-                <div class="bulk-info">
-                    已选择 <span id="selected-count">0</span> 个条目
-                </div>
-            </div>
-            
-            <!-- 高级检索面板 -->
-            <div class="advanced-search">
-                <button class="primary-btn" onclick="toggleAdvancedSearch()">高级检索 ▽</button>
-                <div class="advanced-panel" style="max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s ease-out, opacity 0.2s ease-out, margin-top 0.3s ease-out, margin-bottom 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out;">
-                    <div class="search-row">
-                        <label>时间范围：</label>
-                        <input type="date" id="startDate">
-                        <span>至</span>
-                        <input type="date" id="endDate">
-                    </div>
-                    
-                    <div class="search-row">
-                        <label>包含标签：</label>
-                        <div id="tag-selector"></div>
-                    </div>
-
-                    <div class="search-row">
-                        <label>全文关键词：</label>
-                        <input type="text" id="keywords" placeholder="多个词用空格分隔">
-                        <select id="keywordLogic">
-                            <option value="AND">必须全部包含</option>
-                            <option value="OR">包含任意一个</option>
-                        </select>
-                    </div>
-
-                    <div class="action-buttons">
-                        <button class="primary-btn" onclick="applyAdvancedSearch()">应用筛选</button>
-                        <button class="danger-btn" onclick="resetAdvancedSearch()">重置</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 史料条目列表 -->
-            <div id="entries-container-wrapper"> <!-- 新增容器 -->
-                <div id="entries-container"></div>
-            </div>
-            <div class="pagination">
-                <div class="pagination-info">
-                    第<span id="currentPage">1</span>页，共<span id="totalPages">1</span>页，每页<span id="entriesPerPage"></span>条
-                </div>
-                <div id="pagination-buttons"></div>
-            </div>
-        </div>
-
-        <div class="sidebar">
-            <h3>关键词索引</h3>
-            <div id="keyword-cloud"></div>
-            
-            <!-- 新增：侧边栏操作按钮 -->
-            <div class="sidebar-actions glass-container" style="margin-top: 20px;">
-                <h3>数据管理</h3>
-                <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
-                <button class="primary-btn" onclick="showLogViewer()">工作日志</button>
-                <button class="primary-btn" onclick="showRecycleBin()">回收站</button>
-                <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
-                <button class="primary-btn" onclick="importExcel()">导入Excel</button>
-                <button class="primary-btn" onclick="scanDuplicates()">扫描重复</button>
-                <button class="primary-btn" onclick="migrateLegacyData()" title="修复历史数据中的缺失字段">修复数据</button>
-            </div>
-           
-        <!-- 史料表单弹窗 -->
-        <div id="entry-form" class="form-popup">
-            <h2>史料条目编辑</h2>
-            <form onsubmit="saveEntry(event)">
-                <div class="form-row">
-                    <label>日期：</label>
-                    <input type="date" name="date" required>
-                </div>
-
-                <div class="form-row">
-                    <label>主类：</label>
-                    <select name="main-cat" onchange="updateSubCats()" required>
-                        <!-- 动态加载选项 -->
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <label>子类：</label>
-                    <select name="sub-cat" id="sub-cat" required></select>
-                </div>
-
-                <div class="form-row">
-                    <label>标题：</label>
-                    <input type="text" name="title" required>
-                </div>
-
-                <div class="form-row">
-                    <label>原文摘抄：</label>
-                    <div id="editor-container"></div> <!-- 恢复 ID -->
-                </div>
-
-                <div class="form-row">
-                    <label>分析：</label>
-                     <div id="analysis-editor-container"></div> <!-- 恢复 ID -->
-                </div>
-
-                <div class="form-row">
-                    <label>相关链接（逗号分隔）：</label>
-                    <input type="text" name="links">
-                </div>
-
-                <div class="form-row">
-                    <label>关键词（逗号分隔）：</label>
-                    <input type="text" name="keywords" required>
-                </div>
-
-                <div class="action-buttons">
-                    <button type="submit" class="primary-btn">保存</button>
-                    <button type="button" class="danger-btn" onclick="hideForm()">取消</button>
-                </div>
-            </form>
-        </div>
-
-
-        <!-- 分类管理弹窗 -->
-        <div id="category-manager" class="category-manager">
-            <h3>分类管理</h3>
-            <div class="category-section">
-                <h4>主类管理</h4>
-                <div id="main-categories"></div>
-                <button class="primary-btn" onclick="addMainCategory()">＋ 添加主类</button>
-            </div>
-
-            <div class="category-section">
-                <h4>子类管理</h4>
-                <div id="sub-categories"></div>
-            </div>
-
-            <div class="action-buttons">
-                <button class="primary-btn" onclick="saveCategories()">保存</button>
-                <button class="danger-btn" onclick="hideCategoryManager()">关闭</button>
-            </div>
-        </div>
-        
-        <!-- 日志表单弹窗 -->
-        <div id="log-form" class="form-popup">
-            <h2>工作日志</h2>
-            <form onsubmit="saveLog(event)">
-                <div class="form-row">
-                    <label>日期：</label>
-                    <input type="date" name="log-date" required>
-                </div>
-
-                <div class="form-row">
-                    <label>标题：</label>
-                    <input type="text" name="log-title" required>
-                </div>
-
-                <div class="form-row">
-                    <label>内容：</label>
-                    <div id="log-editor-container"></div> <!-- 恢复 ID -->
-                </div>
-
-                <div class="action-buttons">
-                    <button type="submit" class="primary-btn">保存</button>
-                    <button type="button" class="danger-btn" onclick="hideLogForm()">取消</button>
-                </div>
-            </form>
-        </div>
-        
-        <!-- 日志查看弹窗 -->
-        <div id="log-viewer" class="form-popup" style="width: 800px; max-height: 80vh; overflow-y: auto;">
-            <h2>工作日志记录</h2>
-            <div class="action-buttons" style="margin-bottom: 15px;">
-                <button class="primary-btn" onclick="showLogForm()">＋ 新增日志</button>
-                <button class="danger-btn" onclick="hideLogViewer()">关闭</button>
-                <select id="logPageSize" onchange="changeLogPageSize(this.value)" style="padding:6px 12px;margin-left:10px">
-                    <option value="5">每页5条</option>
-                    <option value="10" selected>每页10条</option>
-                    <option value="15">每页15条</option>
-                    <option value="20">每页20条</option>
-                    <option value="30">每页30条</option>
-                    <option value="50">每页50条</option>
-                </select>
-            </div>
-            <div class="log-date-filter">
-                <label>按日期筛选：</label>
-                <input type="date" id="log-filter-date" onchange="filterLogsByDate(this.value)">
-                <button class="primary-btn" onclick="resetLogFilter()">重置</button>
-            </div>
-            <div id="logs-container"></div>
-            <div class="pagination" id="log-pagination">
-                <div class="pagination-info">
-                    第<span id="currentLogPage">1</span>页，共<span id="totalLogPages">1</span>页，每页<span id="logsPerPage"></span>条
-                </div>
-                <div id="log-pagination-buttons"></div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script> <!-- 恢复 Quill JS -->
-    <!-- <script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/super-build/ckeditor.js"></script> --> <!-- 移除 CKEditor JS -->
-    <script>
-        // 页面加载状态检查
-        let pageLoaded = false;
-        let firebaseInitialized = false;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            pageLoaded = true;
-            if (firebaseInitialized) {
-                initializeApp();
-            }
-        });
-
-        // Firebase初始化
-        const firebaseConfig = {
-            apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
-            authDomain: "slsj-54760.firebaseapp.com",
-            databaseURL: "https://slsj-54760-default-rtdb.firebaseio.com",
-            projectId: "slsj-54760",
-            storageBucket: "slsj-54760.firebasestorage.app",
-            messagingSenderId: "890890573955",
-            appId: "1:890890573955:web:328c0ed09af23d634b23b6"
-        };
-
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
-
-        // 全局数据监听器
-        let unsubscribeEntries = null;
-        let unsubscribeCategories = null;
-
-        // 获取项目路径
-        function getProjectPath(subPath = "") {
-            const projectId = new URLSearchParams(window.location.search).get('project') || 
-                             localStorage.getItem('currentProject');
-            
-            // 新增校验逻辑
-            if (!projectId) {
-                showAlert("项目ID缺失，请从课题列表重新进入", 'error');
-                setTimeout(() => location.href = 'index.html', 2000);
-                throw new Error("Invalid project ID");
-            }
-            
-            return `users/${auth.currentUser.uid}/projects/${projectId}/${subPath}`;
-        }
-
-        // 初始化数据监听
-        async function initDataListeners() {
-            console.log('初始化数据监听开始', new Date().toISOString());
-            
-            // 取消现有监听器
-            if(typeof unsubscribeEntries === 'function') {
-                unsubscribeEntries();
-                unsubscribeEntries = null;
-            }
-            if(typeof unsubscribeCategories === 'function') {
-                unsubscribeCategories();
-                unsubscribeCategories = null;
-            }
-            
-            return new Promise((resolve, reject) => {
-                let timeout = setTimeout(() => {
-                    hideLoading();
-                    reject(new Error("数据加载超时，请检查网络连接"));
-                }, 15000);
-
-                const errorHandler = (error) => {
-                    clearTimeout(timeout);
-                    console.error('监听失败:', error);
-                    if (error.name === 'ReferenceError') {
-                        if (!window.advancedFilter) {
-                            window.advancedFilter = {
-                                startDate: null,
-                                endDate: null,
-                                tags: [],
-                                keywords: [],
-                                keywordLogic: 'OR'
-                            };
-                        }
-                        setTimeout(() => {
-                            renderEntries();
-                            resolve();
-                        }, 100);
-                    } else {
-                        reject(error);
-                    }
-                    hideLoading();
-                };
-
-                let initialEntriesLoaded = false;
-                let initialCategoriesLoaded = false;
-
-                const checkAllDataLoaded = () => {
-                    if (initialEntriesLoaded && initialCategoriesLoaded) {
-                        clearTimeout(timeout);
-                        hideLoading();
-                        console.log('所有数据加载完成', new Date().toISOString());
-                        if (typeof VirtualScroll !== 'undefined') {
-                            initializeVirtualScroll();
-                        }
-                        resolve();
-                    }
-                };
-
-                try {
-                    const entriesPath = getProjectPath('entries');
-                    const categoriesPath = getProjectPath('categories');
-                    
-                    console.log('设置条目监听路径:', entriesPath);
-                    console.log('设置分类监听路径:', categoriesPath);
-
-                    unsubscribeEntries = db.ref(entriesPath).on('value', 
-                        (snapshot) => {
-                            try {
-                                console.log('收到条目数据更新');
-                                const entriesData = snapshot.val();
-                                if (entriesData) {
-                                    entries = Object.values(entriesData).map(entry => ({
-                    links: [],
-                    keywords: [],
-                    analysis: '',
-                                        ...entry
-                                    }));
-                                    console.log('处理后的条目数量:', entries.length);
-                                } else {
-                                    entries = [];
-                                    console.log('没有条目数据');
-                                }
-                                
-                if (!initialEntriesLoaded) {
-                    initialEntriesLoaded = true;
-                                    checkAllDataLoaded();
-                                }
-                                
-                                renderEntries();
-                            } catch (err) {
-                                console.error('处理条目数据时出错:', err);
-                                errorHandler(err);
-                            }
-                        }, 
-                        errorHandler
-                    );
-
-                    unsubscribeCategories = db.ref(categoriesPath).on('value',
-                        (snapshot) => {
-                            try {
-                                console.log('收到分类数据更新');
-                categories = snapshot.val() || { main: {} };
-                                console.log('分类数据:', categories);
-                                
-                                if (!initialCategoriesLoaded) {
-                                    initialCategoriesLoaded = true;
-                                    checkAllDataLoaded();
-                                }
-                                
-                updateCategorySelectors();
-                renderEntries();
-                            } catch (err) {
-                                console.error('处理分类数据时出错:', err);
-                                errorHandler(err);
-                            }
-                        },
-                        errorHandler
-                    );
-                } catch (error) {
-                    console.error('设置数据监听时出错:', error);
-                    errorHandler(error);
-                }
-            });
-        }
-
-        // 认证状态监听
-        auth.onAuthStateChanged(async user => {
-            console.log('认证状态变更', new Date().toISOString());
-            
-            // 防止重复初始化
-            if (window.isInitializing) {
-                console.log('初始化进行中，跳过');
-                return;
-            }
-            
-            window.isInitializing = true;
-            
-            try {
-            if (user) {
-                    // 获取项目ID
-                    const projectId = new URLSearchParams(window.location.search).get('project') || 
-                                    localStorage.getItem('currentProject');
-                    
-                    if (!projectId) {
-                        console.error('缺失项目ID参数');
-                        showAlert("请从课题列表选择要访问的课题", 'error');
-                        window.isInitializing = false;
-                        setTimeout(() => {
-                            window.location.replace('index.html');
-                        }, 2000);
-                        return;
-                    }
-
-                    showLoading('正在验证课题访问权限...');
-                    
-                    try {
-                        // 验证项目存在性和访问权限
-                const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
-                        const projectSnapshot = await projectRef.once('value');
-                        
-                        if (!projectSnapshot.exists()) {
-                            throw new Error("指定课题不存在或无访问权限");
-                        }
-
-                        // 保存当前项目ID
-                        localStorage.setItem('currentProject', projectId);
-                        
-                        // 保存会话信息
-                        localStorage.setItem('currentSession', JSON.stringify({
-                            projectId,
-                            timestamp: Date.now()
-                        }));
-
-                        const projectName = projectSnapshot.val().name || '未命名课题';
-                document.title = `${projectName} - 史料数据库`;
-                document.getElementById('projectTitle').textContent = projectName;
-                
-                        showLoading('正在加载数据...');
-                        
-                        // 初始化全局变量
-                        window.advancedFilter = {
-                            startDate: null,
-                            endDate: null,
-                            tags: [],
-                            keywords: [],
-                            keywordLogic: 'OR'
-                        };
-                        
-                        await initDataListeners();
-                        await restoreCachedSessions();
-                        
-                        window.isInitializing = false;
-                    } catch (error) {
-                        console.error('项目验证失败:', error);
-                        window.isInitializing = false;
-                        showAlert(error.message, 'error');
-                        setTimeout(() => {
-                            window.location.replace('index.html');
-                        }, 2000);
-                    }
-            } else {
-                    console.log('用户未登录，跳转到登录页');
-                    window.isInitializing = false;
-                clearInterval(trackingInterval);
-                localStorage.removeItem('currentSession');
-                    window.location.replace('index.html');
-                }
-            } catch (error) {
-                console.error('初始化失败:', error);
-                window.isInitializing = false;
-                hideLoading();
-                showAlert(error.message, 'error');
-                setTimeout(() => {
-                    window.location.replace('index.html');
-                }, 2000);
-            }
-        });
-
-        // 全局变量
-        let entries = [];
-        let categories = { main: {} };
-        let quill = null;
-        let logQuill = null;
-        let currentPage = 1;
-        let editingId = null;
-        let editingLogId = null;
-        let searchQuery = '';
-        let currentFilterKeyword = null;
-        let ENTRIES_PER_PAGE = 10;
-        let LOGS_PER_PAGE = 10;
-        let logs = [];
-        let filteredLogs = [];
-        let currentLogPage = 1;
-        let currentLogFilterDate = null;
-        let saveDraftTimeout = null;
-
-        // 添加高级筛选相关变量
-        let advancedFilter = {
-            startDate: null,
-            endDate: null,
-            tags: [],
-            keywords: [],
-            keywordLogic: 'OR'
-        };
-
-        // 节流函数
-        function throttle(func, wait) {
-            let timeout;
-            return function() {
-                if (!timeout) {
-                    timeout = setTimeout(() => {
-                        func.apply(this, arguments);
-                        timeout = null;
-                    }, wait);
-                }
-            };
-        }
-
-        // 自动保存草稿
-        const saveDraft = throttle(function() {
-            const draftData = {
-                date: document.querySelector('[name="date"]').value,
-                mainCat: document.querySelector('[name="main-cat"]').value,
-                subCat: document.querySelector('[name="sub-cat"]').value,
-                title: document.querySelector('[name="title"]').value,
-                content: quill ? quill.root.innerHTML : '',
-                analysis: window.analysisQuill ? window.analysisQuill.root.innerHTML : '',
-                links: document.querySelector('[name="links"]').value,
-                keywords: document.querySelector('[name="keywords"]').value
-            };
-            
-            localStorage.setItem('entryDraft', JSON.stringify(draftData));
-            console.log('自动保存成功');
-        }, 2000);
-
-        // 绑定自动保存事件
-        function bindAutoSave() {
-            const inputs = [
-                '[name="date"]', 
-                '[name="main-cat"]', 
-                '[name="sub-cat"]',
-                '[name="title"]',
-                '[name="links"]',
-                '[name="keywords"]'
-            ];
-            
-            inputs.forEach(selector => {
-                document.querySelector(selector).addEventListener('input', saveDraft);
-            });
-            
-            if (quill) {
-                quill.on('text-change', saveDraft);
-            }
-            if (window.analysisQuill) {
-                window.analysisQuill.on('text-change', saveDraft);
-            }
-        }
-        
-        // --- 新增加载提示函数 ---
-        function showLoading(message = '加载中...') {
-            console.log('显示加载提示:', message);
-            const overlay = document.getElementById('loading-overlay');
-            const msgElement = document.getElementById('loading-message');
-            if (overlay && msgElement) {
-                msgElement.textContent = message;
-                overlay.style.display = 'flex';
-            }
-        }
-
-        function hideLoading() {
-            console.log('关闭加载提示', new Date().toISOString());
-            const overlay = document.getElementById('loading-overlay');
-            if (overlay) {
-                overlay.style.display = 'none';
-            }
-        }
-        // --- 结束加载提示函数 ---
-
-        // 批量操作相关变量
-        let bulkModeActive = false;
-        let selectedEntryIds = new Set();
-        let selectedAll = false;
-        let currentViewMode = 'list'; // 默认目录视图
-        
-        // 切换批量操作模式
-        function toggleBulkMode() {
-            bulkModeActive = !bulkModeActive;
-            const bulkBar = document.getElementById('bulk-actions-bar');
-            
-            if (bulkModeActive) {
-                bulkBar.style.display = 'flex';
-                // 清空已选择的条目
-                selectedEntryIds.clear();
-                selectedAll = false;
-                
-                // 更新选择计数
-                updateSelectedCount();
-                
-                // 重新渲染条目以显示复选框
-                renderEntries();
-            } else {
-                bulkBar.style.display = 'none';
-                // 重新渲染条目以隐藏复选框
-                renderEntries();
-            }
-        }
-        
-        // 更新已选择条目计数
-        function updateSelectedCount() {
-            const countElem = document.getElementById('selected-count');
-            if (!countElem) return;
-            
-            // 如果是全选模式，计算所有符合筛选条件的条目数量
-            if (selectedAll) {
-                const totalCount = getFilteredEntries().length;
-                countElem.textContent = totalCount;
-                return;
-            }
-            
-            // 否则显示手动选择的条目数量
-            countElem.textContent = selectedEntryIds.size;
-        }
-        
-        // 批量删除选中的条目
-        async function bulkDelete() {
-            let entriesToDelete = [];
-            
-            if (selectedAll) {
-                // 全选模式：获取所有符合筛选条件的条目
-                entriesToDelete = getFilteredEntries();
-            } else {
-                // 手动选择模式：获取所有已勾选的条目
-                entriesToDelete = entries.filter(entry => selectedEntryIds.has(entry.id));
-            }
-            
-            if (entriesToDelete.length === 0) {
-                showAlert('未选择任何条目', 'warning');
-                return;
-            }
-            
-            // 确认删除
-            if (!confirm(`确定要删除选中的 ${entriesToDelete.length} 条记录吗？这些记录将被移动到回收站。`)) {
-                return;
-            }
-            
-            try {
-                showAlert(`正在删除 ${entriesToDelete.length} 条记录...`, 'info');
-                
-                // 构建多路径更新对象
-                const updates = {};
-                entriesToDelete.forEach(entry => {
-                    // 标记在 entries 中删除
-                    updates[getProjectPath(`entries/${entry.id}`)] = null;
-                    
-                    // 添加到 trash 中
-                    entry.deletedAt = Date.now();
-                    updates[getProjectPath(`trash/${entry.id}`)] = entry;
-                });
-
-                // 一次性执行所有更新
-                await db.ref().update(updates);
-                
-                // 重置选择状态
-                selectedEntryIds.clear();
-                selectedAll = false;
-                updateSelectedCount();
-                
-                showAlert(`成功删除 ${entriesToDelete.length} 条记录并移至回收站`, 'success');
-            } catch (error) {
-                console.error('批量删除失败:', error);
-                showAlert(`批量删除失败: ${error.message}`, 'error');
-            }
-        }
-        
-        // 处理条目选择
-        function handleEntrySelection(id, checked) {
-            if (checked) {
-                selectedEntryIds.add(id);
-            } else {
-                selectedEntryIds.delete(id);
-                // 如果取消选中任何条目，则退出全选模式
-                selectedAll = false;
-                document.getElementById('select-all').checked = false;
-            }
-            
-            // 更新UI显示效果
-            const entryElement = document.querySelector(`.entry-item[data-id="${id}"]`);
-            if (entryElement) {
-                if (checked) {
-                    entryElement.classList.add('selected');
-                } else {
-                    entryElement.classList.remove('selected');
-                }
-            }
-            
-            // 检查当前页是否全选
-            const allPageCheckboxes = document.querySelectorAll('.select-entry');
-            const allChecked = Array.from(allPageCheckboxes).every(cb => cb.checked);
-            document.getElementById('select-page').checked = allChecked;
-            
-            // 更新计数
-            updateSelectedCount();
-        }
-
-        // 新增页面条数改变函数
-        function changePageSize(size) {
-            ENTRIES_PER_PAGE = parseInt(size);
-            currentPage = 1;
-            renderEntries();
-            document.getElementById('entriesPerPage').textContent = size;
-        }
-
-        // --- 恢复 Quill 初始化和相关样式代码 ---
-        function initQuill() {
-             // --- 将 Font 和 Size 定义移到函数开头 ---
-             const Font = Quill.import('formats/font');
-             // 更新字体白名单
-             Font.whitelist = ['SimSun', 'STFangsong', 'KaiTi', 'STZhongsong', 'Times New Roman', 'Arial']; // 添加 STZhongsong
-             Quill.register(Font, true);
-
-             const Size = Quill.import('attributors/style/size');
-             Size.whitelist = Size.whitelist || [
-                 '10px', '12px', '14px', '16px', '18px', '20px', 
-                 '24px', '28px', '32px', '36px', '48px', '72px'
-             ];
-             Quill.register(Size, true);
-             // --- 结束移动 ---
-
-             if (!quill) {
-                 /* // 原来的定义位置 (移除)
-                 const Font = Quill.import('formats/font');
-                 Font.whitelist = ['宋体', '楷体', '仿宋', '黑体', 'Arial', 'Courier New', 'Times New Roman']; 
-                 Quill.register(Font, true);
-
-                 const Size = Quill.import('attributors/style/size');
-                 Size.whitelist = [
-                     '10px', '12px', '14px', '16px', '18px', '20px', 
-                     '24px', '28px', '32px', '36px', '48px', '72px'
-                 ];
-                 Quill.register(Size, true);
-                 */
-
-                 quill = new Quill('#editor-container', {
-                     modules: {
-                         toolbar: [
-                             [{ 'font': Font.whitelist }], // 使用扩展后的字体列表
-                             [{ 'size': Size.whitelist }],
-                             [{ 'header': [1, 2, 3, 4, 5, 6, false] }], // 添加更多标题级别
-                             ['bold', 'italic', 'underline', 'strike'], // 添加删除线
-                             [{ 'script': 'sub'}, { 'script': 'super' }], // 添加上下标
-                             [{ 'color': [] }, { 'background': [] }], // 颜色和背景色
-                             ['blockquote', 'code-block'],
-                             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                             [{ 'indent': '-1'}, { 'indent': '+1' }], // 缩进
-                             [{ 'align': [] }], // 对齐方式
-                             ['link', 'image', 'video'], // 链接、图片、视频
-                             ['clean'] // 清除格式
-                         ]
-                     },
-                     theme: 'snow'
-                 });
-                 console.log("Quill 实例 (原文) 已创建:", quill); // 添加日志
-             }
-             
-             if (!window.analysisQuill) {
-                 window.analysisQuill = new Quill('#analysis-editor-container', {
-                      modules: {
-                          toolbar: [
-                             [{ 'font': Font.whitelist }],
-                             [{ 'size': Size.whitelist }],
-                              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                              ['bold', 'italic', 'underline', 'strike'],
-                              [{ 'script': 'sub'}, { 'script': 'super' }],
-                              [{ 'color': [] }, { 'background': [] }],
-                              ['blockquote', 'code-block'],
-                              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                              [{ 'indent': '-1'}, { 'indent': '+1' }],
-                              [{ 'align': [] }],
-                              ['link', 'image', 'video'],
-                              ['clean']
-                          ]
-                      },
-                     theme: 'snow'
-                 });
-                 console.log("Quill 实例 (分析) 已创建:", window.analysisQuill); // 添加日志
-                 analysisQuill.container.style.height = '300px';
-                 analysisQuill.container.style.overflowY = 'auto';
-             }
-         }
-
-         const fontStyle = document.createElement('style');
-         fontStyle.textContent = `
-             /* 更新字体样式 */
-             .ql-font-SimSun { font-family: SimSun, "宋体", serif !important; }
-             .ql-font-STFangsong { font-family: STFangsong, "华文仿宋", FangSong, "仿宋", serif !important; }
-             .ql-font-KaiTi { font-family: KaiTi, "楷体", serif !important; }
-             .ql-font-STZhongsong { font-family: STZhongsong, "华文中宋", SimSun, serif !important; } /* 添加华文中宋 */
-             .ql-font-TimesNewRoman { font-family: "Times New Roman", Times, serif !important; }
-             .ql-font-Arial { font-family: Arial, Helvetica, sans-serif !important; }
-             /* 移除不再需要的字体 */
-             /* .ql-font-仿宋 { font-family: FangSong, "仿宋", serif !important; } */
-             /* .ql-font-黑体 { font-family: SimHei, "黑体", sans-serif !important; } */
-             /* .ql-font-Courier New { font-family: Courier New, Courier, monospace !important; } */
-             
-             /* 更新字体选择器预览样式 */
-             .ql-picker.ql-font .ql-picker-item[data-value="SimSun"]::before { font-family: SimSun, "宋体", serif !important; content: "宋体" !important; }
-             .ql-picker.ql-font .ql-picker-item[data-value="STFangsong"]::before { font-family: STFangsong, "华文仿宋", FangSong, serif !important; content: "华文仿宋" !important; }
-             .ql-picker.ql-font .ql-picker-item[data-value="KaiTi"]::before { font-family: KaiTi, "楷体", serif !important; content: "楷体" !important; }
-             .ql-picker.ql-font .ql-picker-item[data-value="STZhongsong"]::before { font-family: STZhongsong, "华文中宋", SimSun, serif !important; content: "华文中宋" !important; } /* 添加 */
-             .ql-picker.ql-font .ql-picker-item[data-value="Times New Roman"]::before { font-family: "Times New Roman", Times, serif !important; content: "Times New Roman" !important; }
-             .ql-picker.ql-font .ql-picker-item[data-value="Arial"]::before { font-family: Arial, Helvetica, sans-serif !important; content: "Arial" !important; }
-             /* 移除旧样式 */
-             /* .ql-picker.ql-font .ql-picker-item[data-value="仿宋"]::before { ... } */
-             /* .ql-picker.ql-font .ql-picker-item[data-value="黑体"]::before { ... } */
-             /* .ql-picker.ql-font .ql-picker-item[data-value="Courier New"]::before { ... } */
-
-             /* 更新字体选择器标签样式 (当前选中字体) */
-             .ql-picker.ql-font .ql-picker-label[data-value="SimSun"]::before { font-family: SimSun, "宋体", serif !important; content: "宋体" !important; }
-             .ql-picker.ql-font .ql-picker-label[data-value="STFangsong"]::before { font-family: STFangsong, "华文仿宋", FangSong, serif !important; content: "华文仿宋" !important; }
-             .ql-picker.ql-font .ql-picker-label[data-value="KaiTi"]::before { font-family: KaiTi, "楷体", serif !important; content: "楷体" !important; }
-             .ql-picker.ql-font .ql-picker-label[data-value="STZhongsong"]::before { font-family: STZhongsong, "华文中宋", SimSun, serif !important; content: "华文中宋" !important; } /* 添加 */
-             .ql-picker.ql-font .ql-picker-label[data-value="Times New Roman"]::before { font-family: "Times New Roman", Times, serif !important; content: "Times New Roman" !important; }
-             .ql-picker.ql-font .ql-picker-label[data-value="Arial"]::before { font-family: Arial, Helvetica, sans-serif !important; content: "Arial" !important; }
-             /* 移除旧样式 */
-             /* .ql-picker.ql-font .ql-picker-label[data-value="仿宋"]::before { ... } */
-             /* .ql-picker.ql-font .ql-picker-label[data-value="黑体"]::before { ... } */
-             /* .ql-picker.ql-font .ql-picker-label[data-value="Courier New"]::before { ... } */
-
-              /* 字号样式 (保持不变) */
-              .ql-size-10px { font-size: 10px !important; }
-              /* ... (其他字号样式) ... */
-              .ql-size-72px { font-size: 72px !important; }
-              .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before { font-size: 10px !important; }
-              /* ... (其他字号选择器样式) ... */
-              .ql-picker.ql-size .ql-picker-item[data-value="72px"]::before { font-size: 72px !important; }
-              .ql-picker.ql-size .ql-picker-label[data-value="10px"]::before { font-size: 10px !important; }
-              /* ... (其他字号选择器标签样式) ... */
-              .ql-picker.ql-size .ql-picker-label[data-value="72px"]::before { font-size: 72px !important; }
-         `;
-         document.head.appendChild(fontStyle);
-        // --- 结束恢复 ---
-
-        // --- 恢复 CKEditor 初始化函数 (注释掉) ---
-        /*
-        async function initCKEditor(elementId, existingEditorInstance) {
-             // ... (CKEditor code) ...
-        }
-        */
-        // --- 结束恢复 ---
-
-        // 表单操作
-        function showForm() {
-            const form = document.getElementById('entry-form');
-            form.style.display = 'block';
-            form.classList.remove('closing');
-            initQuill();
-             updateSubCats();
-            
-            // 加载草稿数据
-            const draft = JSON.parse(localStorage.getItem('entryDraft'));
-            if (draft && !editingId) { // 只在新建条目时恢复草稿
-                const restore = confirm('检测到未保存的编辑内容，是否恢复？');
-                if (restore) {
-                    document.querySelector('[name="date"]').value = draft.date || '';
-                    document.querySelector('[name="main-cat"]').value = draft.mainCat || '';
-                    updateSubCats();
-                    setTimeout(() => {
-                        document.querySelector('[name="sub-cat"]').value = draft.subCat || '';
-                    }, 100);
-                    document.querySelector('[name="title"]').value = draft.title || '';
-                    if (quill) quill.root.innerHTML = draft.content || '';
-                    if (window.analysisQuill) window.analysisQuill.root.innerHTML = draft.analysis || '';
-                    document.querySelector('[name="links"]').value = draft.links || '';
-                    document.querySelector('[name="keywords"]').value = draft.keywords || '';
-                }
-            }
-            
-            // 绑定自动保存
-            bindAutoSave();
-        }
-
-        function hideForm() {
-            const form = document.getElementById('entry-form');
-            form.classList.add('closing');
-            
-            setTimeout(() => {
-                form.style.display = 'none';
-                document.querySelector('#entry-form form').reset();
-                if (quill) quill.root.innerHTML = '';
-                if (window.analysisQuill) window.analysisQuill.root.innerHTML = '';
-                
-                // 仅在编辑现有条目时清除草稿
-                if (editingId) {
-                    localStorage.removeItem('entryDraft');
-                }
-                
-                 editingId = null;
-                form.classList.remove('closing');
-            }, 200);
+                form.classList.remove('closing'); // 动画结束后移除类
+            }, 200); // 动画时长 0.2s = 200ms
         }
 
         // 分类管理
@@ -6335,14 +3125,41 @@
                     updatedAt: firebase.database.ServerValue.TIMESTAMP
                 };
 
-                if (editingId) {
+                // 检查关键字段是否修改
+                const isKeyFieldChanged = editingId && (
+                    newEntry.date !== originalEntry.date ||
+                    newEntry.mainCat !== originalEntry.mainCat ||
+                    newEntry.subCat !== originalEntry.subCat
+                );
+
+                // 提示用户关键字段修改会导致ID变更
+                if (isKeyFieldChanged && 
+                    !confirm('修改关键字段将生成新编号，原条目会被删除。是否继续？')) {
+                    return;
+                }
+
+                // 生成新ID（如果关键字段有修改）
+                if (isKeyFieldChanged) {
+                    // 删除旧条目
+                    await entryRef.child(editingId).remove();
+                    // 生成新ID
+                    newEntry.id = await generateID(newEntry);
+                    // 保存到数据库（使用set方法创建新条目）
+                    await entryRef.child(newEntry.id).set(newEntry);
+                } else if (editingId) {
                     // 保持原ID
                     newEntry.id = editingId;
                     // 保持原创建时间
                     newEntry.createdAt = originalEntry.createdAt;
                     
-                    // 更新条目
-                    await entryRef.child(newEntry.id).update(newEntry);
+                    // 使用update方法更新部分字段，而不是set方法覆盖整个条目
+                    const updates = {};
+                    Object.keys(newEntry).forEach(key => {
+                        if (key !== 'id' && key !== 'createdAt') {
+                            updates[key] = newEntry[key];
+                        }
+                    });
+                    await entryRef.child(newEntry.id).update(updates);
                 } else {
                     // 新条目，生成ID
                     newEntry.id = await generateID(newEntry);
@@ -6351,8 +3168,6 @@
                     await entryRef.child(newEntry.id).set(newEntry);
                 }
 
-                // 保存成功后清除草稿
-                localStorage.removeItem('entryDraft');
                 hideForm();
             } catch (error) {
                 alert('保存失败: ' + error.message);
@@ -6497,67 +3312,43 @@
 
         // 新增方法：获取过滤后的条目
         function getFilteredEntries() {
-            try {
-                // 首先应用搜索过滤
-                let filtered = entries;
+            const filtered = entries.filter(entry => {
+                // 关键字过滤
+                const keywordTagMatch = !currentFilterKeyword || 
+                    (entry.keywords && entry.keywords.includes(currentFilterKeyword)); // 确保 keywords 存在
                 
-                if (searchQuery) {
-                    const query = searchQuery.toLowerCase();
-                    filtered = filtered.filter(entry => 
-                        entry.title?.toLowerCase().includes(query) ||
-                        entry.content?.toLowerCase().includes(query) ||
-                        entry.analysis?.toLowerCase().includes(query) ||
-                        entry.keywords?.some(k => k.toLowerCase().includes(query))
-                    );
-                }
+                // 搜索过滤
+                const searchMatch = !searchQuery || 
+                    [entry.title, entry.content, entry.analysis, entry.keywords.join(' ')]
+                        .join(' ')
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase());
+                
+                // 高级筛选
+                const dateMatch = (!advancedFilter.startDate || entry.date >= advancedFilter.startDate) &&
+                                (!advancedFilter.endDate || entry.date <= advancedFilter.endDate);
+                
+                const tagMatch = advancedFilter.tags.length === 0 || 
+                                advancedFilter.tags.every(tag => entry.keywords.includes(tag));
+                
+                const contentText = [entry.title, entry.content, entry.analysis].join(' ').toLowerCase();
+                const advKeywordMatch = advancedFilter.keywords.length === 0 || 
+                                   (advancedFilter.keywordLogic === 'AND' ? 
+                                    advancedFilter.keywords.every(kw => contentText.includes(kw.toLowerCase())) :
+                                    advancedFilter.keywords.some(kw => contentText.includes(kw.toLowerCase())));
+                
+                return keywordTagMatch && searchMatch && dateMatch && tagMatch && advKeywordMatch;
+            });
 
-                // 应用关键词过滤
-                if (currentFilterKeyword) {
-                    filtered = filtered.filter(entry => 
-                        entry.keywords?.includes(currentFilterKeyword)
-                    );
-                }
-
-                // 应用高级筛选
-                if (advancedFilter) {
-                    // 日期范围筛选
-                    if (advancedFilter.startDate) {
-                        filtered = filtered.filter(entry => entry.date >= advancedFilter.startDate);
-                    }
-                    if (advancedFilter.endDate) {
-                        filtered = filtered.filter(entry => entry.date <= advancedFilter.endDate);
-                    }
-
-                    // 标签筛选
-                    if (advancedFilter.tags && advancedFilter.tags.length > 0) {
-                        filtered = filtered.filter(entry => 
-                            advancedFilter.tags.some(tag => entry.keywords?.includes(tag))
-                        );
-                    }
-
-                    // 关键词筛选
-                    if (advancedFilter.keywords && advancedFilter.keywords.length > 0) {
-                        if (advancedFilter.keywordLogic === 'AND') {
-                            filtered = filtered.filter(entry => 
-                                advancedFilter.keywords.every(kw => 
-                                    entry.keywords?.some(k => k.toLowerCase().includes(kw.toLowerCase()))
-                                )
-                            );
-                        } else {
-                            filtered = filtered.filter(entry => 
-                                advancedFilter.keywords.some(kw => 
-                                    entry.keywords?.some(k => k.toLowerCase().includes(kw.toLowerCase()))
-                                )
-                            );
-                        }
-                    }
-                }
+            // 添加排序逻辑：按日期升序 (从早到晚)
+            filtered.sort((a, b) => {
+                // 确保 date 字段存在且为有效字符串进行比较
+                const dateA = a.date || '0000-00-00';
+                const dateB = b.date || '0000-00-00';
+                return dateA.localeCompare(dateB); // 升序排序 (从早到晚)
+            });
 
             return filtered;
-            } catch (error) {
-                console.error('筛选条目时出错:', error);
-                return entries; // 发生错误时返回所有条目
-            }
         }
 
         // --- 新增：导出选中条目的函数 ---
@@ -6651,6 +3442,12 @@
 
         // 重置筛选
         function resetAdvancedSearch() {
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.querySelectorAll('#tag-selector input').forEach(cb => cb.checked = false);
+            document.getElementById('keywords').value = '';
+            document.getElementById('keywordLogic').value = 'AND';
+            
             advancedFilter = {
                 startDate: null,
                 endDate: null,
@@ -6658,23 +3455,6 @@
                 keywords: [],
                 keywordLogic: 'AND'
             };
-            
-            // 重置表单
-            if (document.getElementById('startDate')) {
-                document.getElementById('startDate').value = '';
-            }
-            if (document.getElementById('endDate')) {
-                document.getElementById('endDate').value = '';
-            }
-            if (document.getElementById('keywords')) {
-                document.getElementById('keywords').value = '';
-            }
-            if (document.getElementById('keywordLogic')) {
-                document.getElementById('keywordLogic').value = 'AND';
-            }
-            
-            // 重置标签选择
-            document.querySelectorAll('#tag-selector input').forEach(cb => cb.checked = false);
             
             currentPage = 1;
             renderEntries();
@@ -7485,116 +4265,971 @@
             });
         }
 
-        // 虚拟滚动类定义
-        class VirtualScroll {
-            constructor(options) {
-                this.container = document.querySelector(options.container);
-                this.itemHeight = options.itemHeight;
-                this.renderItem = options.render;
-                this.items = [];
-                this.visibleItems = new Map();
-                this.scrollTop = 0;
-                this.viewportHeight = 0;
-                this.totalHeight = 0;
-                this.bufferSize = 5; // 上下缓冲区大小
+        // 实现虚拟滚动
+        const virtualScroll = new VirtualScroll({
+            container: '#recycle-list',
+            itemHeight: 48,
+            render: (index) => createRecycleItem(data[index])
+        });
 
-                this.init();
+        let activeTimer = null;
+        let startTimestamp = null;
+
+        // 页面可见性监听（防止后台标签页计时不准确）
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                clearInterval(trackingInterval);
+            } else {
+                startTracking();
             }
+        });
 
-            init() {
-                if (!this.container) return;
-                
-                // 创建内部容器
-                this.innerContainer = document.createElement('div');
-                this.innerContainer.style.position = 'relative';
-                this.container.appendChild(this.innerContainer);
+      
 
-                // 监听滚动事件
-                this.container.addEventListener('scroll', () => {
-                    this.onScroll();
-                });
+       
 
-                // 监听容器大小变化
-                const resizeObserver = new ResizeObserver(() => {
-                    this.updateViewport();
-                });
-                resizeObserver.observe(this.container);
+        // 新增全局变量
+        let trackingInterval;
+        let sessionStartTime;
+        let lastUpdateTime = 0;
+        const HEARTBEAT_INTERVAL = 30000; // 30秒同步一次
 
-                // 初始化视口
-                this.updateViewport();
-            }
+       
 
-            updateViewport() {
-                this.viewportHeight = this.container.clientHeight;
-                this.render();
-            }
-
-            setItems(items) {
-                this.items = items;
-                this.totalHeight = items.length * this.itemHeight;
-                this.innerContainer.style.height = `${this.totalHeight}px`;
-                this.render();
-            }
-
-            onScroll() {
-                this.scrollTop = this.container.scrollTop;
-                this.render();
-            }
-
-            render() {
-                if (!this.items.length) return;
-
-                // 计算可见范围
-                const startIndex = Math.max(0, Math.floor(this.scrollTop / this.itemHeight) - this.bufferSize);
-                const endIndex = Math.min(
-                    this.items.length,
-                    Math.ceil((this.scrollTop + this.viewportHeight) / this.itemHeight) + this.bufferSize
-                );
-
-                // 获取当前应该显示的项的索引集合
-                const visibleIndexes = new Set();
-                for (let i = startIndex; i < endIndex; i++) {
-                    visibleIndexes.add(i);
-                }
-
-                // 移除不再可见的项
-                for (const [index, element] of this.visibleItems.entries()) {
-                    if (!visibleIndexes.has(index)) {
-                        element.remove();
-                        this.visibleItems.delete(index);
-                    }
-                }
-
-                // 添加新的可见项
-                for (let i = startIndex; i < endIndex; i++) {
-                    if (!this.visibleItems.has(i)) {
-                        const element = this.renderItem(i);
-                        element.style.position = 'absolute';
-                        element.style.top = `${i * this.itemHeight}px`;
-                        element.style.width = '100%';
-                        this.innerContainer.appendChild(element);
-                        this.visibleItems.set(i, element);
-                    }
-                }
-            }
+        // 用户活动处理
+        function handleUserActivity() {
+          if (!sessionStartTime) {
+            startNewSession();
+          } else {
+            resetInactivityTimer();
+          }
         }
 
-        // 会话恢复函数
+        // 开始新会话
+        function startNewSession() {
+          sessionStartTime = Date.now();
+          localStorage.setItem('currentSession', JSON.stringify({
+            start: sessionStartTime,
+            lastDuration: 0
+          }));
+          startTracking();
+        }
+
+      
+
+      
+
+        // 更新界面显示
+        function updateTimerDisplay(milliseconds) {
+          const totalSeconds = Math.floor(milliseconds / 1000);
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+          
+          document.getElementById('current-duration').textContent = 
+            `${hours}小时${minutes}分${seconds}秒`;
+        }
+
+        // 保存会话记录
+        async function saveSessionToFirebase(duration) {
+          const user = auth.currentUser;
+          if (!user) return;
+
+          const sessionData = {
+            start: sessionStartTime,
+            end: Date.now(),
+            duration: duration,
+            autoRecord: true,
+            deviceId: getDeviceFingerprint() // 需要实现设备指纹
+          };
+
+          try {
+            await db.ref(`worklogs/${user.uid}/${sessionStartTime}`).update(sessionData);
+            localStorage.setItem('currentSession', JSON.stringify({
+              start: sessionStartTime,
+              lastDuration: duration
+            }));
+          } catch (error) {
+            console.error('保存失败:', error);
+            cacheSessionLocally(sessionData); // 本地缓存
+          }
+        }
+
+        // 设备指纹生成
+        function getDeviceFingerprint() {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          ctx.textBaseline = 'top';
+          ctx.font = "14px 'Arial'";
+          ctx.fillText('ID', 2, 15);
+          return canvas.toDataURL().slice(-20);
+        }
+
+        // 本地缓存
+        function cacheSessionLocally(data) {
+          const cached = JSON.parse(localStorage.getItem('cachedSessions') || '[]');
+          cached.push(data);
+          localStorage.setItem('cachedSessions', JSON.stringify(cached.slice(-10))); // 保留最后10条
+        }
+
+        // 恢复离线数据
         async function restoreCachedSessions() {
+          const cached = JSON.parse(localStorage.getItem('cachedSessions') || '[]');
+          if (cached.length > 0) {
+            const user = auth.currentUser;
+            await Promise.all(cached.map(session => 
+              db.ref(`worklogs/${user.uid}/${session.start}`).set(session)
+            ));
+            localStorage.removeItem('cachedSessions');
+          }
+        }
+
+        // Excel导入功能
+        function importExcel() {
+            // 创建一个隐藏的文件输入框
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.xlsx,.xls';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+
+            // 监听文件选择事件
+            fileInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                showLoading('正在读取 Excel 文件...'); // 显示加载提示
+                try {
+                    // 读取Excel文件内容
+                    const reader = new FileReader();
+                    reader.onload = async (event) => { // Renamed parameter to avoid conflict
+                        try {
+                            const fileData = event.target.result; // Use renamed parameter
+                            const workbook = XLSX.read(fileData, { type: 'array' });
+                            
+                            // 新增：处理分类结构表
+                            if (workbook.SheetNames.includes("分类结构")) {
+                                console.log("发现分类结构表，开始处理...");
+                                const categoriesSheet = workbook.Sheets["分类结构"];
+                                const importedCategoriesData = XLSX.utils.sheet_to_json(categoriesSheet);
+                                
+                                const tempCategories = { main: {} };
+                                importedCategoriesData.forEach(row => {
+                                    try {
+                                        // 智能编码处理与验证
+                                        const mainCodeRaw = row['主类代码']?.toString() || '';
+                                        const subCodeRaw = row['子类代码']?.toString() || '';
+                                        const mainName = row['主类名称'] || '';
+                                        const subName = row['子类名称'] || '';
+
+                                        // 跳过无效行
+                                        if (!mainCodeRaw || !mainName) {
+                                           console.warn("跳过无效分类行:", row); 
+                                            return;
+                                        }
+
+                                        // 强制转换大小写并验证/截断
+                                        const mainCode = mainCodeRaw.replace(/[^a-zA-Z0-9]/g, '').substring(0, 2).toUpperCase();
+                                        const subCode = subCodeRaw.replace(/[^a-zA-Z0-9]/g, '').toLowerCase(); // 强制小写
+
+                                        if (!mainCode || !/^[A-Z]{2}$/.test(mainCode)) {
+                                            console.warn("主类代码格式无效，跳过:", mainCodeRaw, row);
+                                            return; // 主类代码必须是2位大写
+                                        }
+                                        
+                                        if (!tempCategories.main[mainCode]) {
+                                            tempCategories.main[mainCode] = {
+                                                name: mainName.substring(0, 20), // 截断名称
+                                                sub: []
+                                            };
+                                        }
+                                        
+                                        // 仅当子类代码和名称都存在时才添加子类
+                                        if (subCode && /^[a-z]+$/.test(subCode) && subName) { // 验证子类代码是小写字母
+                                            const subEntry = `${subCode}-${subName.substring(0, 20)}`;
+                                            if (!tempCategories.main[mainCode].sub.includes(subEntry)) {
+                                                tempCategories.main[mainCode].sub.push(subEntry);
+                                            }
+                                        } else if (subCode || subName) {
+                                            // 如果提供了子类代码或名称，但格式不符或不完整，则记录警告
+                                            console.warn("子类信息不完整或格式错误，未添加:", { subCode, subName }, row);
+                                        }
+                                    } catch(catError) {
+                                       console.error('处理分类行时出错:', row, catError);
+                                    }
+                                });
+
+                                // --- 修改开始 ---
+                                // 直接使用导入的分类数据覆盖 Firebase 和本地缓存
+                                if (Object.keys(tempCategories.main).length > 0) {
+                                    await db.ref(getProjectPath('categories')).set(tempCategories); // 使用 set 覆盖
+                                    categories = tempCategories; // 完全替换本地缓存
+                                    updateCategorySelectors(); // 更新下拉列表
+                                    showAlert(`分类结构已从Excel文件导入并覆盖`, 'success');
+                                    console.log("分类结构已从 Excel 文件导入并覆盖:", tempCategories);
+                                } else {
+                                    // 如果Excel中没有分类数据，可以选择清空或保留原有数据
+                                    if (confirm("Excel文件中未找到有效的分类结构。是否要清空现有的分类？")) {
+                                        await db.ref(getProjectPath('categories')).set({ main: {} }); // 清空
+                                        categories = { main: {} };
+                                        updateCategorySelectors();
+                                        showAlert('现有分类结构已清空', 'info');
+                                    } else {
+                                       console.log("保留现有分类结构。");
+                                    }
+                                }
+                                // --- 修改结束 ---
+
+                                // 原来的合并逻辑 (将被替换)
+                                /*
+                                let updates = {};
+                                let newCategoryCount = 0;
+                                Object.entries(tempCategories.main).forEach(([code, data]) => {
+                                    if (!categories.main[code]) {
+                                        // 完全是新主类
+                                        updates[`main/${code}`] = data;
+                                        categories.main[code] = data; // 更新本地缓存
+                                        newCategoryCount++;
+                                    } else {
+                                        // 主类已存在，合并子类
+                                        let existingSubs = new Set(categories.main[code].sub || []);
+                                        let subsToAdd = [];
+                                        data.sub.forEach(sub => {
+                                            if (!existingSubs.has(sub)) {
+                                                subsToAdd.push(sub);
+                                            }
+                                        });
+                                        if (subsToAdd.length > 0) {
+                                            const newSubList = [...(categories.main[code].sub || []), ...subsToAdd];
+                                            updates[`main/${code}/sub`] = newSubList;
+                                            categories.main[code].sub = newSubList; // 更新本地缓存
+                                            newCategoryCount++;
+                                        }
+                                        // 可选：如果主类名称不同，是否更新？(当前不更新)
+                                        // if (categories.main[code].name !== data.name) { ... }
+                                    }
+                                });
+                                
+                                // 保存到数据库
+                                if (Object.keys(updates).length > 0) {
+                                   await db.ref(getProjectPath('categories')).update(updates);
+                                   updateCategorySelectors(); // 更新下拉列表
+                                   showAlert(`${newCategoryCount}个分类已导入或更新`, 'success');
+                                   console.log("分类结构已更新:", updates);
+                                } else {
+                                   console.log("没有新的分类信息需要导入。");
+                                }
+                                */
+                            }
+                            
+                            // 获取史料数据
+                            const firstSheetName = workbook.SheetNames.find(name => name !== "分类结构") || workbook.SheetNames[0];
+                            if (!firstSheetName) {
+                               showAlert('未找到有效的史料数据工作表', 'error');
+                                return;
+                            }
+                            const firstSheet = workbook.Sheets[firstSheetName];
+                            const rowData = XLSX.utils.sheet_to_json(firstSheet);
+
+                            // 处理数据导入
+                            await processImportData(rowData);
+                            
+                        } catch (error) {
+                            console.error('解析Excel失败:', error);
+                            showAlert(`解析Excel失败: ${error.message}`, 'error');
+                        }
+                    };
+                    
+                    reader.readAsArrayBuffer(file);
+                } catch (error) {
+                    console.error('导入失败:', error);
+                    showAlert(`导入失败: ${error.message}`, 'error');
+                } finally {
+                    // 清理
+                     hideLoading(); // 隐藏加载提示
+                    document.body.removeChild(fileInput);
+                }
+            });
+
+            // 触发文件选择对话框
+            fileInput.click();
+        }
+
+        // 处理Excel导入数据
+        async function processImportData(rowData) {
+            showLoading('正在处理导入的数据...'); // 更新提示
             try {
-                const cachedSession = localStorage.getItem('currentSession');
-                if (cachedSession) {
-                    const sessionData = JSON.parse(cachedSession);
-                    if (sessionData && sessionData.projectId) {
-                        console.log('恢复缓存的会话数据');
-                        return true;
+                const entriesRef = db.ref(getProjectPath('entries'));
+                const batch = {};
+                let newCount = 0;
+                let updateCount = 0;
+                let errorCount = 0;
+                let identifiedCount = 0;
+                
+                // 用于记录处理详情的数组
+                const importResults = {
+                    new: [],
+                    updated: [],
+                    identified: [],
+                    error: []
+                };
+
+                // 新增：检查和修正Excel字段名
+                if (rowData.length > 0) {
+                    // 获取第一行数据的所有键
+                    const firstRowKeys = Object.keys(rowData[0]);
+                    console.log("Excel文件字段:", firstRowKeys);
+                    
+                    // 定义字段映射规则 - 更宽松的匹配
+                    const fieldMappings = {
+                        "日期": ["日期", "date", "日期：", "时间", "时间："],
+                        "主分类": ["主分类", "main", "主分类：", "主分", "主分：", "主类", "主类："],
+                        "子分类": ["子分类", "sub", "子分类：", "子分", "子分：", "子类", "子类："],
+                        "标题": ["标题", "title", "标题：", "名称", "名称："],
+                        "原文内容": ["原文内容", "content", "原文内容：", "内容", "内容：", "正文", "正文：", "原文", "原文："],
+                        "分析": ["分析", "analysis", "分析：", "解读", "解读：", "评论", "评论："],
+                        "相关链接": ["相关链接", "links", "相关链接：", "链接", "链接：", "网址", "网址：", "url", "urls"],
+                        "关键词": ["关键词", "keywords", "关键词：", "关键字", "关键字：", "标签", "标签：", "tags"],
+                        "ID": ["ID", "id", "编号", "编号：", "条目ID"]
+                    };
+                    
+                    // 创建字段映射
+                    const actualFieldMapping = {};
+                    
+                    // 为每个预期字段，查找匹配的实际字段名
+                    Object.keys(fieldMappings).forEach(expectedField => {
+                        const possibleMatches = fieldMappings[expectedField];
+                        // 查找第一个匹配的字段名
+                        const matchedField = firstRowKeys.find(key => 
+                            possibleMatches.some(match => 
+                                key.toLowerCase().trim() === match.toLowerCase().trim()
+                            )
+                        );
+                        
+                        if (matchedField) {
+                            actualFieldMapping[expectedField] = matchedField;
+                            console.log(`映射字段 '${expectedField}' 到 '${matchedField}'`);
+                        } else {
+                            console.log(`未找到字段 '${expectedField}' 的匹配项`);
+                        }
+                    });
+                    
+                    console.log("最终字段映射:", actualFieldMapping);
+                    
+                    // 自动修正数据：为每一行创建规范的字段名
+                    rowData = rowData.map(row => {
+                        const standardizedRow = {};
+                        
+                        // 使用映射将原始字段名转换为标准字段名
+                        Object.keys(actualFieldMapping).forEach(standardField => {
+                            const actualField = actualFieldMapping[standardField];
+                            if (row.hasOwnProperty(actualField)) {
+                                standardizedRow[standardField] = row[actualField];
+                            }
+                        });
+                        
+                        // 保留未映射的字段
+                        Object.keys(row).forEach(originalField => {
+                            if (!Object.values(actualFieldMapping).includes(originalField)) {
+                                standardizedRow[originalField] = row[originalField];
+                            }
+                        });
+                        
+                        return standardizedRow;
+                    });
+                    
+                    console.log("标准化后的数据样例:", rowData[0]);
+                }
+
+                // 获取当前所有条目，用于检查重复
+                const snapshot = await entriesRef.once('value');
+                const existingEntries = snapshot.val() || {};
+                
+                // 建立ID到Key的映射，用于快速查找
+                const idToKeyMap = {};
+                // 建立内容指纹到Key的映射，用于查找相似项
+                const contentFingerprintMap = {};
+                // 建立标题到Key的映射
+                const titleMap = {};
+                
+                Object.entries(existingEntries).forEach(([key, entry]) => {
+                    // ID映射
+                    idToKeyMap[entry.id] = key;
+                    
+                    // 标题映射
+                    if (entry.title) {
+                        const titleKey = entry.title.trim().toLowerCase();
+                        if (!titleMap[titleKey]) {
+                            titleMap[titleKey] = [];
+                        }
+                        titleMap[titleKey].push({key, entry});
+                    }
+                    
+                    // 内容指纹映射
+                    if (entry.title && entry.content) {
+                        const fingerprint = (entry.title + entry.content.substring(0, 100)).replace(/\s+/g, '').toLowerCase();
+                        contentFingerprintMap[fingerprint] = key;
+                    }
+                });
+                
+                // 检查Excel文件是否包含ID列
+                const hasIdColumn = rowData.length > 0 && rowData[0].hasOwnProperty('ID');
+                console.log("Excel文件是否包含ID列:", hasIdColumn);
+                
+                // 处理每一行数据
+                for (const row of rowData) {
+                    try {
+                        console.log("正在处理行:", row);
+                        
+                        // 验证和转换行数据
+                        const entry = {
+                            date: row['日期'] || '',
+                            mainCat: row['主分类'] || '',
+                            subCat: row['子分类'] || '',
+                            title: row['标题'] || '',
+                            content: row['原文内容'] || '',
+                            analysis: row['分析'] || '',
+                            links: row['相关链接'] ? row['相关链接'].split(';').map(l => l.trim()).filter(Boolean) : [],
+                            keywords: row['关键词'] ? row['关键词'].split(';').map(k => k.trim()).filter(Boolean) : [],
+                            updatedAt: firebase.database.ServerValue.TIMESTAMP
+                        };
+
+                        // 1. 如果有ID字段，尝试按ID匹配
+                        if (row['ID'] && idToKeyMap[row['ID']]) {
+                            console.log("通过ID匹配到条目:", row['ID']);
+                            const existingKey = idToKeyMap[row['ID']];
+                            entry.id = row['ID'];
+                            // 修复：确保createdAt不为undefined
+                            entry.createdAt = existingEntries[existingKey].createdAt || firebase.database.ServerValue.TIMESTAMP; // 保留原创建时间，若不存在则使用当前时间
+                            batch[`${existingKey}`] = entry;
+                            updateCount++;
+                            importResults.updated.push({
+                                title: entry.title,
+                                id: entry.id,
+                                matchType: 'ID匹配'
+                            });
+                            continue; // 找到匹配项，跳过后续检查
+                        }
+                        
+                        // 2. 尝试通过标题精确匹配
+                        let identified = false;
+                        if (entry.title) {
+                            const titleKey = entry.title.trim().toLowerCase();
+                            if (titleMap[titleKey] && titleMap[titleKey].length === 1) {
+                                // 只有一个标题完全匹配的条目
+                                console.log("通过标题匹配到条目:", entry.title);
+                                const {key, entry: existingEntry} = titleMap[titleKey][0];
+                                entry.id = existingEntry.id;
+                                // 修复：确保createdAt不为undefined
+                                entry.createdAt = existingEntry.createdAt || firebase.database.ServerValue.TIMESTAMP;
+                                batch[key] = entry;
+                                identifiedCount++;
+                                identified = true;
+                                importResults.identified.push({
+                                    title: entry.title,
+                                    id: entry.id,
+                                    matchType: '标题匹配'
+                                });
+                            }
+                        }
+                        
+                        // 3. 尝试通过内容指纹识别
+                        if (!identified && entry.title && entry.content) {
+                            const fingerprint = (entry.title + entry.content.substring(0, 100)).replace(/\s+/g, '').toLowerCase();
+                            
+                            if (contentFingerprintMap[fingerprint]) {
+                                console.log("通过内容指纹匹配到条目");
+                                const existingKey = contentFingerprintMap[fingerprint];
+                                entry.id = existingEntries[existingKey].id;
+                                // 修复：确保createdAt不为undefined
+                                entry.createdAt = existingEntries[existingKey].createdAt || firebase.database.ServerValue.TIMESTAMP; // 保留原创建时间
+                                batch[`${existingKey}`] = entry;
+                                identifiedCount++;
+                                identified = true;
+                                importResults.identified.push({
+                                    title: entry.title,
+                                    id: entry.id,
+                                    matchType: '内容匹配'
+                                });
+                            }
+                        }
+                        
+                        // 4. 如果未识别到匹配项，则创建新条目
+                        if (!identified) {
+                            // 检查必填字段
+                            if (!entry.date || !entry.mainCat || !entry.subCat) {
+                                console.warn('跳过缺少必要字段的行:', row);
+                                errorCount++;
+                                importResults.error.push({
+                                    title: entry.title || '无标题',
+                                    reason: '缺少必要字段 (日期/主分类/子分类)'
+                                });
+                                continue;
+                            }
+                            
+                            // 检查必须的分类是否存在
+                            if (!categories.main[entry.mainCat]) {
+                                console.warn(`主分类 ${entry.mainCat} 不存在，跳过:`, row);
+                                errorCount++;
+                                importResults.error.push({
+                                    title: entry.title || '无标题',
+                                    reason: `主分类 ${entry.mainCat} 不存在`
+                                });
+                                continue;
+                            }
+                            
+                            try {
+                            // 生成新ID
+                                console.log("生成新条目ID");
+                            const newId = await generateID(entry);
+                            entry.id = newId;
+                            entry.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                            batch[newId] = entry;
+                            newCount++;
+                                importResults.new.push({
+                                    title: entry.title,
+                                    id: newId
+                                });
+                            } catch (error) {
+                                console.error('生成ID失败:', error, row);
+                                errorCount++;
+                                importResults.error.push({
+                                    title: entry.title || '无标题',
+                                    reason: `生成ID失败: ${error.message}`
+                                });
+                            }
+                        }
+                    } catch (err) {
+                        console.error('处理行数据失败:', err, row);
+                        errorCount++;
+                        importResults.error.push({
+                            title: row.标题 || '无标题',
+                            reason: `处理数据失败: ${err.message}`
+                        });
                     }
                 }
-                return true;
-                            } catch (error) {
-                console.error('恢复会话失败:', error);
-                return true; // 继续执行，不影响主流程
+
+                // 批量更新数据库
+                if (Object.keys(batch).length > 0) {
+                    showLoading('正在保存数据到数据库...'); // 更新提示
+                    // 数据清理：确保批量数据中没有undefined值，这会导致Firebase更新失败
+                    Object.keys(batch).forEach(key => {
+                        const entryData = batch[key];
+                        
+                        // 确保所有预期字段都有默认值
+                        entryData.date = entryData.date || '';
+                        entryData.mainCat = entryData.mainCat || '';
+                        entryData.subCat = entryData.subCat || '';
+                        entryData.title = entryData.title || '';
+                        entryData.content = entryData.content || '';
+                        entryData.analysis = entryData.analysis || '';
+                        entryData.links = entryData.links || [];
+                        entryData.keywords = entryData.keywords || [];
+                        entryData.id = entryData.id || '';
+                        
+                        // 确保时间戳字段正确
+                        if (!entryData.createdAt) {
+                            entryData.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                        }
+                        entryData.updatedAt = firebase.database.ServerValue.TIMESTAMP;
+                        
+                        // 针对数组字段进行特殊处理
+                        if (typeof entryData.links === 'string') {
+                            entryData.links = entryData.links.split(';').map(l => l.trim()).filter(Boolean);
+                        }
+                        if (typeof entryData.keywords === 'string') {
+                            entryData.keywords = entryData.keywords.split(';').map(k => k.trim()).filter(Boolean);
+                        }
+                        
+                        // 更新批量数据
+                        batch[key] = entryData;
+                        
+                        // 打印调试信息
+                        console.log(`处理条目 ${key} 的数据:`, JSON.stringify(entryData));
+                    });
+                    
+                    try {
+                    await entriesRef.update(batch);
+                        showAlert(`导入完成: 新增${newCount}条, 更新${updateCount}条, 识别恢复${identifiedCount}条, 失败${errorCount}条`, 'success');
+                        // 显示导入结果详情
+                        showImportResults(importResults, newCount, updateCount, identifiedCount, errorCount);
+                    } catch (error) {
+                        console.error('批量更新失败:', error, '批量数据:', JSON.stringify(batch));
+                        showAlert(`批量更新失败: ${error.message}`, 'error');
+                    }
+                } else {
+                    showAlert('没有有效数据可导入', 'warning');
+                 hideLoading(); // 如果没有数据导入，也需要隐藏
+                }
+            } catch (error) {
+                console.error('批量导入失败:', error);
+                showAlert(`批量导入失败: ${error.message}`, 'error');
+                 hideLoading(); // 出错时也要隐藏
             }
+            // 注意：成功保存后的 hideLoading() 在 importExcel 的 finally 中处理
+        }
+        
+        // 显示导入结果详情
+        function showImportResults(results, newCount, updateCount, identifiedCount, errorCount) {
+            // 创建对话框元素
+            const dialog = document.createElement('div');
+            dialog.className = 'form-popup';
+            dialog.style.display = 'block';
+            dialog.style.width = '90%';
+            dialog.style.maxWidth = '1200px';
+            
+            // 构建对话框HTML
+            dialog.innerHTML = `
+                <h2>Excel导入结果详情</h2>
+                <div style="margin-bottom: 20px;">
+                    总结: 新增${newCount}条, 更新${updateCount}条, 识别恢复${identifiedCount}条, 失败${errorCount}条
+                </div>
+                <div class="form-content" style="max-height: 60vh; overflow-y: auto;">
+                    <!-- 新增条目 -->
+                    ${results.new.length > 0 ? `
+                        <div class="result-section" style="margin-bottom: 30px;">
+                            <h3>新增条目 (${results.new.length})</h3>
+                            <table class="entry-table" style="width: 100%;">
+                                <tr>
+                                    <th>标题</th>
+                                    <th>ID</th>
+                                </tr>
+                                ${results.new.map(item => `
+                                    <tr>
+                                        <td>${item.title || '无标题'}</td>
+                                        <td>${item.id}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- 更新条目 -->
+                    ${results.updated.length > 0 ? `
+                        <div class="result-section" style="margin-bottom: 30px;">
+                            <h3>更新条目 (${results.updated.length})</h3>
+                            <table class="entry-table" style="width: 100%;">
+                                <tr>
+                                    <th>标题</th>
+                                    <th>ID</th>
+                                    <th>匹配方式</th>
+                                </tr>
+                                ${results.updated.map(item => `
+                                    <tr>
+                                        <td>${item.title || '无标题'}</td>
+                                        <td>${item.id}</td>
+                                        <td>${item.matchType}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- 识别恢复条目 -->
+                    ${results.identified.length > 0 ? `
+                        <div class="result-section" style="margin-bottom: 30px;">
+                            <h3>识别恢复条目 (${results.identified.length})</h3>
+                            <table class="entry-table" style="width: 100%;">
+                                <tr>
+                                    <th>标题</th>
+                                    <th>ID</th>
+                                    <th>匹配方式</th>
+                                </tr>
+                                ${results.identified.map(item => `
+                                    <tr>
+                                        <td>${item.title || '无标题'}</td>
+                                        <td>${item.id}</td>
+                                        <td>${item.matchType}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- 失败条目 -->
+                    ${results.error.length > 0 ? `
+                        <div class="result-section" style="margin-bottom: 30px;">
+                            <h3>失败条目 (${results.error.length})</h3>
+                            <table class="entry-table" style="width: 100%;">
+                                <tr>
+                                    <th>标题</th>
+                                    <th>失败原因</th>
+                                </tr>
+                                ${results.error.map(item => `
+                                    <tr>
+                                        <td>${item.title || '无标题'}</td>
+                                        <td>${item.reason}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="action-buttons">
+                    <button class="primary-btn" onclick="this.parentElement.parentElement.remove()">关闭</button>
+                </div>
+            `;
+            
+            // 添加到页面
+            document.body.appendChild(dialog);
+        }
+        
+        // 扫描重复条目功能
+        function scanDuplicates() {
+            showLoading('正在扫描重复条目...');
+            setTimeout(() => {
+                try {
+                    // 确保已加载所有条目
+                    if (!entries || entries.length === 0) {
+                        showAlert('没有找到任何条目，请先加载数据', 'error');
+                        return;
+                    }
+                    
+                    // 查找重复条目
+                    const duplicateGroups = findDuplicateEntries(entries);
+                    const groupCount = Object.keys(duplicateGroups).length;
+                    
+                    if (groupCount === 0) {
+                        showAlert('未发现重复条目', 'success');
+                    } else {
+                        // 显示重复条目对话框
+                        showDuplicatesDialog(duplicateGroups);
+                    }
+                } catch (error) {
+                    console.error('扫描重复条目失败:', error);
+                    showAlert(`扫描重复条目失败: ${error.message}`, 'error');
+                } finally {
+                     hideLoading(); // 隐藏加载提示
+                }
+            }, 100);
+        }
+        
+        // 查找重复条目
+        function findDuplicateEntries(entriesParam) {
+            // 使用传入的entries参数或全局的entries变量
+            const entriesToCheck = entriesParam || entries;
+            
+            // 用于存储找到的重复组
+            const duplicateGroups = {};
+            // 用于快速检索的映射
+            const contentMap = {};
+            const titleMap = {};
+            
+            // 遍历所有条目
+            entriesToCheck.forEach(entry => {
+                // 创建内容指纹 (标题+内容)
+                if (entry.content) {
+                    // 1. 精确内容匹配 (标题 + 内容)
+                const contentFingerprint = (entry.title + entry.content).replace(/\s+/g, '');
+                
+                // 如果指纹非空
+                if (contentFingerprint.length > 0) {
+                    if (!contentMap[contentFingerprint]) {
+                        contentMap[contentFingerprint] = [entry.id];
+                    } else {
+                        contentMap[contentFingerprint].push(entry.id);
+                        }
+                    }
+                }
+                
+                // 2. 标题匹配（可能是不同版本的相同条目）
+                if (entry.title && entry.title.trim().length > 0) {
+                    const titleFingerprint = entry.title.replace(/\s+/g, '').toLowerCase();
+                    
+                    if (!titleMap[titleFingerprint]) {
+                        titleMap[titleFingerprint] = [entry.id];
+                    } else {
+                        titleMap[titleFingerprint].push(entry.id);
+                    }
+                }
+            });
+            
+            // 找出有多个条目的指纹（内容完全相同）
+            Object.keys(contentMap).forEach(fingerprint => {
+                if (contentMap[fingerprint].length > 1) {
+                    const group = contentMap[fingerprint].map(id => entriesToCheck.find(e => e.id === id)).filter(Boolean);
+                    if (group.length > 1) { // 确保至少有两个有效条目
+                        duplicateGroups['c_' + fingerprint.substring(0, 20)] = {
+                            items: group,
+                            type: '完全重复'
+                        };
+                    }
+                }
+            });
+            
+            // 找出标题相同但内容不同的条目
+            Object.keys(titleMap).forEach(titleKey => {
+                if (titleMap[titleKey].length > 1) {
+                    // 检查这些条目是否已经在完全重复组中
+                    const ids = titleMap[titleKey];
+                    const alreadyIncluded = ids.every(id => 
+                        Object.values(duplicateGroups).some(group => 
+                            group.items.some(item => item.id === id)
+                        )
+                    );
+                    
+                    // 如果不是已包含的重复条目，添加为标题重复组
+                    if (!alreadyIncluded) {
+                        const group = ids.map(id => entriesToCheck.find(e => e.id === id)).filter(Boolean);
+                        if (group.length > 1) { // 确保至少有两个有效条目
+                            duplicateGroups['t_' + titleKey.substring(0, 20)] = {
+                                items: group,
+                                type: '标题重复'
+                            };
+                        }
+                    }
+                }
+            });
+            
+            return duplicateGroups;
+        }
+        
+        // 显示重复条目对话框
+        function showDuplicatesDialog(duplicates) {
+            // 创建对话框元素
+            const dialog = document.createElement('div');
+            dialog.className = 'form-popup';
+            dialog.style.display = 'block';
+            dialog.style.width = '90%';
+            dialog.style.maxWidth = '1200px';
+            
+            // 计算重复组数量和条目数量
+            const groupCount = Object.keys(duplicates).length;
+            const totalDuplicates = Object.values(duplicates).reduce((sum, group) => sum + group.items.length, 0);
+            
+            // 构建对话框HTML
+            dialog.innerHTML = `
+                <h2>扫描重复条目结果</h2>
+                <div style="margin-bottom: 20px;">
+                    找到 ${groupCount} 组重复条目，共涉及 ${totalDuplicates} 条记录。
+                </div>
+                <div class="form-content" style="max-height: 60vh; overflow-y: auto;">
+                    ${Object.entries(duplicates).map(([fingerprint, group], groupIndex) => `
+                        <div class="duplicate-group" style="margin-bottom: 30px; border: 1px solid var(--glass-border); padding: 15px; border-radius: 8px;">
+                            <h3>重复组 #${groupIndex + 1} - ${group.type} (${group.items.length}条)</h3>
+                            <table class="entry-table" style="width: 100%;">
+                                <tr>
+                                    <th>选择</th>
+                                    <th>ID</th>
+                                    <th>日期</th>
+                                    <th>标题</th>
+                                    <th>分类</th>
+                                </tr>
+                                ${group.items.map((entry, entryIndex) => `
+                                    <tr>
+                                        <td>
+                                            <input type="radio" name="keep_${groupIndex}" value="${entry.id}" 
+                                                   ${entryIndex === 0 ? 'checked' : ''}>
+                                        </td>
+                                        <td>${entry.id}</td>
+                                        <td>${entry.date || ''}</td>
+                                        <td>${entry.title || ''}</td>
+                                        <td>${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</td>
+                                    </tr>
+                                `).join('')}
+                            </table>
+                            <div style="margin-top: 10px;">
+                                <button class="primary-btn" onclick="viewEntry('${group.items[0].id}', this)">查看内容</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="action-buttons">
+                    <button class="primary-btn" onclick="processDuplicates(this)">删除选中项以外的重复条目</button>
+                    <button class="danger-btn" onclick="this.parentElement.parentElement.remove()">关闭</button>
+                </div>
+            `;
+            
+            // 添加到页面
+            document.body.appendChild(dialog);
+        }
+        
+        // 查看条目内容
+        function viewEntry(entryId, button) {
+            const entry = entries.find(e => e.id === entryId);
+            if (!entry) return;
+            
+            // 检查是否已经显示内容
+            const container = button.parentElement.parentElement;
+            const existingContent = container.querySelector('.entry-content');
+            
+            if (existingContent) {
+                // 已显示，则切换显示状态
+                existingContent.style.display = existingContent.style.display === 'none' ? 'block' : 'none';
+                button.textContent = existingContent.style.display === 'none' ? '查看内容' : '隐藏内容';
+            } else {
+                // 未显示，创建内容区域
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'entry-content';
+                contentDiv.style.marginTop = '15px';
+                contentDiv.style.padding = '15px';
+                contentDiv.style.border = '1px solid var(--glass-border)';
+                contentDiv.style.borderRadius = '8px';
+                contentDiv.style.backgroundColor = 'var(--glass-bg)';
+                
+                contentDiv.innerHTML = `
+                    <h4>标题: ${entry.title}</h4>
+                    <div style="margin-top: 10px;"><strong>原文内容:</strong></div>
+                    <div style="max-height: 300px; overflow-y: auto; margin: 10px 0; padding: 10px; border: 1px solid var(--glass-border); border-radius: 4px;">
+                        ${entry.content || '<em>无内容</em>'}
+                    </div>
+                    <div style="margin-top: 10px;"><strong>分析:</strong></div>
+                    <div style="max-height: 300px; overflow-y: auto; margin: 10px 0; padding: 10px; border: 1px solid var(--glass-border); border-radius: 4px;">
+                        ${entry.analysis || '<em>无分析</em>'}
+                    </div>
+                `;
+                
+                container.appendChild(contentDiv);
+                button.textContent = '隐藏内容';
+            }
+        }
+        
+        // 处理重复条目选择
+        async function processDuplicates(button) {
+            if (!confirm('确定要删除未选中的重复条目吗？此操作不可撤销。')) {
+                return;
+            }
+            
+            const dialog = button.parentElement.parentElement;
+            const duplicateGroups = dialog.querySelectorAll('.duplicate-group');
+            const entriesRef = db.ref(getProjectPath('entries'));
+            let deleteCount = 0;
+            
+            try {
+                button.disabled = true;
+                button.textContent = '处理中...';
+                
+                for (const group of duplicateGroups) {
+                    const selectedRadio = group.querySelector('input[type="radio"]:checked');
+                    if (!selectedRadio) continue;
+                    
+                    const keepId = selectedRadio.value;
+                    const allRadios = group.querySelectorAll('input[type="radio"]');
+                    
+                    for (const radio of allRadios) {
+                        if (radio.value !== keepId) {
+                            const deleteId = radio.value;
+                            await entriesRef.child(deleteId).remove();
+                            deleteCount++;
+                        }
+                    }
+                }
+                
+                showAlert(`成功删除 ${deleteCount} 条重复项`, 'success');
+                dialog.remove();
+                
+            } catch (error) {
+                console.error('处理重复条目失败:', error);
+                showAlert(`处理重复条目失败: ${error.message}`, 'error');
+                button.disabled = false;
+                button.textContent = '删除选中项以外的重复条目';
+            }
+        }
+        
+        // 切换视图模式
+        function changeViewMode(mode) {
+            currentViewMode = mode;
+            renderEntries();
         }
     </script>
     
