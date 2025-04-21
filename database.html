@@ -1561,146 +1561,6 @@
     </div>
 
     <script>
-        // 页面加载状态检查
-        let pageLoaded = false;
-        let firebaseInitialized = false;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            pageLoaded = true;
-            if (firebaseInitialized) {
-                initializeApp();
-            }
-        });
-
-        // Firebase初始化
-        const firebaseConfig = {
-            apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
-            authDomain: "slsj-54760.firebaseapp.com",
-            databaseURL: "https://slsj-54760-default-rtdb.firebaseio.com",
-            projectId: "slsj-54760",
-            storageBucket: "slsj-54760.firebasestorage.app",
-            messagingSenderId: "890890573955",
-            appId: "1:890890573955:web:328c0ed09af23d634b23b6"
-        };
-
-        let app;
-        let auth;
-        let db;
-
-        try {
-            app = firebase.initializeApp(firebaseConfig);
-            auth = firebase.auth();
-            db = firebase.database();
-            firebaseInitialized = true;
-            
-            if (pageLoaded) {
-                initializeApp();
-            }
-        } catch (error) {
-            console.error('Firebase初始化失败:', error);
-            showAlert('系统初始化失败，请刷新页面重试', 'error');
-        }
-
-        // 应用初始化函数
-        function initializeApp() {
-            // 初始化全局变量
-            window.entries = [];
-            window.categories = { main: {} };
-            window.currentPage = 1;
-            window.ENTRIES_PER_PAGE = 10;
-            window.searchQuery = '';
-            window.advancedFilter = {
-                startDate: null,
-                endDate: null,
-                tags: [],
-                keywords: [],
-                keywordLogic: 'OR'
-            };
-            
-            // 设置认证状态监听
-            auth.onAuthStateChanged(async user => {
-                console.log('认证状态变更', new Date().toISOString());
-                
-                if (window.isInitializing) {
-                    console.log('初始化进行中，跳过');
-                    return;
-                }
-                
-                window.isInitializing = true;
-                
-                try {
-                    if (user) {
-                        await handleUserAuthenticated(user);
-                    } else {
-                        handleUserSignedOut();
-                    }
-                } catch (error) {
-                    console.error('认证处理失败:', error);
-                    handleAuthError(error);
-                }
-            });
-        }
-
-        // 处理用户认证成功
-        async function handleUserAuthenticated(user) {
-            try {
-                const projectId = new URLSearchParams(window.location.search).get('project') || 
-                                localStorage.getItem('currentProject');
-                
-                if (!projectId) {
-                    throw new Error('缺失项目ID参数');
-                }
-
-                showLoading('正在验证课题访问权限...');
-                
-                const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
-                const projectSnapshot = await projectRef.once('value');
-                
-                if (!projectSnapshot.exists()) {
-                    throw new Error('指定课题不存在或无访问权限');
-                }
-
-                // 保存会话信息
-                localStorage.setItem('currentProject', projectId);
-                localStorage.setItem('currentSession', JSON.stringify({
-                    projectId,
-                    timestamp: Date.now()
-                }));
-
-                // 初始化页面
-                const projectName = projectSnapshot.val().name || '未命名课题';
-                document.title = `${projectName} - 史料数据库`;
-                document.getElementById('projectTitle').textContent = projectName;
-                
-                showLoading('正在加载数据...');
-                await initDataListeners();
-                await restoreCachedSessions();
-                
-            } catch (error) {
-                throw error;
-            } finally {
-                window.isInitializing = false;
-            }
-        }
-
-        // 处理用户退出
-        function handleUserSignedOut() {
-            console.log('用户未登录，跳转到登录页');
-            clearInterval(window.trackingInterval);
-            localStorage.removeItem('currentSession');
-            window.location.replace('index.html');
-        }
-
-        // 处理认证错误
-        function handleAuthError(error) {
-            console.error('认证错误:', error);
-            hideLoading();
-            showAlert(error.message, 'error');
-            setTimeout(() => {
-                window.location.replace('index.html');
-            }, 2000);
-        }
-
         // 添加特性检测
         if (!CSS.supports('backdrop-filter', 'blur(1px)')) {
             document.body.classList.add('no-blur-effect');
@@ -2102,6 +1962,161 @@
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script> <!-- 恢复 Quill JS -->
     <!-- <script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/super-build/ckeditor.js"></script> --> <!-- 移除 CKEditor JS -->
     <script>
+        // 页面加载状态检查
+        let pageLoaded = false;
+        let firebaseInitialized = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            pageLoaded = true;
+            if (firebaseInitialized) {
+                initializeApp();
+            }
+        });
+
+        // Firebase初始化
+        const firebaseConfig = {
+            apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
+            authDomain: "slsj-54760.firebaseapp.com",
+            databaseURL: "https://slsj-54760-default-rtdb.firebaseio.com",
+            projectId: "slsj-54760",
+            storageBucket: "slsj-54760.firebasestorage.app",
+            messagingSenderId: "890890573955",
+            appId: "1:890890573955:web:328c0ed09af23d634b23b6"
+        };
+
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+        firebaseInitialized = true;
+        
+        if (pageLoaded) {
+            initializeApp();
+        }
+
+        // 应用初始化函数
+        function initializeApp() {
+            console.log('开始初始化应用...');
+            
+            // 初始化全局变量
+            window.entries = [];
+            window.categories = { main: {} };
+            window.currentPage = 1;
+            window.ENTRIES_PER_PAGE = 10;
+            window.searchQuery = '';
+            window.advancedFilter = {
+                startDate: null,
+                endDate: null,
+                tags: [],
+                keywords: [],
+                keywordLogic: 'OR'
+            };
+
+            // 初始化UI组件
+            initializeUIComponents();
+            
+            // 设置认证状态监听
+            auth.onAuthStateChanged(handleAuthStateChange);
+        }
+
+        // 初始化UI组件
+        function initializeUIComponents() {
+            // 初始化编辑器
+            if (typeof Quill !== 'undefined') {
+                window.quill = new Quill('#editor-container', {
+                    theme: 'snow',
+                    placeholder: '请输入内容...'
+                });
+                
+                window.logQuill = new Quill('#log-editor-container', {
+                    theme: 'snow',
+                    placeholder: '请输入日志内容...'
+                });
+            }
+        }
+
+        // 处理认证状态变化
+        async function handleAuthStateChange(user) {
+            console.log('认证状态变更', new Date().toISOString());
+            
+            if (window.isInitializing) {
+                console.log('初始化进行中，跳过');
+                return;
+            }
+            
+            window.isInitializing = true;
+            
+            try {
+                if (user) {
+                    await handleUserAuthenticated(user);
+                } else {
+                    handleUserSignedOut();
+                }
+            } catch (error) {
+                console.error('认证处理失败:', error);
+                handleAuthError(error);
+            }
+        }
+
+        // 处理用户认证成功
+        async function handleUserAuthenticated(user) {
+            try {
+                const projectId = new URLSearchParams(window.location.search).get('project') || 
+                                localStorage.getItem('currentProject');
+                
+                if (!projectId) {
+                    throw new Error('缺失项目ID参数');
+                }
+
+                showLoading('正在验证课题访问权限...');
+                
+                const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
+                const projectSnapshot = await projectRef.once('value');
+                
+                if (!projectSnapshot.exists()) {
+                    throw new Error('指定课题不存在或无访问权限');
+                }
+
+                // 保存会话信息
+                localStorage.setItem('currentProject', projectId);
+                localStorage.setItem('currentSession', JSON.stringify({
+                    projectId,
+                    timestamp: Date.now()
+                }));
+
+                // 初始化页面
+                const projectName = projectSnapshot.val().name || '未命名课题';
+                document.title = `${projectName} - 史料数据库`;
+                document.getElementById('projectTitle').textContent = projectName;
+                
+                showLoading('正在加载数据...');
+                await initDataListeners();
+                await restoreCachedSessions();
+                
+            } catch (error) {
+                throw error;
+            } finally {
+                window.isInitializing = false;
+            }
+        }
+
+        // 处理用户退出
+        function handleUserSignedOut() {
+            console.log('用户未登录，跳转到登录页');
+            clearInterval(window.trackingInterval);
+            localStorage.removeItem('currentSession');
+            window.location.replace('index.html');
+        }
+
+        // 处理认证错误
+        function handleAuthError(error) {
+            console.error('认证错误:', error);
+            hideLoading();
+            showAlert(error.message, 'error');
+            setTimeout(() => {
+                window.location.replace('index.html');
+            }, 2000);
+        }
+
         // 全局数据监听器
         let unsubscribeEntries = null;
         let unsubscribeCategories = null;
@@ -2609,6 +2624,344 @@
                              [{ 'font': Font.whitelist }], // 使用扩展后的字体列表
                              [{ 'size': Size.whitelist }],
                              [{ 'header': [1, 2, 3, 4, 5, 6, false] }], // 添加更多标题级别
+                             ['bold', 'italic', 'underline', 'strike'], // 添加删除线
+                             [{ 'script': 'sub'}, { 'script': 'super' }], // 添加上下标
+                             [{ 'color': [] }, { 'background': [] }], // 颜色和背景色
+                             ['blockquote', 'code-block'],
+                             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                             [{ 'indent': '-1'}, { 'indent': '+1' }], // 缩进
+                             [{ 'align': [] }], // 对齐方式
+                             ['link', 'image', 'video'], // 链接、图片、视频
+                             ['clean'] // 清除格式
+                         ]
+                     },
+                     theme: 'snow'
+                 });
+                 console.log("Quill 实例 (原文) 已创建:", quill); // 添加日志
+             }
+             
+             if (!window.analysisQuill) {
+                 window.analysisQuill = new Quill('#analysis-editor-container', {
+                      modules: {
+                          toolbar: [
+                             [{ 'font': Font.whitelist }],
+                             [{ 'size': Size.whitelist }],
+                              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                              ['bold', 'italic', 'underline', 'strike'],
+                              [{ 'script': 'sub'}, { 'script': 'super' }],
+                              [{ 'color': [] }, { 'background': [] }],
+                              ['blockquote', 'code-block'],
+                              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                              [{ 'indent': '-1'}, { 'indent': '+1' }],
+                              [{ 'align': [] }],
+                              ['link', 'image', 'video'],
+                              ['clean']
+                          ]
+                      },
+                     theme: 'snow'
+                 });
+                 console.log("Quill 实例 (分析) 已创建:", window.analysisQuill); // 添加日志
+                 analysisQuill.container.style.height = '300px';
+                 analysisQuill.container.style.overflowY = 'auto';
+             }
+         }
+
+         const fontStyle = document.createElement('style');
+         fontStyle.textContent = `
+             /* 更新字体样式 */
+             .ql-font-SimSun { font-family: SimSun, "宋体", serif !important; }
+             .ql-font-STFangsong { font-family: STFangsong, "华文仿宋", FangSong, "仿宋", serif !important; }
+             .ql-font-KaiTi { font-family: KaiTi, "楷体", serif !important; }
+             .ql-font-STZhongsong { font-family: STZhongsong, "华文中宋", SimSun, serif !important; } /* 添加华文中宋 */
+             .ql-font-TimesNewRoman { font-family: "Times New Roman", Times, serif !important; }
+             .ql-font-Arial { font-family: Arial, Helvetica, sans-serif !important; }
+             /* 移除不再需要的字体 */
+             /* .ql-font-仿宋 { font-family: FangSong, "仿宋", serif !important; } */
+             /* .ql-font-黑体 { font-family: SimHei, "黑体", sans-serif !important; } */
+             /* .ql-font-Courier New { font-family: Courier New, Courier, monospace !important; } */
+             
+             /* 更新字体选择器预览样式 */
+             .ql-picker.ql-font .ql-picker-item[data-value="SimSun"]::before { font-family: SimSun, "宋体", serif !important; content: "宋体" !important; }
+             .ql-picker.ql-font .ql-picker-item[data-value="STFangsong"]::before { font-family: STFangsong, "华文仿宋", FangSong, serif !important; content: "华文仿宋" !important; }
+             .ql-picker.ql-font .ql-picker-item[data-value="KaiTi"]::before { font-family: KaiTi, "楷体", serif !important; content: "楷体" !important; }
+             .ql-picker.ql-font .ql-picker-item[data-value="STZhongsong"]::before { font-family: STZhongsong, "华文中宋", SimSun, serif !important; content: "华文中宋" !important; } /* 添加 */
+             .ql-picker.ql-font .ql-picker-item[data-value="Times New Roman"]::before { font-family: "Times New Roman", Times, serif !important; content: "Times New Roman" !important; }
+             .ql-picker.ql-font .ql-picker-item[data-value="Arial"]::before { font-family: Arial, Helvetica, sans-serif !important; content: "Arial" !important; }
+             /* 移除旧样式 */
+             /* .ql-picker.ql-font .ql-picker-item[data-value="仿宋"]::before { ... } */
+             /* .ql-picker.ql-font .ql-picker-item[data-value="黑体"]::before { ... } */
+             /* .ql-picker.ql-font .ql-picker-item[data-value="Courier New"]::before { ... } */
+
+             /* 更新字体选择器标签样式 (当前选中字体) */
+             .ql-picker.ql-font .ql-picker-label[data-value="SimSun"]::before { font-family: SimSun, "宋体", serif !important; content: "宋体" !important; }
+             .ql-picker.ql-font .ql-picker-label[data-value="STFangsong"]::before { font-family: STFangsong, "华文仿宋", FangSong, serif !important; content: "华文仿宋" !important; }
+             .ql-picker.ql-font .ql-picker-label[data-value="KaiTi"]::before { font-family: KaiTi, "楷体", serif !important; content: "楷体" !important; }
+             .ql-picker.ql-font .ql-picker-label[data-value="STZhongsong"]::before { font-family: STZhongsong, "华文中宋", SimSun, serif !important; content: "华文中宋" !important; } /* 添加 */
+             .ql-picker.ql-font .ql-picker-label[data-value="Times New Roman"]::before { font-family: "Times New Roman", Times, serif !important; content: "Times New Roman" !important; }
+             .ql-picker.ql-font .ql-picker-label[data-value="Arial"]::before { font-family: Arial, Helvetica, sans-serif !important; content: "Arial" !important; }
+             /* 移除旧样式 */
+             /* .ql-picker.ql-font .ql-picker-label[data-value="仿宋"]::before { ... } */
+             /* .ql-picker.ql-font .ql-picker-label[data-value="黑体"]::before { ... } */
+             /* .ql-picker.ql-font .ql-picker-label[data-value="Courier New"]::before { ... } */
+
+              /* 字号样式 (保持不变) */
+              .ql-size-10px { font-size: 10px !important; }
+              /* ... (其他字号样式) ... */
+              .ql-size-72px { font-size: 72px !important; }
+              .ql-picker.ql-size .ql-picker-item[data-value="10px"]::before { font-size: 10px !important; }
+              /* ... (其他字号选择器样式) ... */
+              .ql-picker.ql-size .ql-picker-item[data-value="72px"]::before { font-size: 72px !important; }
+              .ql-picker.ql-size .ql-picker-label[data-value="10px"]::before { font-size: 10px !important; }
+              /* ... (其他字号选择器标签样式) ... */
+              .ql-picker.ql-size .ql-picker-label[data-value="72px"]::before { font-size: 72px !important; }
+         `;
+         document.head.appendChild(fontStyle);
+        // --- 结束恢复 ---
+
+        // --- 恢复 CKEditor 初始化函数 (注释掉) ---
+        /*
+        async function initCKEditor(elementId, existingEditorInstance) {
+             // ... (CKEditor code) ...
+        }
+        */
+        // --- 结束恢复 ---
+
+        // 表单操作
+        function showForm() {
+            const form = document.getElementById('entry-form');
+            form.style.display = 'block';
+            form.classList.remove('closing');
+            initQuill();
+             updateSubCats();
+            
+            // 加载草稿数据
+            const draft = JSON.parse(localStorage.getItem('entryDraft'));
+            if (draft && !editingId) { // 只在新建条目时恢复草稿
+                const restore = confirm('检测到未保存的编辑内容，是否恢复？');
+                if (restore) {
+                    document.querySelector('[name="date"]').value = draft.date || '';
+                    document.querySelector('[name="main-cat"]').value = draft.mainCat || '';
+                    updateSubCats();
+                    setTimeout(() => {
+                        document.querySelector('[name="sub-cat"]').value = draft.subCat || '';
+                    }, 100);
+                    document.querySelector('[name="title"]').value = draft.title || '';
+                    if (quill) quill.root.innerHTML = draft.content || '';
+                    if (window.analysisQuill) window.analysisQuill.root.innerHTML = draft.analysis || '';
+                    document.querySelector('[name="links"]').value = draft.links || '';
+                    document.querySelector('[name="keywords"]').value = draft.keywords || '';
+                }
+            }
+            
+            // 绑定自动保存
+            bindAutoSave();
+        }
+
+        function hideForm() {
+            const form = document.getElementById('entry-form');
+            form.classList.add('closing');
+            
+            setTimeout(() => {
+                form.style.display = 'none';
+                document.querySelector('#entry-form form').reset();
+                if (quill) quill.root.innerHTML = '';
+                if (window.analysisQuill) window.analysisQuill.root.innerHTML = '';
+                
+                // 仅在编辑现有条目时清除草稿
+                if (editingId) {
+                    localStorage.removeItem('entryDraft');
+                }
+                
+                 editingId = null;
+                form.classList.remove('closing');
+            }, 200);
+        }
+
+        // 分类管理
+        function showCategoryManager() {
+            const manager = document.getElementById('category-manager');
+            manager.style.display = 'block';
+            manager.classList.remove('closing');
+            renderCategoryManager();
+        }
+
+        function hideCategoryManager() {
+            const manager = document.getElementById('category-manager');
+            manager.classList.add('closing');
+            setTimeout(() => {
+                manager.style.display = 'none';
+                manager.classList.remove('closing');
+            }, 200);
+        }
+
+        function renderCategoryManager() {
+            const container = document.getElementById('main-categories');
+            container.innerHTML = Object.entries(categories.main)
+                .map(([code, data]) => `
+                    <div class="category-item">
+                        <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
+                        <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
+                        <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
+                    </div>
+                    ${data.sub.map(sub => `
+                        <div class="category-item" style="margin-left:20px">
+                            <input value="${sub.split('-')[1]}" 
+                                   onchange="updateSubCategory('${code}', '${sub}', this.value)">
+                            <button class="danger-btn" 
+                                    onclick="removeSubCategory('${code}', '${sub}')">删除</button>
+                        </div>
+                    `).join('')}
+                `).join('');
+        }
+
+        // 分类操作
+        function addMainCategory() {
+            const code = prompt("请输入主类代码（2位大写字母）：");
+            // 验证：必须是2位大写字母
+            if (code && /^[A-Z]{2}$/.test(code)) {
+                categories.main[code] = { name: '新分类', sub: [] };
+                renderCategoryManager();
+            } else {
+                alert("主类代码格式错误，请输入2位大写字母。");
+            }
+        }
+
+        function removeMainCategory(code) {
+            if (confirm("确定要删除这个主类及其所有子类吗？")) {
+                delete categories.main[code];
+                renderCategoryManager();
+            }
+        }
+
+        function addSubCategory(mainCode) {
+            const subCode = prompt("请输入子类代码（小写字母）：");
+            // 验证：必须是小写字母
+            if (subCode && /^[a-z]+$/.test(subCode)) {
+                const subName = prompt("请输入子类名称：");
+                if (subName) { // 确保子类名称不为空
+                   categories.main[mainCode].sub.push(`${subCode}-${subName}`);
+                   renderCategoryManager();
+                }
+            } else {
+                 alert("子类代码格式错误，请输入小写字母。");
+            }
+        }
+
+        function removeSubCategory(mainCode, subCode) {
+            categories.main[mainCode].sub = categories.main[mainCode].sub.filter(
+                sc => sc !== subCode
+            );
+            renderCategoryManager();
+        }
+
+        async function updateMainCategory(code, newName) {
+            const oldCode = code; // 保存旧代码用于查找条目
+            
+            // 查询可能影响的条目数量
+            const entriesRef = db.ref(getProjectPath('entries'));
+            const snapshot = await entriesRef.once('value');
+            const entriesData = snapshot.val() || {};
+            const affectedEntries = Object.values(entriesData).filter(entry => entry.mainCat === oldCode).length;
+            
+            // 提示用户
+            const newCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的主类代码（2位大写字母）：`, code);
+            
+            // 验证新代码格式
+            if (newCode && /^[A-Z]{2}$/.test(newCode)) {
+                 if (newCode !== oldCode) {
+                     if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
+                         return;
+                     }
+                     
+                     // 更新分类数据
+                     categories.main[newCode] = {...categories.main[oldCode]};
+                     categories.main[newCode].name = newName;
+                     delete categories.main[oldCode];
+                     
+                     // 更新所有相关条目
+                     const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
+                         if (entry.mainCat === oldCode) {
+                             // 删除旧条目
+                             await entriesRef.child(id).remove();
+                             // 创建新条目
+                             entry.mainCat = newCode;
+                             entry.id = await generateID(entry); // 重新生成ID
+                             await entriesRef.child(entry.id).set(entry);
+                         }
+                     });
+                     
+                     await Promise.all(updatePromises);
+                     renderCategoryManager();
+                     
+                     // 提示更新成功
+                     if (affectedEntries > 0) {
+                         alert(`主类代码已从 ${oldCode} 更新为 ${newCode}，共更新了 ${affectedEntries} 个条目的编号。`);
+                     } else {
+                         alert(`主类代码已从 ${oldCode} 更新为 ${newCode}。`);
+                     }
+                 } else {
+                     // 仅修改名称
+                     categories.main[oldCode].name = newName;
+                     renderCategoryManager();
+                 }
+            } else {
+                alert("新主类代码格式错误，请输入2位大写字母。");
+            }
+        }
+
+        async function updateSubCategory(mainCode, oldSub, newName) {
+            const [oldSubCode] = oldSub.split('-');
+            
+            // 查询可能影响的条目数量
+            const entriesRef = db.ref(getProjectPath('entries'));
+            const snapshot = await entriesRef.once('value');
+            const entriesData = snapshot.val() || {};
+            const affectedEntries = Object.values(entriesData).filter(entry => 
+                entry.mainCat === mainCode && entry.subCat === oldSub
+            ).length;
+            
+            // 提示用户
+            const newSubCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的子类代码（小写字母）：`, oldSubCode);
+            
+            // 验证新子类代码格式
+            if (newSubCode && /^[a-z]+$/.test(newSubCode)) {
+                const index = categories.main[mainCode].sub.indexOf(oldSub);
+                const newSub = `${newSubCode}-${newName}`;
+                
+                // 检查代码是否真的变更
+                if (oldSubCode !== newSubCode) {
+                    if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
+                        return;
+                    }
+                    
+                    // 更新分类数据
+                    categories.main[mainCode].sub[index] = newSub;
+                    
+                    // 更新所有相关条目
+                    const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
+                        if (entry.mainCat === mainCode && entry.subCat === oldSub) {
+                            // 删除旧条目
+                            await entriesRef.child(id).remove();
+                            // 创建新条目
+                            entry.subCat = newSub;
+                            entry.id = await generateID(entry); // 重新生成ID
+                            await entriesRef.child(entry.id).set(entry);
+                        }
+                    });
+                    
+                    await Promise.all(updatePromises);
+                    
+                    // 提示更新成功
+                    if (affectedEntries > 0) {
+                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}，共更新了 ${affectedEntries} 个条目的编号。`);
+                    } else {
+                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}。`);
+                    }
+                } else {
+                    // 仅修改名称，不更改代码
+                    categories.main[mainCode].sub[index] = `${oldSubCode}-${newName}`;
+                }
+                
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -4573,6 +4926,17 @@
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script> <!-- 恢复 Quill JS -->
     <!-- <script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/super-build/ckeditor.js"></script> --> <!-- 移除 CKEditor JS -->
     <script>
+        // 页面加载状态检查
+        let pageLoaded = false;
+        let firebaseInitialized = false;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            pageLoaded = true;
+            if (firebaseInitialized) {
+                initializeApp();
+            }
+        });
+
         // Firebase初始化
         const firebaseConfig = {
             apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
