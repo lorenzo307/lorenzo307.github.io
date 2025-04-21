@@ -1444,6 +1444,19 @@
             50% { opacity: 1; transform: translateY(0); }
             100% { opacity: 0.6; }
         }
+
+        /* 添加警告提示样式 */
+        .draft-warning {
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255, 235, 59, 0.15);
+            border: 1px solid #ffeb3b;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #ffc107;
+        }
     </style>
     
     <!-- 响应式布局调整 -->
@@ -3266,6 +3279,18 @@
         async function saveEntry(e) {
             e.preventDefault();
             const formData = new FormData(e.target);
+            
+            // 恢复保护：如果正在编辑已删除条目
+            if (editingId) {
+                const entryRef = db.ref(getProjectPath(`entries/${editingId}`));
+                const snapshot = await entryRef.once('value');
+                if (!snapshot.exists()) {
+                    if (!confirm("原条目已不存在，将保存为新条目。是否继续？")) {
+                        return;
+                    }
+                    editingId = null; // 重置为新建状态
+                }
+            }
             
             // 校验必填项
             if (!formData.get('date')) {
@@ -5663,6 +5688,29 @@
                 
                 if (snapshot.exists()) {
                     const draft = snapshot.val();
+                    
+                    // 检查是否是新建草稿或条目是否存在
+                    const isNewDraft = draftId.startsWith('NEW_');
+                    let originalExists = false;
+                    
+                    if (!isNewDraft) {
+                        const entryRef = db.ref(getProjectPath(`entries/${draftId}`));
+                        const entrySnapshot = await entryRef.once('value');
+                        originalExists = entrySnapshot.exists();
+                    }
+
+                    // 如果原条目不存在且不是新建草稿，转为新建状态
+                    if (!originalExists && !isNewDraft) {
+                        if (confirm("原条目已不存在，是否转为新建条目？")) {
+                            editingId = null; // 重置为新建状态
+                            draft.id = null; // 清除原ID
+                        } else {
+                            return;
+                        }
+                    } else {
+                        editingId = isNewDraft ? null : draftId;
+                    }
+
                     // 先清空编辑器内容
                     quill.root.innerHTML = '';
                     window.analysisQuill.root.innerHTML = '';
@@ -5673,6 +5721,15 @@
                         entryDraft = draftId;
                         showForm();
                         hideDraftBox();
+                        
+                        // 更新状态提示
+                        const statusEl = document.getElementById('draft-status');
+                        if (!originalExists && !isNewDraft) {
+                            statusEl.innerHTML += `<div class="draft-warning">
+                                <span class="material-icons">warning</span>
+                                原条目已不存在，将保存为新条目
+                            </div>`;
+                        }
                         
                         // 自动聚焦到标题字段
                         document.querySelector('[name="title"]').focus();
