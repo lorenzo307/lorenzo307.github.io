@@ -1457,6 +1457,62 @@
             gap: 8px;
             color: #ffc107;
         }
+
+        /* ... 现有样式 ... */
+        
+        /* 草稿类型标签样式 */
+        .draft-type {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: normal;
+            margin-right: 8px;
+            background: var(--accent-1-15);
+            color: var(--accent-1);
+        }
+        
+        /* 草稿ID样式 */
+        .draft-id {
+            font-family: monospace;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        /* 草稿元数据样式优化 */
+        .draft-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .draft-date {
+            color: var(--text-secondary);
+        }
+        
+        .draft-size {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+        
+        /* 草稿项样式优化 */
+        .draft-item {
+            margin-bottom: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .draft-item:hover {
+            border-color: var(--accent-1);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
     </style>
     
     <!-- 响应式布局调整 -->
@@ -1868,7 +1924,7 @@
                 <span class="material-icons">schedule</span>
                 <div class="draft-timers">
                     <span id="countdown-tip">
-                        自动保存倒计时：<span id="countdown">30</span>秒
+                        自动保存倒计时：<span id="countdown">5:00</span>
                     </span>
                     <span id="last-save-time"></span>
                 </div>
@@ -2444,24 +2500,36 @@
             const form = document.getElementById('entry-form');
             form.style.display = 'block';
             form.classList.remove('closing'); // 确保移除关闭动画类
-            initQuill(); // 恢复
-            updateSubCats();
             
-            // 显示草稿状态栏
-            document.getElementById('draft-status').style.display = 'flex';
-            
-            // 初始化自动保存系统
-            lastSaveTimestamp = Date.now();
-            startAutoSaveSystem();
-            
-            // 如果是新建条目，清理可能存在的旧草稿绑定
-            if (!editingId) {
-                localStorage.removeItem('lastDraftId');
-                entryDraft = null;
-            }
-            
-            // 新增草稿检查
-            checkDraft();
+            // 初始化编辑器并等待完成
+            ensureEditorsInitialized().then(() => {
+                updateSubCats();
+                
+                // 新增：生成或获取当前草稿ID
+                if (!editingId) {
+                    currentDraftId = localStorage.getItem('currentDraftId') || `NEW_${Date.now()}`;
+                    localStorage.setItem('currentDraftId', currentDraftId);
+                }
+                
+                // 显示草稿状态栏
+                document.getElementById('draft-status').style.display = 'flex';
+                
+                // 初始化自动保存系统
+                lastSaveTimestamp = Date.now();
+                startAutoSaveSystem();
+                
+                // 如果是新建条目，清理可能存在的旧草稿绑定
+                if (!editingId) {
+                    localStorage.removeItem('lastDraftId');
+                    entryDraft = currentDraftId;
+                }
+                
+                // 检查草稿
+                checkDraft();
+            }).catch(error => {
+                console.error('表单初始化失败:', error);
+                showAlert('表单初始化失败: ' + error.message, 'error');
+            });
         }
 
         function hideForm() {
@@ -2470,9 +2538,18 @@
             
             if (hasUnsavedChanges && confirm('检测到未保存的修改，是否保存到草稿箱？')) {
                 saveDraft().then(() => {
+                    // 保留草稿ID以便下次恢复
+                    if (currentDraftId && !editingId) {
+                        localStorage.setItem('currentDraftId', currentDraftId);
+                    }
                     performCloseForm();
                 });
             } else {
+                if (!hasUnsavedChanges && currentDraftId) {
+                    // 如果没有未保存的更改，清理草稿ID
+                    localStorage.removeItem('currentDraftId');
+                    currentDraftId = null;
+                }
                 performCloseForm();
             }
         }
@@ -2503,32 +2580,62 @@
             // 立即显示初始状态
             updateCountdownDisplay();
             
+            // 2分30秒 = 150000毫秒
+            const AUTOSAVE_INTERVAL = 150000;
+            const FINAL_COUNTDOWN = 10000; // 最后10秒
+            
             autoSaveTimer = setInterval(() => {
                 const currentTime = Date.now();
                 const elapsed = currentTime - lastSaveTimestamp;
+                const remaining = AUTOSAVE_INTERVAL - elapsed;
                 
                 // 更新倒计时显示
-                updateCountdownDisplay(30000 - elapsed);
+                updateCountdownDisplay(remaining);
                 
-                // 到达30秒立即保存
-                if(elapsed >= 30000) {
+                // 如果进入最后10秒，清除当前定时器，启动更频繁的更新
+                if (remaining <= FINAL_COUNTDOWN && remaining > 0) {
+                    clearInterval(autoSaveTimer);
+                    startFinalCountdown(remaining);
+                }
+                
+                // 到达2分30秒立即保存
+                if(elapsed >= AUTOSAVE_INTERVAL) {
                     triggerAutoSave();
                 }
-            }, 500); // 每0.5秒更新显示提升流畅度
+            }, 10000); // 每10秒更新一次显示
+        }
+
+        // 最后10秒的倒计时处理
+        function startFinalCountdown(initialRemaining) {
+            autoSaveTimer = setInterval(() => {
+                const currentTime = Date.now();
+                const elapsed = currentTime - lastSaveTimestamp;
+                const remaining = 150000 - elapsed; // 2分30秒 = 150000毫秒
+                
+                if (remaining <= 0) {
+                    clearInterval(autoSaveTimer);
+                    triggerAutoSave();
+                    return;
+                }
+                
+                updateCountdownDisplay(remaining);
+            }, 1000); // 每秒更新一次显示
         }
 
         // 更新倒计时显示
-        function updateCountdownDisplay(remaining = 30000 - (Date.now() - lastSaveTimestamp)) {
+        function updateCountdownDisplay(remaining = 150000 - (Date.now() - lastSaveTimestamp)) {
             const countdownEl = document.getElementById('countdown');
             const countdownTip = document.getElementById('countdown-tip');
             
             if(!countdownEl || !countdownTip) return;
 
             const seconds = Math.ceil(remaining / 1000);
-            countdownEl.textContent = seconds > 0 ? seconds : 30;
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            countdownEl.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
             
-            // 最后5秒变红闪烁
-            if(seconds <= 5) {
+            // 最后10秒变红闪烁
+            if(seconds <= 10) {
                 countdownEl.style.color = 'var(--danger-bg)';
                 countdownTip.classList.add('danger-pulse');
             } else {
@@ -2565,40 +2672,57 @@
                     定时保存：${timeString}
                 `;
 
+                // 确定草稿ID（基于条目编号）
+                let draftId;
+                if (editingId) {
+                    // 编辑模式：使用现有条目ID
+                    draftId = editingId;
+                } else {
+                    try {
+                        // 尝试生成基础ID
+                        const baseId = await generateBaseId({
+                            date: formData.date,
+                            mainCat: formData.mainCat,
+                            subCat: formData.subCat
+                        });
+                        // 如果已有序号，使用完整ID
+                        const existingEntry = await findExistingEntry(baseId);
+                        draftId = existingEntry ? existingEntry.id : baseId;
+                    } catch (error) {
+                        // 如果无法生成ID，使用临时ID
+                        draftId = currentDraftId || `TEMP_${Date.now()}`;
+                    }
+                }
+
                 // 保存到Firebase
                 const draftData = {
                     ...formData,
-                    updatedAt: now.getTime()
+                    updatedAt: now.getTime(),
+                    version: (Date.now()).toString(36),
+                    originalId: editingId || null,
+                    entryBaseId: draftId.split('-').slice(0, -1).join('-') // 存储基础ID部分
                 };
                 
-                // 优化草稿路径：编辑模式按条目ID存储，新建模式独立存储
-                const draftPath = editingId ? 
-                    `drafts/${editingId}` :  // 编辑模式：按条目ID存储
-                    `drafts/NEW_${Date.now()}`; // 新建模式：独立存储
+                await db.ref(getProjectPath(`drafts/${draftId}`)).set(draftData);
                 
-                // 如果是新建条目，生成新的草稿ID
-                if (!editingId) {
-                    entryDraft = `NEW_${Date.now()}`;
-                    // 保存最新草稿ID到localStorage
-                    localStorage.setItem('lastDraftId', entryDraft);
-                } else {
-                    // 编辑模式使用条目ID作为草稿ID
-                    entryDraft = editingId;
-                }
-                
-                await db.ref(getProjectPath(draftPath)).set(draftData);
+                // 更新当前草稿ID
+                currentDraftId = draftId;
+                localStorage.setItem('currentDraftId', draftId);
                 
                 // 更新最后保存时间戳
                 lastSaveTimestamp = Date.now();
                 
                 // 重置倒计时显示
-                updateCountdownDisplay(30000);
+                updateCountdownDisplay(150000);
+                
+                // 重新启动常规更新定时器
+                startAutoSaveSystem();
                 
             } catch (error) {
                 console.error('自动保存失败:', error);
                 document.getElementById('last-save-time').innerHTML = `
                     <span class="material-icons" style="color:var(--danger-bg)">error</span>
-                    保存失败！下次重试时间：${new Date(lastSaveTimestamp + 30000).toLocaleTimeString()}
+                    保存失败！下次重试时间：${new Date(lastSaveTimestamp + 150000).toLocaleTimeString()}
                 `;
             } finally {
                 setTimeout(() => {
@@ -2606,6 +2730,93 @@
                     statusEl.classList.remove('save-pulse');
                 }, 1500);
                 isSaving = false;
+            }
+        }
+
+        // 查找已存在的条目
+        async function findExistingEntry(baseId) {
+            const entriesRef = db.ref(getProjectPath('entries'));
+            const snapshot = await entriesRef.orderByKey()
+                .startAt(baseId)
+                .endAt(baseId + '\uf8ff')
+                .once('value');
+            
+            const entries = snapshot.val();
+            return entries ? Object.values(entries)[0] : null;
+        }
+
+        // 检查草稿
+        async function checkDraft() {
+            try {
+                let draftId = null;
+                let baseId = null;
+                
+                // 编辑模式：使用条目ID
+                if (editingId) {
+                    draftId = editingId;
+                    baseId = editingId.split('-').slice(0, -1).join('-');
+                } 
+                // 新建模式：尝试从表单数据生成基础ID
+                else {
+                    const formData = getFormData();
+                    if (formData.date && formData.mainCat && formData.subCat) {
+                        baseId = await generateBaseId({
+                            date: formData.date,
+                            mainCat: formData.mainCat,
+                            subCat: formData.subCat
+                        });
+                        
+                        // 查找是否有匹配的草稿
+                        const draftsRef = db.ref(getProjectPath('drafts'));
+                        const snapshot = await draftsRef.orderByChild('entryBaseId')
+                            .equalTo(baseId)
+                            .once('value');
+                        
+                        const drafts = snapshot.val();
+                        if (drafts) {
+                            // 如果找到多个草稿，使用最新的
+                            const latestDraft = Object.entries(drafts)
+                                .sort(([,a], [,b]) => b.updatedAt - a.updatedAt)[0];
+                            draftId = latestDraft[0];
+                        } else {
+                            draftId = currentDraftId;
+                        }
+                    } else {
+                        draftId = currentDraftId;
+                    }
+                }
+                
+                if (draftId) {
+                    const draftRef = db.ref(getProjectPath(`drafts/${draftId}`));
+                    const snapshot = await draftRef.once('value');
+                    
+                    if (snapshot.exists()) {
+                        const draft = snapshot.val();
+                        const saveTime = new Date(draft.updatedAt).toLocaleString();
+                        const message = editingId ? 
+                            `检测到本条目（${draftId}）的未提交修改（最后保存：${saveTime}），是否恢复？` :
+                            `检测到相同编号（${baseId || '临时ID'}）的未提交草稿（最后保存：${saveTime}），是否恢复？`;
+                            
+                        if (confirm(message)) {
+                            await populateForm(draft);
+                            entryDraft = draftId;
+                            currentDraftId = draftId;
+                            
+                            // 初始化保存时间显示
+                            document.getElementById('last-save-time').innerHTML = `
+                                <span class="material-icons">history</span>
+                                已恢复草稿（${draftId}）：${saveTime}
+                            `;
+                        } else if (!editingId) {
+                            // 如果用户选择不恢复，且是新建模式，清理草稿ID
+                            localStorage.removeItem('currentDraftId');
+                            currentDraftId = null;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('检查草稿失败:', error);
+                showAlert('检查草稿失败: ' + error.message, 'error');
             }
         }
 
@@ -3278,108 +3489,30 @@
 
         async function saveEntry(e) {
             e.preventDefault();
-            const formData = new FormData(e.target);
-            
-            // 恢复保护：如果正在编辑已删除条目
-            if (editingId) {
-                const entryRef = db.ref(getProjectPath(`entries/${editingId}`));
-                const snapshot = await entryRef.once('value');
-                if (!snapshot.exists()) {
-                    if (!confirm("原条目已不存在，将保存为新条目。是否继续？")) {
-                        return;
-                    }
-                    editingId = null; // 重置为新建状态
-                }
-            }
-            
-            // 校验必填项
-            if (!formData.get('date')) {
-                showAlert('日期为必填项！', 'warning');
-                return;
-            }
-            // 修改：移除对主分类必须存在的硬性校验，改为自动创建
-            const mainCode = formData.get('main-cat');
-            if (!mainCode) {
-                showAlert('主分类为必填项！', 'warning');
-                return;
-            }
-            const subCat = formData.get('sub-cat'); // 子分类可能为空
-
             try {
-                const entryRef = db.ref(getProjectPath('entries'));
-                const user = auth.currentUser;
-
-                // 新增：保存前验证或创建分类
-                // 如果主类不存在则自动创建
-                if (!categories.main[mainCode]) {
-                    const newMainCatData = { name: `导入主类-${mainCode}`, sub: [] };
-                    await db.ref(getProjectPath(`categories/main/${mainCode}`)).set(newMainCatData);
-                    categories.main[mainCode] = newMainCatData; // 更新本地缓存
-                    showAlert(`自动创建了新的主分类: ${mainCode}`, 'info');
-                    updateCategorySelectors(); // 更新下拉列表
-                }
-
-                // 如果子类不存在（且子类不为空）则自动创建
-                if (subCat && !categories.main[mainCode].sub.includes(subCat)) {
-                    const [subCode, subName] = subCat.split('-');
-                    // 如果子类名称为空，给一个默认名称
-                    const newSubCat = subName ? subCat : `${subCode}-导入子类-${subCode}`;
-                    
-                    const newSubList = [...categories.main[mainCode].sub, newSubCat];
-                    await db.ref(getProjectPath(`categories/main/${mainCode}/sub`)).set(newSubList);
-                    categories.main[mainCode].sub = newSubList; // 更新本地缓存
-                    showAlert(`自动创建了新的子分类: ${newSubCat}`, 'info');
-                    updateSubCats(); // 更新子分类下拉列表
-                }
+                const formData = getFormData();
                 
-                // 获取原始数据（如果是编辑状态）
-                let originalEntry = null;
-                if (editingId) {
-                    const snapshot = await entryRef.child(editingId).once('value');
-                    originalEntry = snapshot.val();
-                }
-
-                // 生成新条目数据
+                // 验证必填字段
+                if (!formData.date) throw new Error('请选择日期');
+                if (!formData.title.trim()) throw new Error('请输入标题');
+                if (!formData.content.trim()) throw new Error('请输入原文内容');
+                
+                // 构建新条目
                 const newEntry = {
-                    date: formData.get('date'),
-                    mainCat: formData.get('main-cat'),
-                    subCat: formData.get('sub-cat'),
-                    title: formData.get('title'),
-                    content: quill.root.innerHTML,
-                    analysis: window.analysisQuill.root.innerHTML,
-                    links: formData.get('links') ? formData.get('links').split(',').map(l => l.trim()).filter(Boolean) : [],
-                    keywords: formData.get('keywords') ? formData.get('keywords').split(',').map(k => k.trim()).filter(Boolean) : [],
-                    updatedAt: firebase.database.ServerValue.TIMESTAMP
+                    ...formData,
+                    updatedAt: Date.now()
                 };
+                
+                const entryRef = db.ref(getProjectPath('entries'));
+                const originalEntry = editingId ? (await entryRef.child(editingId).once('value')).val() : null;
 
-                // 检查关键字段是否修改
-                const isKeyFieldChanged = editingId && (
-                    newEntry.date !== originalEntry.date ||
-                    newEntry.mainCat !== originalEntry.mainCat ||
-                    newEntry.subCat !== originalEntry.subCat
-                );
-
-                // 提示用户关键字段修改会导致ID变更
-                if (isKeyFieldChanged && 
-                    !confirm('修改关键字段将生成新编号，原条目会被删除。是否继续？')) {
-                    return;
-                }
-
-                // 生成新ID（如果关键字段有修改）
-                if (isKeyFieldChanged) {
-                    // 删除旧条目
-                    await entryRef.child(editingId).remove();
-                    // 生成新ID
-                    newEntry.id = await generateID(newEntry);
-                    // 保存到数据库（使用set方法创建新条目）
-                    await entryRef.child(newEntry.id).set(newEntry);
-                } else if (editingId) {
+                if (editingId) {
                     // 保持原ID
                     newEntry.id = editingId;
                     // 保持原创建时间
                     newEntry.createdAt = originalEntry.createdAt;
                     
-                    // 使用update方法更新部分字段，而不是set方法覆盖整个条目
+                    // 使用update方法更新部分字段
                     const updates = {};
                     Object.keys(newEntry).forEach(key => {
                         if (key !== 'id' && key !== 'createdAt') {
@@ -3391,14 +3524,15 @@
                     // 新条目，生成ID
                     newEntry.id = await generateID(newEntry);
                     newEntry.createdAt = firebase.database.ServerValue.TIMESTAMP;
-                    // 保存到数据库（使用set方法创建新条目）
+                    // 保存到数据库
                     await entryRef.child(newEntry.id).set(newEntry);
                 }
 
-                // 成功保存后清除草稿
-                if (entryDraft) {
-                    await db.ref(getProjectPath(`drafts/${entryDraft}`)).remove();
-                    entryDraft = null;
+                // 新增：成功保存后清理草稿
+                if (currentDraftId) {
+                    await db.ref(getProjectPath(`drafts/${currentDraftId}`)).remove();
+                    localStorage.removeItem('currentDraftId');
+                    currentDraftId = null;
                 }
 
                 hideForm();
@@ -5467,78 +5601,76 @@
 
         // 新增 checkDraft 函数
         async function checkDraft() {
-            // 编辑模式：只检查当前条目的草稿
-            if (editingId) {
-                const draftRef = db.ref(getProjectPath(`drafts/${editingId}`));
-                const snapshot = await draftRef.once('value');
+            try {
+                let draftId = null;
+                let baseId = null;
                 
-                if (snapshot.exists()) {
-                    const draft = snapshot.val();
-                    const saveTime = new Date(draft.updatedAt).toLocaleString();
-                    if (confirm(`检测到本条未提交的修改（最后保存：${saveTime}），是否恢复？`)) {
-                        populateForm(draft);
-                        entryDraft = editingId; // 绑定到当前编辑ID
+                // 编辑模式：使用条目ID
+                if (editingId) {
+                    draftId = editingId;
+                    baseId = editingId.split('-').slice(0, -1).join('-');
+                } 
+                // 新建模式：尝试从表单数据生成基础ID
+                else {
+                    const formData = getFormData();
+                    if (formData.date && formData.mainCat && formData.subCat) {
+                        baseId = await generateBaseId({
+                            date: formData.date,
+                            mainCat: formData.mainCat,
+                            subCat: formData.subCat
+                        });
                         
-                        // 初始化保存时间显示
-                        document.getElementById('last-save-time').innerHTML = `
-                            <span class="material-icons">history</span>
-                            已恢复草稿：${saveTime}
-                        `;
+                        // 查找是否有匹配的草稿
+                        const draftsRef = db.ref(getProjectPath('drafts'));
+                        const snapshot = await draftsRef.orderByChild('entryBaseId')
+                            .equalTo(baseId)
+                            .once('value');
+                        
+                        const drafts = snapshot.val();
+                        if (drafts) {
+                            // 如果找到多个草稿，使用最新的
+                            const latestDraft = Object.entries(drafts)
+                                .sort(([,a], [,b]) => b.updatedAt - a.updatedAt)[0];
+                            draftId = latestDraft[0];
+                        } else {
+                            draftId = currentDraftId;
+                        }
+                    } else {
+                        draftId = currentDraftId;
                     }
                 }
-            } 
-            // 新建模式：检查最新的新建草稿
-            else {
-                // 先检查是否有localStorage中保存的草稿ID
-                const lastDraftId = localStorage.getItem('lastDraftId');
-                if (lastDraftId) {
-                    const draftRef = db.ref(getProjectPath(`drafts/${lastDraftId}`));
+                
+                if (draftId) {
+                    const draftRef = db.ref(getProjectPath(`drafts/${draftId}`));
                     const snapshot = await draftRef.once('value');
                     
                     if (snapshot.exists()) {
                         const draft = snapshot.val();
                         const saveTime = new Date(draft.updatedAt).toLocaleString();
-                        if (confirm(`检测到未提交的新建草稿（最后保存：${saveTime}），是否恢复？`)) {
-                            populateForm(draft);
-                            entryDraft = lastDraftId;
+                        const message = editingId ? 
+                            `检测到本条目（${draftId}）的未提交修改（最后保存：${saveTime}），是否恢复？` :
+                            `检测到相同编号（${baseId || '临时ID'}）的未提交草稿（最后保存：${saveTime}），是否恢复？`;
+                            
+                        if (confirm(message)) {
+                            await populateForm(draft);
+                            entryDraft = draftId;
+                            currentDraftId = draftId;
                             
                             // 初始化保存时间显示
                             document.getElementById('last-save-time').innerHTML = `
                                 <span class="material-icons">history</span>
-                                已恢复草稿：${saveTime}
+                                已恢复草稿（${draftId}）：${saveTime}
                             `;
-                            return;
+                        } else if (!editingId) {
+                            // 如果用户选择不恢复，且是新建模式，清理草稿ID
+                            localStorage.removeItem('currentDraftId');
+                            currentDraftId = null;
                         }
                     }
                 }
-                
-                // 如果没有指定草稿ID或该草稿不存在，查找最新的新建草稿
-                const draftsRef = db.ref(getProjectPath('drafts'));
-                const snapshot = await draftsRef.orderByKey()
-                    .startAt('NEW_')
-                    .endAt('NEW_\uf8ff')
-                    .limitToLast(1)
-                    .once('value');
-                
-                const drafts = snapshot.val() || {};
-                
-                if (Object.keys(drafts).length > 0) {
-                    const draftId = Object.keys(drafts)[0];
-                    const draft = drafts[draftId];
-                    
-                    const saveTime = new Date(draft.updatedAt).toLocaleString();
-                    if (confirm(`检测到未提交的新建草稿（最后保存：${saveTime}），是否恢复？`)) {
-                        populateForm(draft);
-                        entryDraft = draftId;
-                        localStorage.setItem('lastDraftId', draftId);
-                        
-                        // 初始化保存时间显示
-                        document.getElementById('last-save-time').innerHTML = `
-                            <span class="material-icons">history</span>
-                            已恢复草稿：${saveTime}
-                        `;
-                    }
-                }
+            } catch (error) {
+                console.error('检查草稿失败:', error);
+                showAlert('检查草稿失败: ' + error.message, 'error');
             }
         }
 
@@ -5556,18 +5688,67 @@
             };
         }
 
-        function populateForm(data) {
-            document.querySelector('[name="date"]').value = data.date || '';
-            document.querySelector('[name="main-cat"]').value = data.mainCat || '';
-            updateSubCats();
-            setTimeout(() => {
+        // 填充表单数据
+        async function populateForm(data) {
+            try {
+                // 等待编辑器初始化
+                await ensureEditorsInitialized();
+                
+                // 填充基本字段
+                document.querySelector('[name="date"]').value = data.date || '';
+                document.querySelector('[name="main-cat"]').value = data.mainCat || '';
+                await updateSubCats(); // 等待子分类更新
                 document.querySelector('[name="sub-cat"]').value = data.subCat || '';
-            }, 100);
-            document.querySelector('[name="title"]').value = data.title || '';
-            quill.root.innerHTML = data.content || '';
-            window.analysisQuill.root.innerHTML = data.analysis || '';
-            document.querySelector('[name="links"]').value = (data.links || []).join(', ');
-            document.querySelector('[name="keywords"]').value = (data.keywords || []).join(', ');
+                document.querySelector('[name="title"]').value = data.title || '';
+                document.querySelector('[name="links"]').value = (data.links || []).join(',');
+                document.querySelector('[name="keywords"]').value = (data.keywords || []).join(',');
+                
+                // 填充富文本编辑器内容
+                if (quill && data.content) {
+                    quill.root.innerHTML = data.content;
+                }
+                if (window.analysisQuill && data.analysis) {
+                    window.analysisQuill.root.innerHTML = data.analysis;
+                }
+            } catch (error) {
+                console.error('填充表单失败:', error);
+                showAlert('恢复草稿失败: ' + error.message, 'error');
+            }
+        }
+
+        // 确保编辑器已初始化
+        function ensureEditorsInitialized() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 10;
+                const checkInterval = 100; // 100ms
+
+                function checkEditors() {
+                    if (quill && window.analysisQuill) {
+                        resolve();
+                        return;
+                    }
+
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        reject(new Error('编辑器初始化超时'));
+                        return;
+                    }
+
+                    // 如果编辑器未初始化，重新尝试初始化
+                    if (!quill || !window.analysisQuill) {
+                        try {
+                            initQuill();
+                        } catch (error) {
+                            console.warn('编辑器初始化尝试失败，将重试:', error);
+                        }
+                    }
+
+                    setTimeout(checkEditors, checkInterval);
+                }
+
+                checkEditors();
+            });
         }
 
         // 清理过期草稿
@@ -5634,10 +5815,20 @@
                 const snapshot = await draftsRef.once('value');
                 const drafts = snapshot.val() || {};
                 
-                // 转换并过滤30天内草稿
+                // 转换为数组并过滤30天内的草稿
                 const now = Date.now();
                 const validDrafts = Object.entries(drafts)
-                    .map(([id, draft]) => ({ id, ...draft }))
+                    .map(([id, draft]) => {
+                        // 添加草稿类型标记
+                        if (draft.originalId) {
+                            draft.type = '编辑草稿';
+                            draft.displayId = draft.originalId;
+                        } else {
+                            draft.type = '新建草稿';
+                            draft.displayId = id;
+                        }
+                        return { id, ...draft };
+                    })
                     .filter(d => now - d.updatedAt < 30 * 86400000)
                     .sort((a, b) => b.updatedAt - a.updatedAt);
 
@@ -5666,11 +5857,19 @@
             container.innerHTML = drafts.map(draft => `
                 <div class="draft-item glass-container" data-id="${draft.id}" data-timestamp="${draft.updatedAt}">
                     <div class="draft-header">
-                        <h3 class="draft-title">${draft.title || '未命名草稿'}</h3>
+                        <h3 class="draft-title">
+                            <span class="draft-type">[${draft.type}]</span>
+                            <span class="draft-id">${draft.id}</span>
+                            ${draft.title || '未命名草稿'}
+                        </h3>
                         <div class="draft-meta">
+                            <span class="draft-base-id">${draft.entryBaseId || '临时草稿'}</span>
                             <span class="draft-date">${new Date(draft.updatedAt).toLocaleString()}</span>
                             <span class="draft-size">${Math.ceil(JSON.stringify(draft).length/1024)}KB</span>
                         </div>
+                    </div>
+                    <div class="draft-content-preview">
+                        ${draft.content ? `<div class="preview-text">${draft.content.substring(0, 100)}...</div>` : ''}
                     </div>
                     <div class="draft-actions">
                         <button class="primary-btn" onclick="continueDraft('${draft.id}')">继续编辑</button>
@@ -6166,6 +6365,34 @@
     .danger-pulse {
         animation: pulse 1s infinite;
         color: var(--danger-bg) !important;
+    }
+
+    .draft-base-id {
+        font-family: monospace;
+        color: var(--text-secondary);
+        background: var(--bg-secondary);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.9em;
+    }
+    
+    .draft-content-preview {
+        margin: 8px 0;
+        padding: 8px;
+        background: var(--bg-secondary);
+        border-radius: 4px;
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        max-height: 60px;
+        overflow: hidden;
+    }
+    
+    .preview-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 </style>
 
