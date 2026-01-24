@@ -1276,12 +1276,13 @@
 
         /* 关键词云样式优化 */
         #keyword-cloud {
-            max-height: 800px; /* 增加高度，显示更多关键词 */
+            max-height: calc(100vh - 420px); /* 动态计算高度，充分利用屏幕空间 */
+            min-height: 300px; /* 最小高度保证 */
             overflow-y: auto;
             padding-right: 10px;
             margin: 0;
             scrollbar-width: thin;
-            scrollbar-color: rgba(100, 100, 100, 0.5) transparent;
+            scrollbar-color: var(--glass-border) rgba(0, 0, 0, 0.05);
             background: var(--glass-bg);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -1290,8 +1291,8 @@
             padding: 20px;
             box-shadow: var(--glass-shadow);
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
             opacity: 0;
             transform: translateY(-10px);
             transition: opacity 0.3s ease, transform 0.3s ease;
@@ -1304,23 +1305,58 @@
 
         /* Webkit浏览器滚动条美化 */
         #keyword-cloud::-webkit-scrollbar {
-            width: 8px;
-            background-color: transparent;
+            width: 10px;
+            background-color: rgba(0, 0, 0, 0.05);
         }
 
         #keyword-cloud::-webkit-scrollbar-thumb {
-            background-color: rgba(100, 100, 100, 0.3);
-            border-radius: 4px;
+            background-color: var(--glass-border);
+            border-radius: 6px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
         }
 
         #keyword-cloud::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(100, 100, 100, 0.6);
+            background-color: var(--glass-active);
+        }
+
+        /* 针对不同屏幕尺寸优化网格布局 */
+        @media (min-width: 1600px) {
+            #keyword-cloud {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 16px;
+            }
+        }
+
+        @media (min-width: 1200px) and (max-width: 1599px) {
+            #keyword-cloud {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 14px;
+            }
+        }
+
+        @media (min-width: 993px) and (max-width: 1199px) {
+            #keyword-cloud {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 12px;
+            }
+        }
+
+        /* 平板横屏优化 */
+        @media (min-width: 769px) and (max-width: 992px) {
+            #keyword-cloud {
+                max-height: calc(100vh - 380px) !important;
+                min-height: 250px;
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
         }
 
         /* 移动端优化 */
         @media (max-width: 768px) {
             #keyword-cloud {
                 max-height: 250px;
+                min-height: 200px;
                 scrollbar-width: none; /* Firefox隐藏滚动条 */
             }
             
@@ -1330,18 +1366,27 @@
         }
 
         .keyword-tag {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px; /* 增加最小高度，提升可读性 */
             background: var(--glass-bg) !important;
             border: 1px solid var(--glass-border);
             color: var(--glass-text);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
             border-radius: 20px;
-            padding: 6px 12px;
-            margin: 4px;
+            padding: 8px 16px !important;
+            margin: 6px;
             transition: all 0.3s ease;
             box-shadow: var(--glass-shadow);
             font-weight: 500;
+            font-size: 0.95em;
+            line-height: 1.4;
+            text-align: center;
+            word-break: break-word; /* 长关键词自动换行 */
+            overflow-wrap: break-word;
+            white-space: normal; /* 允许多行显示 */
             /* 动画相关 */
             opacity: 0;
             transform: translateY(10px);
@@ -1358,12 +1403,17 @@
         .keyword-tag:hover {
             background: var(--glass-hover) !important;
             color: var(--glass-text-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
 
         .keyword-tag.active {
-            background: var(--accent-1-15) !important;
+            background: var(--accent-1-25) !important;
             border-color: var(--accent-1);
+            border-width: 2px;
             color: var(--glass-text-hover);
+            font-weight: 600;
+            transform: translateY(-1px);
         }
 
         /* ========== 美化分页UI设计 ========== */
@@ -3219,7 +3269,7 @@
 
             #keyword-cloud {
                 padding: 22px;
-                max-height: 600px; /* 平板横屏版本增加高度 */
+                max-height: 450px; /* 平板横屏版本增加高度 */
                 gap: 12px;
             }
 
