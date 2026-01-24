@@ -53,6 +53,10 @@
             --depth-1: 0 2px 10px rgba(0, 0, 0, 0.1);
             --depth-2: 0 8px 30px rgba(0, 0, 0, 0.15);
             --depth-3: 0 15px 50px rgba(0, 0, 0, 0.2);
+            /* 性能优化：简化阴影变量 */
+            --shadow-light: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-medium: 0 4px 12px rgba(0,0,0,0.15);
+            --shadow-heavy: 0 8px 24px rgba(0,0,0,0.2);
         }
 
         /* 暗色模式变量 */
@@ -75,6 +79,43 @@
                 --danger-hover: #B71C1C;
                 --cancel-bg: #607D8B;
                 --cancel-hover: #455A64;
+            }
+        }
+
+        /* 性能优化：尊重用户“减少动态效果”偏好 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* 性能模式（body.performance-mode）：减弱模糊与阴影，降低内存与重绘 */
+        body.performance-mode .glass-container,
+        body.performance-mode .main-content .action-buttons {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        body.performance-mode .bg-3d { display: none !important; }
+        body.performance-mode .entry-item,
+        body.performance-mode .detail-entry {
+            box-shadow: var(--shadow-light);
+        }
+        body.performance-mode .sidebar {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        /* 移动端减弱模糊，降低重绘开销 */
+        @media (max-width: 768px) {
+            .glass-container,
+            .main-content .action-buttons {
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+            .entry-item, .detail-entry {
+                box-shadow: var(--shadow-light);
             }
         }
 
@@ -131,6 +172,8 @@
                 inset 0 -1px 0 rgba(255, 255, 255, 0.2);
             flex-wrap: wrap;
             transition: all 0.3s ease;
+            position: relative; /* 确保定位上下文 */
+            overflow: visible !important; /* 确保下拉菜单不会被裁剪 */
         }
 
         .main-content .action-buttons:hover {
@@ -141,11 +184,13 @@
             transform: translateY(-2px);
         }
 
-        /* 搜索框容器 */
+        /* 搜索框容器 - 创建定位上下文，下拉框相对此定位 */
         .main-content .action-buttons > div:first-child {
             flex: 1;
             min-width: 300px;
             position: relative;
+            z-index: 1000;
+            overflow: visible !important; /* 确保下拉菜单不会被裁剪 */
         }
 
         /* 搜索输入框立体化 */
@@ -340,6 +385,7 @@
             height: calc(100vh - 120px);
             position: sticky;
             top: 80px;
+            z-index: 50; /* 设置明确的 z-index，确保在搜索结果容器 (200) 之下 */
             overflow-y: auto;
             scrollbar-width: thin;
             scrollbar-color: var(--glass-border) transparent;
@@ -1230,7 +1276,7 @@
 
         /* 关键词云样式优化 */
         #keyword-cloud {
-            max-height: 360px;
+            max-height: 800px; /* 增加高度，显示更多关键词 */
             overflow-y: auto;
             padding-right: 10px;
             margin: 0;
@@ -2227,11 +2273,7 @@
         .detail-entry {
             padding: 24px 22px;
             border-radius: 14px;
-            transition: transform 0.3s ease;
-        }
-
-        .detail-entry:hover {
-            transform: translateY(-3px);
+            /* transition: transform 0.3s ease; 已移除，因为不再使用 transform 动画 */
         }
 
         /* 重用或调整 .entry-header, .entry-meta, .entry-actions */
@@ -2355,9 +2397,9 @@
             transform: translateX(100%);
         }
 
-        /* 卡片悬停效果 - 3D */
+        /* 卡片悬停效果 - 已移除变大动画 */
         .entry-item:hover, .detail-entry:hover, .log-item:hover, .draft-item:hover {
-            transform: translateY(-8px) rotateX(5deg) scale(1.02);
+            /* transform: translateY(-8px) rotateX(5deg) scale(1.02); 已移除 */
             box-shadow: 
                 0 25px 60px rgba(0, 0, 0, 0.25),
                 0 8px 20px rgba(0, 0, 0, 0.15);
@@ -2504,6 +2546,8 @@
 
         /* 条目列表外层容器 */
         #entries-container-wrapper {
+            position: relative;
+            z-index: 200; /* 确保搜索结果容器在 header (100) 和侧边栏之上，但低于搜索建议下拉框 (10001) */
             margin-top: 8px;
             margin-bottom: 24px;
             padding: 24px 20px 28px;
@@ -2522,6 +2566,7 @@
         /* 视图容器样式 */
         #entries-container {
             position: relative;
+            z-index: 1; /* 确保内容在容器内正确层叠 */
             min-height: 480px;
             overflow: hidden;
         }
@@ -2819,7 +2864,7 @@
         }
 
         .stat-card:hover {
-            transform: translateY(-8px) rotateX(5deg);
+            /* transform: translateY(-8px) rotateX(5deg); 已移除跳动动画 */
             box-shadow: 
                 0 20px 40px rgba(0, 0, 0, 0.2),
                 0 10px 20px rgba(0, 0, 0, 0.15);
@@ -3029,81 +3074,6 @@
             width: 40%;
         }
 
-        /* 搜索建议下拉 */
-        /* 搜索建议下拉菜单美化 */
-        .search-suggestions {
-            position: absolute;
-            top: calc(100% + 10px);
-            left: 0;
-            right: 0;
-            background: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.15),
-                rgba(255, 255, 255, 0.05)
-            ) !important;
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.25),
-                0 8px 32px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6);
-            z-index: 100;
-            max-height: 300px;
-            overflow-y: auto;
-            display: none;
-            animation: searchSuggestionsPopIn 0.2s ease-out;
-        }
-
-        @keyframes searchSuggestionsPopIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .search-suggestions.show {
-            display: block;
-        }
-        
-        .search-suggestion-item {
-            padding: 14px 20px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid var(--glass-border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: transparent;
-        }
-        
-        .search-suggestion-item:last-child {
-            border-bottom: none;
-        }
-        
-        .search-suggestion-item:hover {
-            background: linear-gradient(
-                90deg,
-                rgba(var(--accent-1-rgb), 0.15),
-                rgba(var(--accent-2-rgb), 0.1)
-            );
-            transform: translateX(4px);
-        }
-        
-        .search-suggestion-item .suggestion-type {
-            font-size: 0.8em;
-            color: var(--text-secondary);
-            background: var(--glass-bg);
-            padding: 4px 10px;
-            border-radius: 12px;
-            border: 1px solid var(--glass-border);
-        }
-
         /* 快速筛选标签 */
         .quick-filters {
             display: flex;
@@ -3249,7 +3219,7 @@
 
             #keyword-cloud {
                 padding: 22px;
-                max-height: 380px;
+                max-height: 600px; /* 平板横屏版本增加高度 */
                 gap: 12px;
             }
 
@@ -3324,10 +3294,16 @@
                 padding: 16px;
             }
             
+            .main-content .action-buttons {
+                overflow: visible !important; /* 确保搜索建议不被裁剪 */
+            }
+
             .main-content .action-buttons > div:first-child {
                 min-width: 100%;
                 order: -1;
                 margin-bottom: 10px;
+                z-index: 1000;
+                overflow: visible !important;
             }
             
             .main-content .action-buttons input[type="text"] {
@@ -3462,6 +3438,15 @@
              .sidebar-actions button {
                  font-size: 0.85em;
                  padding: 10px 12px !important;
+             }
+
+             .main-content .action-buttons {
+                 overflow: visible !important;
+             }
+
+             .main-content .action-buttons > div:first-child {
+                 z-index: 1000;
+                 overflow: visible !important;
              }
 
              .sidebar {
@@ -3867,7 +3852,6 @@
             <div class="action-buttons">
                 <div style="flex:1; position:relative;">
                     <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="width:100%">
-                    <div class="search-suggestions" id="search-suggestions"></div>
                 </div>
                 <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
                 <div style="display:inline-block;margin-left:10px">
@@ -4185,6 +4169,29 @@
         // 全局数据监听器
         let unsubscribeEntries = null;
         let unsubscribeCategories = null;
+
+        /* 性能模式：减弱模糊/阴影、隐藏 3D 背景，降低内存与重绘 */
+        function enablePerformanceMode() {
+            document.body.classList.add('performance-mode');
+            try { localStorage.setItem('performanceMode', '1'); } catch (e) {}
+        }
+        function disablePerformanceMode() {
+            document.body.classList.remove('performance-mode');
+            try { localStorage.removeItem('performanceMode'); } catch (e) {}
+        }
+        window.enablePerformanceMode = enablePerformanceMode;
+        window.disablePerformanceMode = disablePerformanceMode;
+        (function initPerformanceMode() {
+            try {
+                if (localStorage.getItem('performanceMode') === '1') {
+                    enablePerformanceMode();
+                    return;
+                }
+                var c = typeof navigator.hardwareConcurrency === 'number' ? navigator.hardwareConcurrency : 4;
+                var m = typeof navigator.deviceMemory === 'number' ? navigator.deviceMemory : 4;
+                if (c < 4 || m < 4) enablePerformanceMode();
+            } catch (e) {}
+        })();
 
         // 获取项目路径
         function getProjectPath(subPath = "") {
@@ -5791,12 +5798,35 @@
             }
         }
 
+        /* 性能优化：防抖与节流 */
+        function debounce(fn, wait) {
+            let t;
+            return function executed(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+        function throttle(fn, limit) {
+            let inThrottle;
+            return function(...args) {
+                if (!inThrottle) {
+                    fn.apply(this, args);
+                    inThrottle = true;
+                    setTimeout(() => { inThrottle = false; }, limit);
+                }
+            };
+        }
+
         // 事件监听
-        document.getElementById('search-input').addEventListener('input', () => {
-            searchQuery = document.getElementById('search-input').value;
-            currentPage = 1;
-            renderEntries();
-        });
+        (function initSearchInput() {
+            const el = document.getElementById('search-input');
+            if (!el) return;
+            el.addEventListener('input', debounce(function() {
+                searchQuery = this.value;
+                currentPage = 1;
+                renderEntries();
+            }, 300));
+        })();
 
         function filterByKeyword(keyword) {
             currentFilterKeyword = keyword === currentFilterKeyword ? null : keyword;
@@ -6061,11 +6091,15 @@
             });
         }
 
-        // 页面卸载时清理监听器
+        // 页面卸载时清理监听器与定时器（减少内存占用）
         window.addEventListener('beforeunload', () => {
             if (unsubscribeEntries) unsubscribeEntries();
             if (unsubscribeCategories) unsubscribeCategories();
-             hideLoading(); // 确保离开页面时隐藏
+            if (typeof autoSaveTimer !== 'undefined' && autoSaveTimer) {
+                clearInterval(autoSaveTimer);
+                autoSaveTimer = null;
+            }
+            hideLoading();
         });
 
         // 新增在页面显示状态提示的方法
@@ -6339,71 +6373,6 @@
             }
         }
         
-        // 搜索建议功能
-        function setupSearchSuggestions() {
-            const searchInput = document.getElementById('search-input');
-            const suggestionsContainer = document.getElementById('search-suggestions');
-            
-            if (!searchInput || !suggestionsContainer) return;
-            
-            // 收集所有可搜索的词
-            const getSuggestions = () => {
-                const suggestions = [];
-                entries.forEach(e => {
-                    if (e.title) suggestions.push({ text: e.title, type: '标题' });
-                    (e.keywords || []).forEach(k => {
-                        if (!suggestions.find(s => s.text === k)) {
-                            suggestions.push({ text: k, type: '关键词' });
-                        }
-                    });
-                });
-                return suggestions;
-            };
-            
-            searchInput.addEventListener('input', function() {
-                const value = this.value.trim().toLowerCase();
-                
-                if (value.length < 2) {
-                    suggestionsContainer.classList.remove('show');
-                    return;
-                }
-                
-                const allSuggestions = getSuggestions();
-                const matches = allSuggestions.filter(s => 
-                    s.text.toLowerCase().includes(value)
-                ).slice(0, 8);
-                
-                if (matches.length === 0) {
-                    suggestionsContainer.classList.remove('show');
-                    return;
-                }
-                
-                suggestionsContainer.innerHTML = matches.map(m => `
-                    <div class="search-suggestion-item" onclick="selectSuggestion('${m.text.replace(/'/g, "\\'")}')">
-                        ${m.text}
-                        <span class="suggestion-type">${m.type}</span>
-                    </div>
-                `).join('');
-                
-                suggestionsContainer.classList.add('show');
-            });
-            
-            // 点击外部关闭建议
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('#search-input') && !e.target.closest('#search-suggestions')) {
-                    suggestionsContainer.classList.remove('show');
-                }
-            });
-        }
-        
-        function selectSuggestion(text) {
-            document.getElementById('search-input').value = text;
-            document.getElementById('search-suggestions').classList.remove('show');
-            searchQuery = text;
-            currentPage = 1;
-            renderEntries();
-        }
-        
         // 批量编辑弹窗
         function showBulkEditForm() {
             if (selectedEntryIds.size === 0 && !selectedAll) {
@@ -6599,20 +6568,15 @@
             showAlert('Markdown导出成功', 'success');
         }
         
-        // 初始化新功能
-        document.addEventListener('DOMContentLoaded', () => {
-            setupSearchSuggestions();
-        });
-        
         // ========== 结束新增功能 ==========
 
         /*********************
          * 3D交互效果
          *********************/
         document.addEventListener('DOMContentLoaded', function() {
-            // 为所有卡片添加3D悬停效果
+            // 为所有卡片添加3D悬停效果（不含 .stat-card，避免数据统计框跳动）
             const add3DHoverEffect = () => {
-                const cards = document.querySelectorAll('.entry-item, .detail-entry, .stat-card, .log-item, .draft-item');
+                const cards = document.querySelectorAll('.entry-item, .detail-entry, .log-item, .draft-item');
                 
                 cards.forEach(card => {
                     card.addEventListener('mousemove', (e) => {
@@ -6683,20 +6647,10 @@
             `;
             document.head.appendChild(style);
             
-            // 为统计卡片添加浮动动画
-            const addFloatingAnimation = () => {
-                const statCards = document.querySelectorAll('.stat-card');
-                statCards.forEach((card, index) => {
-                    card.classList.add('floating');
-                    card.style.animationDelay = `${index * 0.2}s`;
-                });
-            };
-            
-            // 初始化效果
+            // 初始化效果（已移除统计卡片浮动动画，避免数据统计框跳来跳去）
             setTimeout(() => {
                 add3DHoverEffect();
                 addRippleEffect();
-                addFloatingAnimation();
             }, 500);
             
             // 添加视差滚动效果
