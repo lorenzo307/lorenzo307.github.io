@@ -57,6 +57,13 @@
             --shadow-light: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-medium: 0 4px 12px rgba(0,0,0,0.15);
             --shadow-heavy: 0 8px 24px rgba(0,0,0,0.2);
+
+            /* 动效缓动曲线（更自然/更“生物感”） */
+            --ease-elastic: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --ease-morph: cubic-bezier(0.76, 0, 0.24, 1);
+            --ease-blob: cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         /* 暗色模式变量 */
@@ -1120,38 +1127,804 @@
 
         /* 删除按钮样式 */
         .danger-btn {
-            background: var(--danger-bg) !important;
+            /* 深红渐变 + 立体层次 */
+            position: relative;
+            isolation: isolate;
             color: #FFFFFF !important;
-            border: 2px solid var(--danger-hover) !important;
+            background: #ff1744 !important; /* fallback：鲜红 */
+            background-image: linear-gradient(
+                145deg,
+                #ff3b30 0%,
+                #ff1744 35%,
+                #ff5252 70%,
+                #ff1744 100%
+            ) !important;
+            background-size: 180% 180% !important;
+            background-position: 20% 30% !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            box-shadow:
+                0 14px 32px rgba(0, 0, 0, 0.25),
+                0 7px 0 rgba(140, 0, 0, 0.85),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35),
+                inset 0 -10px 20px rgba(0, 0, 0, 0.18) !important;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+            transform-style: preserve-3d;
+            transition: transform 0.35s var(--ease-bounce), box-shadow 0.35s var(--ease-bounce), filter 0.35s var(--ease-smooth), background-position 0.6s var(--ease-smooth);
+        }
+
+        .danger-btn::before {
+            /* 立体高光（静态） */
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(
+                120% 120% at 20% 15%,
+                rgba(255, 255, 255, 0.45) 0%,
+                rgba(255, 255, 255, 0.18) 22%,
+                rgba(255, 255, 255, 0) 55%
+            );
+            opacity: 0.9;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .danger-btn::after {
+            /* 悬停时的流动高光 */
+            content: '';
+            position: absolute;
+            inset: -40% -60%;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.26) 50%, transparent 100%);
+            transform: translateX(-40%) rotate(12deg);
+            opacity: 0;
+            transition: opacity 0.35s var(--ease-smooth), transform 0.6s var(--ease-smooth);
+            z-index: 0;
+            pointer-events: none;
         }
 
         .danger-btn:hover {
-            background: var(--danger-hover) !important;
             color: #FFFFFF !important;
-            border: 3px solid var(--danger-hover) !important;
+            transform: translateY(-2px) scale(1.02);
+            filter: brightness(1.08) saturate(1.08);
+            background-position: 75% 20% !important;
+            box-shadow:
+                0 18px 44px rgba(0, 0, 0, 0.30),
+                0 9px 0 rgba(140, 0, 0, 0.9),
+                inset 0 1px 0 rgba(255, 255, 255, 0.45),
+                inset 0 -12px 24px rgba(0, 0, 0, 0.18) !important;
+        }
+
+        .danger-btn:hover::after {
+            opacity: 1;
+            transform: translateX(55%) rotate(12deg);
         }
 
         .danger-btn:active {
-            background: var(--danger-hover) !important;
-            border: 3px solid var(--danger-hover) !important;
+            transform: translateY(1px) scale(0.99);
+            filter: brightness(0.98) saturate(1.05);
+            box-shadow:
+                0 8px 22px rgba(0, 0, 0, 0.22),
+                0 3px 0 rgba(140, 0, 0, 0.85),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                inset 0 -8px 16px rgba(0, 0, 0, 0.22) !important;
+        }
+
+        .danger-btn:focus-visible {
+            outline: none !important;
+            box-shadow:
+                0 0 0 3px rgba(255, 255, 255, 0.35),
+                0 0 0 6px rgba(255, 23, 68, 0.40),
+                0 14px 32px rgba(0, 0, 0, 0.25),
+                0 7px 0 rgba(140, 0, 0, 0.85),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35),
+                inset 0 -10px 20px rgba(0, 0, 0, 0.18) !important;
         }
 
         /* 取消按钮样式 */
         .cancel-btn {
-            background: var(--cancel-bg) !important;
+            /* 同系深红渐变，但更“克制”一点 */
+            position: relative;
+            isolation: isolate;
             color: #FFFFFF !important;
-            border: 2px solid var(--cancel-hover) !important;
+            background: #ff1744 !important; /* fallback：鲜红 */
+            background-image: linear-gradient(
+                145deg,
+                #ff5a52 0%,
+                #ff1744 40%,
+                #ff2d55 72%,
+                #ff1744 100%
+            ) !important;
+            background-size: 180% 180% !important;
+            background-position: 25% 30% !important;
+            border: 1px solid rgba(255, 255, 255, 0.14) !important;
+            box-shadow:
+                0 12px 28px rgba(0, 0, 0, 0.22),
+                0 6px 0 rgba(140, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.30),
+                inset 0 -10px 18px rgba(0, 0, 0, 0.18) !important;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+            transform-style: preserve-3d;
+            transition: transform 0.35s var(--ease-bounce), box-shadow 0.35s var(--ease-bounce), filter 0.35s var(--ease-smooth), background-position 0.6s var(--ease-smooth);
+        }
+
+        .cancel-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(
+                120% 120% at 20% 15%,
+                rgba(255, 255, 255, 0.40) 0%,
+                rgba(255, 255, 255, 0.16) 22%,
+                rgba(255, 255, 255, 0) 55%
+            );
+            opacity: 0.9;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .cancel-btn::after {
+            content: '';
+            position: absolute;
+            inset: -40% -60%;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.22) 50%, transparent 100%);
+            transform: translateX(-40%) rotate(12deg);
+            opacity: 0;
+            transition: opacity 0.35s var(--ease-smooth), transform 0.6s var(--ease-smooth);
+            z-index: 0;
+            pointer-events: none;
         }
 
         .cancel-btn:hover {
-            background: var(--cancel-hover) !important;
             color: #FFFFFF !important;
-            border: 3px solid var(--cancel-hover) !important;
+            transform: translateY(-2px) scale(1.02);
+            filter: brightness(1.06) saturate(1.06);
+            background-position: 80% 20% !important;
+            box-shadow:
+                0 16px 40px rgba(0, 0, 0, 0.28),
+                0 8px 0 rgba(140, 0, 0, 0.85),
+                inset 0 1px 0 rgba(255, 255, 255, 0.40),
+                inset 0 -12px 22px rgba(0, 0, 0, 0.18) !important;
+        }
+
+        .cancel-btn:hover::after {
+            opacity: 1;
+            transform: translateX(55%) rotate(12deg);
         }
 
         .cancel-btn:active {
-            background: var(--cancel-hover) !important;
-            border: 3px solid var(--cancel-hover) !important;
+            transform: translateY(1px) scale(0.99);
+            filter: brightness(0.98) saturate(1.05);
+            box-shadow:
+                0 7px 20px rgba(0, 0, 0, 0.20),
+                0 3px 0 rgba(140, 0, 0, 0.85),
+                inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                inset 0 -8px 16px rgba(0, 0, 0, 0.22) !important;
+        }
+
+        .cancel-btn:focus-visible {
+            outline: none !important;
+            box-shadow:
+                0 0 0 3px rgba(255, 255, 255, 0.32),
+                0 0 0 6px rgba(255, 23, 68, 0.38),
+                0 12px 28px rgba(0, 0, 0, 0.22),
+                0 6px 0 rgba(140, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.30),
+                inset 0 -10px 18px rgba(0, 0, 0, 0.18) !important;
+        }
+
+        /*********************
+         * 高级检索：时间范围 + 包含标签 UI 美化
+         *********************/
+        .advanced-search {
+            margin: 0 0 8px 0; /* 顶部无间距，底部小间距 */
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .advanced-search .primary-btn {
+            padding: 12px 24px !important;
+            background: linear-gradient(145deg,
+                rgba(var(--accent-1-rgb), 0.18),
+                rgba(var(--accent-2-rgb), 0.10)) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-primary) !important;
+            font-weight: 700 !important;
+            border-radius: 16px !important;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.4s var(--ease-bounce) !important;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.60);
+        }
+
+        .advanced-search .primary-btn:hover {
+            background: linear-gradient(145deg,
+                rgba(var(--accent-1-rgb), 0.26),
+                rgba(var(--accent-2-rgb), 0.16)) !important;
+            border-color: rgba(var(--accent-1-rgb), 0.45) !important;
+            transform: translateY(-2px);
+            box-shadow:
+                0 10px 30px rgba(var(--accent-1-rgb), 0.16),
+                inset 0 1px 0 rgba(255, 255, 255, 0.80);
+        }
+
+        .advanced-panel {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)) !important;
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px !important;
+            margin: 12px 0 !important;
+            box-shadow:
+                0 15px 40px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.60);
+        }
+
+        .advanced-panel .search-row {
+            margin-bottom: 18px;
+            padding: 18px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.05));
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s var(--ease-smooth);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .advanced-panel .search-row:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08));
+            border-color: var(--accent-1-25);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .advanced-panel .search-row label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1.06em;
+            position: relative;
+            padding-left: 10px;
+        }
+
+        .advanced-panel .search-row label::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 16px;
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            border-radius: 2px;
+        }
+
+        /* 时间范围 */
+        .date-range-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .date-range-group span {
+            color: var(--text-secondary);
+            font-weight: 600;
+            min-width: 24px;
+            text-align: center;
+            opacity: 0.85;
+        }
+
+        .date-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .date-input-wrapper::after {
+            content: '▼';
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(var(--accent-1-rgb), 0.85);
+            font-size: 0.85em;
+            pointer-events: none;
+        }
+
+        .advanced-panel input[type="date"] {
+            width: 100%;
+            padding: 14px 40px 14px 14px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            color: var(--text-primary) !important;
+            font-size: 1em;
+            transition: all 0.3s var(--ease-smooth) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.60);
+            cursor: pointer;
+        }
+
+        .advanced-panel input[type="date"]:hover {
+            border-color: rgba(var(--accent-1-rgb), 0.55) !important;
+            transform: translateY(-1px);
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.70);
+        }
+
+        .advanced-panel input[type="date"]:focus {
+            border-color: rgba(var(--accent-1-rgb), 0.70) !important;
+            box-shadow:
+                0 0 0 3px rgba(var(--accent-1-rgb), 0.15),
+                0 6px 20px rgba(0, 0, 0, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.80) !important;
+            outline: none;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background: transparent;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .date-presets {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .date-preset-btn {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s var(--ease-smooth);
+        }
+
+        .date-preset-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+            color: var(--text-primary);
+            border-color: rgba(var(--accent-1-rgb), 0.50);
+            transform: translateY(-1px);
+        }
+
+        .date-preset-btn.active {
+            background: linear-gradient(135deg, var(--accent-1-15), var(--accent-2-15));
+            color: var(--text-primary);
+            border-color: rgba(var(--accent-1-rgb), 0.55);
+            font-weight: 700;
+        }
+
+        /* 标签选择 */
+        .tag-selector-container {
+            min-height: 64px;
+            max-height: 280px;
+            padding: 14px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.05));
+            border-radius: 16px;
+            border: 1px dashed var(--glass-border);
+            transition: all 0.3s var(--ease-smooth);
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        /* 标签选择器滚动条美化 */
+        .tag-selector-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .tag-selector-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        .tag-selector-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--accent-1-25), var(--accent-2-15));
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .tag-selector-container::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+        }
+
+        /* Firefox 滚动条 */
+        .tag-selector-container {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(var(--accent-1-rgb), 0.4) rgba(0, 0, 0, 0.05);
+        }
+
+        .tag-selector-container:hover {
+            border-color: rgba(var(--accent-1-rgb), 0.55);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .tag-selector-container.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        @keyframes tagAppear {
+            0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .tag-item {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.10));
+            color: var(--text-primary);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s var(--ease-bounce);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            overflow: hidden;
+            animation: tagAppear 0.28s var(--ease-bounce) both;
+            animation-delay: calc(var(--index, 0) * 0.03s);
+        }
+
+        .tag-item input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .tag-item:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+            border-color: rgba(var(--accent-1-rgb), 0.55);
+        }
+
+        .tag-item.selected {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important;
+            border-color: transparent !important;
+            color: #fff !important;
+            transform: translateY(-1px);
+            box-shadow:
+                0 12px 26px rgba(var(--accent-1-rgb), 0.28),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35);
+            font-weight: 800;
+        }
+
+        .tag-count {
+            font-size: 0.8em;
+            opacity: 0.8;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.10);
+            color: inherit;
+        }
+
+        .tag-item.selected .tag-count {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .checkmark {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: scale(0.6);
+            transition: all 0.25s var(--ease-bounce);
+        }
+
+        .tag-item.selected .checkmark {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .checkmark::before {
+            content: '✓';
+            color: var(--accent-1);
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .tag-filter-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, rgba(var(--accent-1-rgb), 0.10), rgba(var(--accent-2-rgb), 0.06));
+            border-radius: 12px;
+            border-left: 3px solid var(--accent-1);
+            font-size: 0.9em;
+            color: var(--text-primary);
+        }
+
+        .tag-filter-count {
+            background: var(--accent-1);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.9em;
+        }
+
+        .clear-tags-btn {
+            margin-left: auto;
+            padding: 4px 12px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.2s var(--ease-smooth);
+        }
+
+        .clear-tags-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            color: var(--text-primary);
+        }
+
+        /* 全文关键词 */
+        .keywords-input-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .keywords-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .keywords-input-wrapper::before {
+            content: '🔍';
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.65;
+            pointer-events: none;
+        }
+
+        #keywords {
+            width: 100%;
+            padding: 14px 14px 14px 42px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            color: var(--text-primary) !important;
+            transition: all 0.3s var(--ease-smooth);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.60);
+        }
+
+        #keywords:focus {
+            border-color: rgba(var(--accent-1-rgb), 0.70) !important;
+            box-shadow: 0 0 0 3px rgba(var(--accent-1-rgb), 0.15), 0 6px 20px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.80) !important;
+            outline: none;
+        }
+
+        #keywordLogic {
+            padding: 12px 18px !important;
+            border-radius: 12px !important;
+            border: 1px solid var(--glass-border) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
+            color: var(--text-primary) !important;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-smooth);
+            min-width: 170px;
+        }
+
+        #keywordLogic:hover {
+            border-color: rgba(var(--accent-1-rgb), 0.55) !important;
+            transform: translateY(-1px);
+        }
+
+        #keywordLogic:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(var(--accent-1-rgb), 0.15);
+        }
+
+        @media (max-width: 768px) {
+            .date-range-group { flex-direction: column; align-items: stretch; }
+            .date-range-group span { display: none; }
+            .keywords-input-group { flex-direction: column; align-items: stretch; }
+            #keywordLogic { width: 100%; min-width: unset; }
+            .fulltext-options { flex-direction: column; }
+            #fulltext-logic, #fulltext-scope { min-width: unset; width: 100%; }
+        }
+
+        /* 全文检索样式 */
+        .fulltext-search-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .fulltext-input-wrapper {
+            position: relative;
+        }
+
+        .fulltext-input-wrapper::before {
+            content: '🔍';
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.65;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        #fulltext-search {
+            width: 100%;
+            padding: 14px 14px 14px 42px !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px !important;
+            color: var(--text-primary) !important;
+            font-size: 1.05em;
+            transition: all 0.3s var(--ease-smooth);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.60);
+        }
+
+        #fulltext-search:focus {
+            border-color: rgba(var(--accent-1-rgb), 0.70) !important;
+            box-shadow: 
+                0 0 0 3px rgba(var(--accent-1-rgb), 0.15),
+                0 6px 20px rgba(0, 0, 0, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.80) !important;
+            outline: none;
+        }
+
+        .fulltext-options {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        #fulltext-logic,
+        #fulltext-scope {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px 18px !important;
+            border-radius: 12px !important;
+            border: 1px solid var(--glass-border) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
+            color: var(--text-primary) !important;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-smooth);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        #fulltext-logic:hover,
+        #fulltext-scope:hover {
+            border-color: rgba(var(--accent-1-rgb), 0.55) !important;
+            transform: translateY(-1px);
+        }
+
+        #fulltext-logic:focus,
+        #fulltext-scope:focus {
+            border-color: rgba(var(--accent-1-rgb), 0.70) !important;
+            box-shadow: 
+                0 0 0 3px rgba(var(--accent-1-rgb), 0.15),
+                0 6px 20px rgba(0, 0, 0, 0.10) !important;
+            outline: none;
+        }
+
+        .search-tips {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, rgba(var(--accent-1-rgb), 0.10), rgba(var(--accent-2-rgb), 0.06));
+            border-radius: 10px;
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--accent-1);
+        }
+
+        .search-tips .tip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .search-tips .tip::before {
+            content: '💡';
+            font-size: 1.1em;
+        }
+
+        .fulltext-results-summary {
+            margin-top: 15px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(var(--accent-1-rgb), 0.15), rgba(var(--accent-2-rgb), 0.10));
+            border-radius: 12px;
+            border: 1px dashed var(--accent-1-25);
+            display: none;
+        }
+
+        .fulltext-results-summary.active {
+            display: block;
+            animation: softAppear 0.4s var(--ease-smooth);
+        }
+
+        .fulltext-results-summary h4 {
+            margin: 0 0 8px 0;
+            font-size: 1em;
+            color: var(--accent-1);
+        }
+
+        .fulltext-results-summary .results-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .results-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .results-stat-item .stat-value {
+            font-weight: 700;
+            color: var(--accent-1);
+        }
+
+        .results-stat-item .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        .fulltext-highlight {
+            background-color: rgba(255, 235, 59, 0.3);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+            animation: highlightPulse 1.5s ease-in-out;
+        }
+
+        @keyframes highlightPulse {
+            0%, 100% { background-color: rgba(255, 235, 59, 0.3); }
+            50% { background-color: rgba(255, 235, 59, 0.6); }
         }
 
         /* 输入框样式 */
@@ -2379,6 +3152,28 @@
             border-top: 1px solid var(--glass-border);
         }
 
+        /* 目录视图内容预览 */
+        .entry-content-preview {
+            margin: 12px 0;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+            border-radius: 10px;
+            border-left: 3px solid var(--accent-1-25);
+            color: var(--text-secondary);
+            font-size: 0.95em;
+            line-height: 1.6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .entry-content-preview .fulltext-highlight {
+            background-color: rgba(255, 235, 59, 0.3);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+            animation: highlightPulse 1.5s ease-in-out;
+        }
+
         .entry-links a {
             color: var(--accent-1);
             margin-left: 10px;
@@ -2563,7 +3358,7 @@
             /* ... 其他样式 ... */
             
             /* 添加动画 */
-            animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            animation: popIn 0.3s var(--ease-elastic);
             transform-origin: center;
         }
 
@@ -2580,7 +3375,7 @@
 
         /* 关闭动画 */
         .form-popup.closing, .category-manager.closing {
-            animation: popOut 0.2s ease-in forwards; /* 使用 forwards 保持最后状态 */
+            animation: popOut 0.2s var(--ease-morph) forwards; /* 使用 forwards 保持最后状态 */
         }
 
         @keyframes popOut {
@@ -2598,7 +3393,7 @@
         #entries-container-wrapper {
             position: relative;
             z-index: 200; /* 确保搜索结果容器在 header (100) 和侧边栏之上，但低于搜索建议下拉框 (10001) */
-            margin-top: 8px;
+            margin-top: 1px;
             margin-bottom: 24px;
             padding: 24px 20px 28px;
             background: linear-gradient(
@@ -3128,7 +3923,8 @@
         .quick-filters {
             display: flex;
             gap: 10px;
-            margin: 0 0 25px 0; /* 减少顶部间距，增加底部间距 */
+            align-items: center;
+            margin: 0 0 1px 0;
             padding: 16px;
             background: linear-gradient(
                 135deg,
@@ -3165,6 +3961,29 @@
             background: var(--accent-1);
             color: white;
             border-color: var(--accent-1);
+        }
+
+        /* 快速筛选行中的高级检索按钮样式 */
+        .quick-filters .primary-btn {
+            margin-left: auto;
+            padding: 8px 16px !important;
+            font-size: 0.9em !important;
+            border-radius: 20px !important;
+            background: linear-gradient(145deg,
+                rgba(var(--accent-1-rgb), 0.18),
+                rgba(var(--accent-2-rgb), 0.10)) !important;
+            border: 1px solid var(--glass-border) !important;
+            color: var(--text-primary) !important;
+            font-weight: 600 !important;
+            transition: all 0.3s var(--ease-bounce) !important;
+        }
+
+        .quick-filters .primary-btn:hover {
+            background: linear-gradient(145deg,
+                rgba(var(--accent-1-rgb), 0.26),
+                rgba(var(--accent-2-rgb), 0.16)) !important;
+            border-color: rgba(var(--accent-1-rgb), 0.45) !important;
+            transform: translateY(-1px);
         }
 
         /* 批量编辑弹窗 */
@@ -3716,6 +4535,75 @@
                 box-shadow: 0 0 20px rgba(var(--accent-1-rgb), 0.5);
             }
         }
+
+        /*********************
+         * 更自然的动效增强（追加，不替换原有）
+         *********************/
+        @keyframes softAppear {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); filter: blur(10px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes cellMerge {
+            0% { opacity: 0; transform: scale(0.8) rotate(-5deg); filter: blur(20px) brightness(1.2); }
+            60% { opacity: 0.8; transform: scale(1.1) rotate(2deg); filter: blur(5px) brightness(1.1); }
+            100% { opacity: 1; transform: scale(1) rotate(0); filter: blur(0) brightness(1); }
+        }
+
+        @keyframes cellSplit {
+            0% { clip-path: inset(0 0 0 0); opacity: 1; }
+            100% { clip-path: inset(50% 50% 50% 50%); opacity: 0; }
+        }
+
+        @keyframes elasticIn {
+            0% { transform: scale(0.8) translateY(30px); opacity: 0; }
+            50% { transform: scale(1.05) translateY(-10px); opacity: 0.8; }
+            70% { transform: scale(0.98) translateY(5px); opacity: 0.9; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        @keyframes elasticOut {
+            0% { transform: scale(1) translateY(0); opacity: 1; }
+            30% { transform: scale(1.02) translateY(-15px); opacity: 0.8; }
+            100% { transform: scale(0.8) translateY(60px); opacity: 0; }
+        }
+
+        @keyframes fluidWave {
+            0%, 100% { transform: translateY(0) scale(1); border-radius: 20px; }
+            33% { transform: translateY(-8px) scale(1.02); border-radius: 25px 20px 20px 25px; }
+            66% { transform: translateY(4px) scale(0.98); border-radius: 20px 25px 25px 20px; }
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 1; filter: blur(0); }
+            50% { transform: scale(1.03); opacity: 0.9; filter: blur(2px); }
+        }
+
+        @keyframes organicPulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; filter: blur(1px); }
+            25% { transform: scale(1.1) rotate(5deg); opacity: 0.9; filter: blur(0.5px); }
+            50% { transform: scale(0.95) rotate(-3deg); opacity: 0.8; filter: blur(0.8px); }
+            75% { transform: scale(1.05) rotate(2deg); opacity: 0.85; filter: blur(0.3px); }
+        }
+
+        @keyframes rippleExpand {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .animate-soft-appear { animation: softAppear 0.6s var(--ease-smooth) both; }
+        .animate-elastic-in { animation: elasticIn 0.8s var(--ease-elastic) both; }
+        .animate-elastic-out { animation: elasticOut 0.6s var(--ease-elastic) both; }
+        .animate-cell-merge { animation: cellMerge 0.7s var(--ease-morph) both; }
+        .animate-cell-split { animation: cellSplit 0.3s var(--ease-morph) both; }
+        .animate-fluid-wave { animation: fluidWave 3s var(--ease-blob) infinite; }
+        .animate-breathe { animation: breathe 4s var(--ease-smooth) infinite; }
+        .loading-organic { animation: organicPulse 2s var(--ease-blob) infinite; }
+
+        /* 关键词云：利用现有 inline animation-delay，让标签“弹性入场” */
+        #keyword-cloud .keyword-tag {
+            animation: elasticIn 0.5s var(--ease-elastic) both;
+        }
     </style>
 </head>
 <body>
@@ -3900,7 +4788,7 @@
 
         <div class="main-content">
             <div class="action-buttons">
-                <div style="flex:1; position:relative;">
+                <div id="search-box" style="flex:1; position:relative;">
                     <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="width:100%">
                 </div>
                 <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
@@ -3944,6 +4832,7 @@
                 <button class="quick-filter-btn" onclick="applyQuickFilter('noAnalysis', event)">待分析</button>
                 <button class="quick-filter-btn" onclick="applyQuickFilter('noKeywords', event)">无关键词</button>
                 <button class="quick-filter-btn" onclick="applyQuickFilter('reset', event)">显示全部</button>
+                <button class="primary-btn" onclick="toggleAdvancedSearch()" style="margin-left: auto; padding: 8px 16px !important; font-size: 0.9em !important; border-radius: 20px !important;">高级检索 ▽</button>
             </div>
             
             <!-- 批量操作栏 -->
@@ -3969,28 +4858,82 @@
             </div>
             
             <!-- 高级检索面板 -->
-            <div class="advanced-search">
-                <button class="primary-btn" onclick="toggleAdvancedSearch()">高级检索 ▽</button>
+            <div class="advanced-search" style="margin-top: 0;">
                 <div class="advanced-panel" style="max-height: 0; opacity: 0; overflow: hidden; transition: max-height 0.3s ease-out, opacity 0.2s ease-out, margin-top 0.3s ease-out, margin-bottom 0.3s ease-out, padding-top 0.3s ease-out, padding-bottom 0.3s ease-out;">
                     <div class="search-row">
-                        <label>时间范围：</label>
-                        <input type="date" id="startDate">
-                        <span>至</span>
-                        <input type="date" id="endDate">
+                        <label>时间范围</label>
+                        <div class="date-range-group">
+                            <div class="date-input-wrapper">
+                                <input type="date" id="startDate">
+                            </div>
+                            <span>至</span>
+                            <div class="date-input-wrapper">
+                                <input type="date" id="endDate">
+                            </div>
+                        </div>
+                        <div class="date-presets">
+                            <button class="date-preset-btn" onclick="setDatePreset('today', this)">今天</button>
+                            <button class="date-preset-btn" onclick="setDatePreset('week', this)">本周</button>
+                            <button class="date-preset-btn" onclick="setDatePreset('month', this)">本月</button>
+                            <button class="date-preset-btn" onclick="setDatePreset('year', this)">今年</button>
+                            <button class="date-preset-btn" onclick="clearDates()">清空</button>
+                        </div>
                     </div>
                     
                     <div class="search-row">
-                        <label>包含标签：</label>
-                        <div id="tag-selector"></div>
+                        <label>包含标签</label>
+                        <div id="tag-selector" class="tag-selector-container empty"></div>
+                        <div id="tag-filter-summary" class="tag-filter-summary" style="display: none;">
+                            <span>已选择</span>
+                            <span id="selected-tags-count" class="tag-filter-count">0</span>
+                            <span>个标签</span>
+                            <button class="clear-tags-btn" onclick="clearAllTags()">清空选择</button>
+                        </div>
                     </div>
 
                     <div class="search-row">
-                        <label>全文关键词：</label>
-                        <input type="text" id="keywords" placeholder="多个词用空格分隔">
-                        <select id="keywordLogic">
-                            <option value="AND">必须全部包含</option>
-                            <option value="OR">包含任意一个</option>
-                        </select>
+                        <label>全文关键词</label>
+                        <div class="keywords-input-group">
+                            <div class="keywords-input-wrapper">
+                                <input type="text" id="keywords" placeholder="多个词用空格分隔，如：历史 文化">
+                            </div>
+                            <select id="keywordLogic">
+                                <option value="AND">必须全部包含</option>
+                                <option value="OR">包含任意一个</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="search-row">
+                        <label>全文检索 (多词交叉) <span style="color: var(--accent-1); font-size: 0.85em; font-weight: normal;">(仅详细视图)</span></label>
+                        <div class="fulltext-search-group">
+                            <div class="fulltext-input-wrapper">
+                                <input type="text" id="fulltext-search" placeholder="输入多个词，如：战争 经济 改革">
+                            </div>
+                            <div class="fulltext-options">
+                                <select id="fulltext-logic">
+                                    <option value="AND">与 (全部包含)</option>
+                                    <option value="OR">或 (包含任意)</option>
+                                    <option value="PHRASE">精确短语</option>
+                                </select>
+                                <select id="fulltext-scope">
+                                    <option value="all">全部内容</option>
+                                    <option value="content">仅原文</option>
+                                    <option value="analysis">仅分析</option>
+                                    <option value="title">仅标题</option>
+                                </select>
+                            </div>
+                            <div class="search-tips">
+                                <span class="tip">提示：用空格分隔多个词，支持"引号"精确匹配。此功能仅在详细视图下可用</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="search-row">
+                        <div class="action-buttons" style="justify-content: flex-start; gap: 12px; margin-top: 0;">
+                            <button class="primary-btn" onclick="applyFulltextSearch()">执行全文检索</button>
+                            <button class="danger-btn" onclick="clearFulltextSearch()">清空全文检索</button>
+                        </div>
                     </div>
 
                     <div class="action-buttons">
@@ -4366,6 +5309,16 @@
             keywordLogic: 'AND'
         };
         let currentQuickFilter = null; // 快速筛选状态
+        
+        // 全文检索状态
+        let fulltextSearch = {
+            query: '',
+            terms: [],
+            logic: 'AND',
+            scope: 'all',
+            results: [],
+            highlights: {}
+        };
         
         // --- 新增加载提示函数 ---
         function showLoading(message = '加载中...') {
@@ -5348,6 +6301,11 @@
             if (bulkModeActive) {
                 updateSelectedCount();
             }
+
+            // 让新渲染的元素也能参与入场动画（如果增强模块已初始化）
+            if (typeof window.refreshEnhancedAnimations === 'function') {
+                try { window.refreshEnhancedAnimations(); } catch (_) {}
+            }
         }
 
         // 渲染目录视图 (使用div结构以兼容批量操作)
@@ -5367,10 +6325,11 @@
                          </div>`;
                  }
 
+                 // 目录视图：不显示内容预览，只显示标题、元数据和关键词
                  // 简化的条目内容
                  entryContent += `
                      <div class="entry-header">
-                         <h3 class="entry-title">${entry.title}</h3>
+                         <h3 class="entry-title">${entry.title || ''}</h3>
                          <div class="entry-meta">
                              <span class="entry-id">${entry.id}</span>
                              <span class="entry-date">${entry.date}</span>
@@ -5410,6 +6369,46 @@
                                </div>`;
                        }
 
+                       // 全文检索高亮处理
+                       let title = entry.title || '';
+                       let content = entry.content || '';
+                       let analysis = entry.analysis || '';
+                       
+                       if (fulltextSearch.highlights && fulltextSearch.highlights[entry.id]) {
+                           const highlights = fulltextSearch.highlights[entry.id];
+                           const titleLen = title.length;
+                           const contentLen = content.length;
+                           
+                           // 根据检索范围分离高亮
+                           if (fulltextSearch.scope === 'all') {
+                               // 全部内容：需要按位置分离标题、内容、分析的高亮
+                               const titleHighlights = highlights.filter(hl => hl.start < titleLen);
+                               const contentHighlights = highlights.filter(hl => hl.start >= titleLen && hl.start < titleLen + 1 + contentLen).map(hl => ({
+                                   ...hl,
+                                   start: hl.start - titleLen - 1,
+                                   end: hl.end - titleLen - 1
+                               }));
+                               const analysisHighlights = highlights.filter(hl => hl.start >= titleLen + 1 + contentLen).map(hl => ({
+                                   ...hl,
+                                   start: hl.start - titleLen - 1 - contentLen - 1,
+                                   end: hl.end - titleLen - 1 - contentLen - 1
+                               }));
+                               
+                               if (titleHighlights.length > 0) title = highlightText(title, titleHighlights);
+                               if (contentHighlights.length > 0) content = highlightText(content, contentHighlights);
+                               if (analysisHighlights.length > 0) analysis = highlightText(analysis, analysisHighlights);
+                           } else if (fulltextSearch.scope === 'title') {
+                               const titleHighlights = highlights;
+                               if (titleHighlights.length > 0) title = highlightText(title, titleHighlights);
+                           } else if (fulltextSearch.scope === 'content') {
+                               const contentHighlights = highlights;
+                               if (contentHighlights.length > 0) content = highlightText(content, contentHighlights);
+                           } else if (fulltextSearch.scope === 'analysis') {
+                               const analysisHighlights = highlights;
+                               if (analysisHighlights.length > 0) analysis = highlightText(analysis, analysisHighlights);
+                           }
+                       }
+
                        // 详细条目内容
                        entryContent += `
                            <div class="entry-header">
@@ -5424,15 +6423,15 @@
                                </div>
                            </div>
                            <div class="entry-body">
-                               <h3 class="entry-title">${entry.title}</h3>
+                               <h3 class="entry-title">${title}</h3>
                                <div class="content-section">
                                    <h4>原文内容 <span class="word-count-badge">${countWords(entry.content)} 字</span></h4>
-                                   <div class="entry-content">${entry.content || '无内容'}</div>
+                                   <div class="entry-content">${content || '无内容'}</div>
                                </div>
                                ${entry.analysis ? `
                                    <div class="analysis-section">
                                        <h4>分析解读</h4>
-                                       <div class="entry-analysis">${entry.analysis}</div>
+                                       <div class="entry-analysis">${analysis}</div>
                                    </div>
                                ` : ''}
                                <div class="entry-footer">
@@ -5878,6 +6877,17 @@
             }, 300));
         })();
 
+        // 高级检索：标签选择变化时同步 UI 摘要（事件委托，避免重复绑定）
+        document.addEventListener('change', (e) => {
+            const target = e.target;
+            if (!(target instanceof HTMLInputElement)) return;
+            if (target.closest && target.closest('#tag-selector')) {
+                if (typeof updateTagFilterSummary === 'function') {
+                    updateTagFilterSummary();
+                }
+            }
+        });
+
         function filterByKeyword(keyword) {
             currentFilterKeyword = keyword === currentFilterKeyword ? null : keyword;
             currentPage = 1;
@@ -5973,13 +6983,26 @@
                 const tagMatch = advancedFilter.tags.length === 0 || 
                                 advancedFilter.tags.every(tag => (entry.keywords || []).includes(tag));
                 
-                const contentText = [entry.title, entry.content, entry.analysis].join(' ').toLowerCase();
+                // 全文搜索：在标题、原文内容、分析解读三个字段中搜索关键词
+                const titleText = (entry.title || '').toLowerCase();
+                const contentText = (entry.content || '').toLowerCase();
+                const analysisText = (entry.analysis || '').toLowerCase();
+                const fullText = `${titleText} ${contentText} ${analysisText}`;
+                
+                // 根据逻辑（AND/OR）进行交叉检索
                 const advKeywordMatch = advancedFilter.keywords.length === 0 || 
                                    (advancedFilter.keywordLogic === 'AND' ? 
-                                    advancedFilter.keywords.every(kw => contentText.includes(kw.toLowerCase())) :
-                                    advancedFilter.keywords.some(kw => contentText.includes(kw.toLowerCase())));
+                                    // AND：所有关键词都必须出现在全文中的任意位置
+                                    advancedFilter.keywords.every(kw => fullText.includes(kw.toLowerCase())) :
+                                    // OR：任意一个关键词出现在全文中即可
+                                    advancedFilter.keywords.some(kw => fullText.includes(kw.toLowerCase())));
                 
-                return keywordTagMatch && searchMatch && dateMatch && tagMatch && advKeywordMatch;
+                // 全文检索过滤（仅在详细视图模式下生效）
+                const fulltextMatch = currentViewMode === 'list' || // 目录视图：忽略全文检索
+                                    fulltextSearch.results.length === 0 || 
+                                    fulltextSearch.results.includes(entry.id);
+                
+                return keywordTagMatch && searchMatch && dateMatch && tagMatch && advKeywordMatch && fulltextMatch;
             });
             
             // 应用快速筛选
@@ -6018,7 +7041,7 @@
         // 切换高级搜索面板
         function toggleAdvancedSearch() {
             const panel = document.querySelector('.advanced-panel');
-            const button = panel.previousElementSibling; // 获取触发按钮
+            const button = event?.target || document.querySelector('#quick-filters .primary-btn'); // 获取触发按钮（现在在快速筛选行中）
             
             // 检查面板当前是否可见或正在展开
             if (panel.style.maxHeight && panel.style.maxHeight !== '0px') {
@@ -6030,7 +7053,7 @@
                 panel.style.marginBottom = '0';
                 panel.style.paddingTop = '0';
                 panel.style.paddingBottom = '0';
-                button.textContent = '高级检索 ▽'; // 更新按钮文本
+                if (button) button.textContent = '高级检索 ▽'; // 更新按钮文本
             } else {
                 // 显示面板
                 // 先让元素可见以便计算高度，但保持其在屏幕外或透明
@@ -6052,32 +7075,145 @@
                 panel.style.maxHeight = scrollHeight + 'px';
                 panel.style.opacity = '1';
                 // 添加外边距和内边距（如果设计需要）
-                panel.style.marginTop = '15px'; 
-                panel.style.marginBottom = '15px';
+                panel.style.marginTop = '12px'; 
+                panel.style.marginBottom = '12px';
                 panel.style.paddingTop = '15px';
                 panel.style.paddingBottom = '15px';
-                button.textContent = '高级检索 △'; // 更新按钮文本
+                if (button) button.textContent = '高级检索 △'; // 更新按钮文本
                 
                 // 动态加载标签 (如果需要)
                 if (!document.getElementById('tag-selector').children.length) {
-                const allTags = [...new Set(entries.flatMap(e => e.keywords || []))];
-                document.getElementById('tag-selector').innerHTML = allTags.map(tag => `
-                    <label class="tag-checkbox">
-                        <input type="checkbox" value="${tag}">
-                        ${tag}
-                    </label>
-                `).join('');
+                    const allTags = [...new Set(entries.flatMap(e => e.keywords || []))];
+                    const container = document.getElementById('tag-selector');
+
+                    if (!container) return;
+
+                    if (allTags.length === 0) {
+                        container.textContent = '暂无标签数据';
+                        container.classList.add('empty');
+                    } else {
+                        container.classList.remove('empty');
+                        container.innerHTML = `
+                            <div class="tag-cloud">
+                                ${allTags.map((tag, index) => `
+                                    <label class="tag-item" data-tag="${tag}" style="--index:${index}">
+                                        <input type="checkbox" value="${tag}">
+                                        <span class="tag-text">${tag}</span>
+                                        <span class="tag-count">${countTagOccurrences(tag)}</span>
+                                        <span class="checkmark" aria-hidden="true"></span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
                 }
+                updateTagFilterSummary();
             }
+        }
+
+        // 标签出现次数
+        function countTagOccurrences(tag) {
+            return entries.filter(e => (e.keywords || []).includes(tag)).length;
+        }
+
+        // 同步标签选中状态 + 摘要
+        function updateTagFilterSummary() {
+            const container = document.getElementById('tag-selector');
+            const summaryEl = document.getElementById('tag-filter-summary');
+            const countEl = document.getElementById('selected-tags-count');
+            if (!container || !summaryEl || !countEl) return;
+
+            const items = container.querySelectorAll('.tag-item');
+            let selectedCount = 0;
+            items.forEach((item) => {
+                const input = item.querySelector('input[type="checkbox"]');
+                const selected = !!(input && input.checked);
+                item.classList.toggle('selected', selected);
+                if (selected) selectedCount++;
+            });
+
+            countEl.textContent = String(selectedCount);
+            summaryEl.style.display = selectedCount > 0 ? 'flex' : 'none';
+        }
+
+        function clearAllTags() {
+            document.querySelectorAll('#tag-selector input[type="checkbox"]').forEach(cb => { cb.checked = false; });
+            updateTagFilterSummary();
+        }
+
+        // 日期预设
+        function setDatePreset(preset, btn) {
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            if (!startDateInput || !endDateInput) return;
+
+            document.querySelectorAll('.date-preset-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+
+            const today = new Date();
+            const toISODate = (d) => {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
+            };
+
+            let startDate = '';
+            let endDate = '';
+
+            switch (preset) {
+                case 'today': {
+                    startDate = toISODate(today);
+                    endDate = startDate;
+                    break;
+                }
+                case 'week': {
+                    const weekStart = new Date(today);
+                    // 以周日为一周开始（与原方案一致）
+                    weekStart.setDate(today.getDate() - today.getDay());
+                    startDate = toISODate(weekStart);
+                    endDate = toISODate(today);
+                    break;
+                }
+                case 'month': {
+                    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                    startDate = toISODate(monthStart);
+                    endDate = toISODate(today);
+                    break;
+                }
+                case 'year': {
+                    const yearStart = new Date(today.getFullYear(), 0, 1);
+                    startDate = toISODate(yearStart);
+                    endDate = toISODate(today);
+                    break;
+                }
+                default:
+                    break;
+            }
+
+            startDateInput.value = startDate;
+            endDateInput.value = endDate;
+        }
+
+        function clearDates() {
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            if (startDateInput) startDateInput.value = '';
+            if (endDateInput) endDateInput.value = '';
+            document.querySelectorAll('.date-preset-btn').forEach(b => b.classList.remove('active'));
         }
 
         // 应用高级筛选
         function applyAdvancedSearch() {
+            // 全文关键词：按空格分割，过滤空字符串，并去除首尾空格
+            const keywordsInput = document.getElementById('keywords').value.trim();
+            const keywords = keywordsInput ? keywordsInput.split(/\s+/).filter(Boolean) : [];
+            
             advancedFilter = {
                 startDate: document.getElementById('startDate').value,
                 endDate: document.getElementById('endDate').value,
                 tags: Array.from(document.querySelectorAll('#tag-selector input:checked')).map(cb => cb.value),
-                keywords: document.getElementById('keywords').value.split(' ').filter(Boolean),
+                keywords: keywords,
                 keywordLogic: document.getElementById('keywordLogic').value
             };
             
@@ -6092,6 +7228,8 @@
             document.querySelectorAll('#tag-selector input').forEach(cb => cb.checked = false);
             document.getElementById('keywords').value = '';
             document.getElementById('keywordLogic').value = 'AND';
+            clearDates();
+            updateTagFilterSummary();
             
             advancedFilter = {
                 startDate: null,
@@ -6105,9 +7243,303 @@
             renderEntries();
         }
 
+        // ========== 全文检索功能 ==========
+        // 执行全文检索
+        function applyFulltextSearch() {
+            // 全文检索仅在详细视图模式下支持
+            if (currentViewMode === 'list') {
+                showAlert('全文检索功能仅在详细视图下可用，请先切换到详细视图', 'warning');
+                return;
+            }
+            
+            const input = document.getElementById('fulltext-search').value.trim();
+            const logic = document.getElementById('fulltext-logic').value;
+            const scope = document.getElementById('fulltext-scope').value;
+            
+            if (!input) {
+                showAlert('请输入检索词', 'warning');
+                return;
+            }
+            
+            fulltextSearch.query = input;
+            fulltextSearch.logic = logic;
+            fulltextSearch.scope = scope;
+            
+            // 解析检索词
+            if (logic === 'PHRASE') {
+                fulltextSearch.terms = [input]; // 精确短语作为一个整体
+            } else {
+                // 处理引号内的精确匹配
+                const phraseMatches = input.match(/"([^"]+)"/g);
+                let remaining = input;
+                let terms = [];
+                
+                if (phraseMatches) {
+                    phraseMatches.forEach(match => {
+                        const phrase = match.slice(1, -1); // 去除引号
+                        terms.push(phrase);
+                        remaining = remaining.replace(match, '');
+                    });
+                }
+                
+                // 添加剩余的词
+                const remainingTerms = remaining.trim().split(/\s+/).filter(t => t);
+                terms.push(...remainingTerms);
+                fulltextSearch.terms = terms;
+            }
+            
+            // 执行检索
+            performFulltextSearch();
+            
+            // 显示结果摘要
+            showFulltextResultsSummary();
+        }
+
+        // 执行检索逻辑
+        function performFulltextSearch() {
+            fulltextSearch.results = [];
+            fulltextSearch.highlights = {};
+            
+            entries.forEach(entry => {
+                let searchText = '';
+                
+                // 根据范围构建搜索文本
+                switch (fulltextSearch.scope) {
+                    case 'content':
+                        searchText = entry.content || '';
+                        break;
+                    case 'analysis':
+                        searchText = entry.analysis || '';
+                        break;
+                    case 'title':
+                        searchText = entry.title || '';
+                        break;
+                    case 'all':
+                    default:
+                        searchText = `${entry.title || ''} ${entry.content || ''} ${entry.analysis || ''}`;
+                        break;
+                }
+                
+                // 转换为小写进行不区分大小写的搜索
+                const textLower = searchText.toLowerCase();
+                
+                // 根据逻辑检查匹配
+                let isMatch = false;
+                let highlights = [];
+                
+                if (fulltextSearch.logic === 'PHRASE') {
+                    // 精确短语匹配
+                    const phrase = fulltextSearch.terms[0].toLowerCase();
+                    if (textLower.includes(phrase)) {
+                        isMatch = true;
+                        highlights = findPhraseHighlights(searchText, phrase);
+                    }
+                } else if (fulltextSearch.logic === 'AND') {
+                    // 必须包含所有词
+                    const allMatch = fulltextSearch.terms.every(term => 
+                        textLower.includes(term.toLowerCase())
+                    );
+                    if (allMatch) {
+                        isMatch = true;
+                        highlights = fulltextSearch.terms.flatMap(term => 
+                            findTermHighlights(searchText, term)
+                        );
+                    }
+                } else { // OR逻辑
+                    // 包含任意一个词
+                    const anyMatch = fulltextSearch.terms.some(term => 
+                        textLower.includes(term.toLowerCase())
+                    );
+                    if (anyMatch) {
+                        isMatch = true;
+                        highlights = fulltextSearch.terms.flatMap(term => 
+                            findTermHighlights(searchText, term)
+                        );
+                    }
+                }
+                
+                if (isMatch) {
+                    fulltextSearch.results.push(entry.id);
+                    fulltextSearch.highlights[entry.id] = highlights;
+                }
+            });
+            
+            // 重新渲染条目列表
+            currentPage = 1;
+            renderEntries();
+        }
+
+        // 查找术语高亮位置
+        function findTermHighlights(text, term) {
+            const highlights = [];
+            const termLower = term.toLowerCase();
+            const textLower = text.toLowerCase();
+            let startIndex = 0;
+            
+            while (startIndex < textLower.length) {
+                const index = textLower.indexOf(termLower, startIndex);
+                if (index === -1) break;
+                
+                highlights.push({
+                    start: index,
+                    end: index + term.length,
+                    term: term
+                });
+                
+                startIndex = index + 1;
+            }
+            
+            return highlights;
+        }
+
+        // 查找短语高亮位置
+        function findPhraseHighlights(text, phrase) {
+            const highlights = [];
+            const phraseLower = phrase.toLowerCase();
+            const textLower = text.toLowerCase();
+            let startIndex = 0;
+            
+            while (startIndex < textLower.length) {
+                const index = textLower.indexOf(phraseLower, startIndex);
+                if (index === -1) break;
+                
+                highlights.push({
+                    start: index,
+                    end: index + phrase.length,
+                    term: phrase
+                });
+                
+                startIndex = index + 1;
+            }
+            
+            return highlights;
+        }
+
+        // 在文本中添加高亮标记
+        function highlightText(text, highlights) {
+            if (!highlights || highlights.length === 0) return text;
+            
+            // 按起始位置排序
+            highlights.sort((a, b) => a.start - b.start);
+            
+            let result = '';
+            let lastIndex = 0;
+            
+            highlights.forEach(hl => {
+                // 添加高亮前的文本
+                result += text.substring(lastIndex, hl.start);
+                
+                // 添加高亮标记
+                result += `<span class="fulltext-highlight" title="匹配词: ${hl.term}">`;
+                result += text.substring(hl.start, hl.end);
+                result += '</span>';
+                
+                lastIndex = hl.end;
+            });
+            
+            // 添加剩余文本
+            result += text.substring(lastIndex);
+            
+            return result;
+        }
+
+        // 显示全文检索结果摘要
+        function showFulltextResultsSummary() {
+            const searchRow = document.querySelector('.fulltext-search-group')?.parentNode;
+            if (!searchRow) return;
+            
+            let container = document.getElementById('fulltext-results-summary');
+            if (!container) {
+                // 创建结果摘要容器
+                const summaryHTML = `
+                    <div id="fulltext-results-summary" class="fulltext-results-summary">
+                        <h4>检索结果</h4>
+                        <div class="results-stats">
+                            <div class="results-stat-item">
+                                <span class="stat-value">${fulltextSearch.results.length}</span>
+                                <span class="stat-label">个匹配条目</span>
+                            </div>
+                            <div class="results-stat-item">
+                                <span class="stat-value">${fulltextSearch.terms.length}</span>
+                                <span class="stat-label">个检索词</span>
+                            </div>
+                            <div class="results-stat-item">
+                                <span class="stat-value">${fulltextSearch.logic}</span>
+                                <span class="stat-label">逻辑关系</span>
+                            </div>
+                            <div class="results-stat-item">
+                                <span class="stat-value">${fulltextSearch.scope === 'all' ? '全部内容' : fulltextSearch.scope === 'content' ? '仅原文' : fulltextSearch.scope === 'analysis' ? '仅分析' : '仅标题'}</span>
+                                <span class="stat-label">检索范围</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                searchRow.insertAdjacentHTML('beforeend', summaryHTML);
+                container = document.getElementById('fulltext-results-summary');
+            } else {
+                // 更新现有摘要
+                const statItems = container.querySelectorAll('.results-stat-item');
+                if (statItems.length >= 4) {
+                    statItems[0].querySelector('.stat-value').textContent = fulltextSearch.results.length;
+                    statItems[1].querySelector('.stat-value').textContent = fulltextSearch.terms.length;
+                    statItems[2].querySelector('.stat-value').textContent = fulltextSearch.logic;
+                    statItems[3].querySelector('.stat-value').textContent = fulltextSearch.scope === 'all' ? '全部内容' : fulltextSearch.scope === 'content' ? '仅原文' : fulltextSearch.scope === 'analysis' ? '仅分析' : '仅标题';
+                }
+                container.classList.add('active');
+            }
+            
+            // 如果有结果，显示成功提示
+            if (fulltextSearch.results.length > 0) {
+                const termList = fulltextSearch.terms.map(t => `"${t}"`).join('、');
+                showAlert(`找到 ${fulltextSearch.results.length} 个包含 ${termList} 的条目`, 'success');
+            } else {
+                showAlert('未找到匹配的条目', 'warning');
+            }
+        }
+
+        // 清空全文检索
+        function clearFulltextSearch() {
+            const fulltextInput = document.getElementById('fulltext-search');
+            const fulltextLogic = document.getElementById('fulltext-logic');
+            const fulltextScope = document.getElementById('fulltext-scope');
+            
+            if (fulltextInput) fulltextInput.value = '';
+            if (fulltextLogic) fulltextLogic.value = 'AND';
+            if (fulltextScope) fulltextScope.value = 'all';
+            
+            fulltextSearch = {
+                query: '',
+                terms: [],
+                logic: 'AND',
+                scope: 'all',
+                results: [],
+                highlights: {}
+            };
+            
+            // 移除结果摘要
+            const summary = document.getElementById('fulltext-results-summary');
+            if (summary) {
+                summary.classList.remove('active');
+                setTimeout(() => summary.remove(), 300);
+            }
+            
+            // 重新渲染条目列表
+            currentPage = 1;
+            renderEntries();
+            
+            showAlert('全文检索已清除', 'info');
+        }
+
         // 初始化
         updateCategorySelectors();
         renderEntries();
+
+        // 全文检索：按Enter执行检索（事件委托，支持动态创建的元素）
+        document.addEventListener('keypress', function(e) {
+            if (e.target && e.target.id === 'fulltext-search' && e.key === 'Enter') {
+                applyFulltextSearch();
+            }
+        });
 
         // 自动检查数据完整性
         setTimeout(() => {
@@ -6624,6 +8056,11 @@
          * 3D交互效果
          *********************/
         document.addEventListener('DOMContentLoaded', function() {
+            // 尊重“减少动态效果”偏好：避免 JS 强行施加 3D/涟漪/入场动画
+            try {
+                if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+            } catch (_) {}
+
             // 为所有卡片添加3D悬停效果（不含 .stat-card，避免数据统计框跳动）
             const add3DHoverEffect = () => {
                 const cards = document.querySelectorAll('.entry-item, .detail-entry, .log-item, .draft-item');
@@ -6639,19 +8076,27 @@
                         
                         const rotateY = (x - centerX) / 25;
                         const rotateX = (centerY - y) / 25;
+
+                        // 同步写入 CSS 变量，便于 CSS 侧做更自然的复合动效
+                        const relativeX = (x - centerX) / centerX;
+                        const relativeY = (y - centerY) / centerY;
+                        card.style.setProperty('--mouse-x', String(relativeX));
+                        card.style.setProperty('--mouse-y', String(relativeY));
                         
                         card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
                     });
                     
                     card.addEventListener('mouseleave', () => {
                         card.style.transform = '';
+                        card.style.removeProperty('--mouse-x');
+                        card.style.removeProperty('--mouse-y');
                     });
                 });
             };
             
             // 为按钮添加点击涟漪效果
             const addRippleEffect = () => {
-                const buttons = document.querySelectorAll('.primary-btn, .danger-btn, .cancel-btn');
+                const buttons = document.querySelectorAll('.primary-btn, .danger-btn, .cancel-btn, .page-btn, .keyword-tag');
                 
                 buttons.forEach(button => {
                     button.style.position = 'relative';
@@ -6659,22 +8104,21 @@
                     
                     button.addEventListener('click', function(e) {
                         const rect = this.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
+                        const size = Math.max(rect.width, rect.height);
+                        const x = e.clientX - rect.left - size / 2;
+                        const y = e.clientY - rect.top - size / 2;
                         
                         const ripple = document.createElement('span');
                         ripple.style.cssText = `
                             position: absolute;
                             border-radius: 50%;
                             background: rgba(255, 255, 255, 0.5);
-                            transform: scale(0);
-                            animation: ripple 0.6s linear;
+                            width: ${size}px;
+                            height: ${size}px;
                             top: ${y}px;
                             left: ${x}px;
-                            width: 100px;
-                            height: 100px;
-                            margin-top: -50px;
-                            margin-left: -50px;
+                            transform: scale(0);
+                            animation: rippleExpand 0.6s var(--ease-blob);
                             pointer-events: none;
                             z-index: 1;
                         `;
@@ -6694,13 +8138,72 @@
                         opacity: 0;
                     }
                 }
+                @keyframes rippleExpand {
+                    0% { transform: scale(0); opacity: 1; }
+                    100% { transform: scale(2); opacity: 0; }
+                }
             `;
             document.head.appendChild(style);
+
+            // 入场观察器：仅用于“非条目内容”的轻量入场（避免条目出现时模糊/跳动）
+            const initEnhancedAnimations = () => {
+                if (!('IntersectionObserver' in window)) return;
+                const observerOptions = { threshold: 0.12, rootMargin: '0px 0px -60px 0px' };
+
+                const appearObserver = new IntersectionObserver((entriesList) => {
+                    entriesList.forEach((entry) => {
+                        if (!entry.isIntersecting) return;
+                        const el = entry.target;
+
+                        if (el.classList.contains('stat-card')) {
+                            el.classList.add('animate-elastic-in');
+                        } else {
+                            el.classList.add('animate-soft-appear');
+                        }
+
+                        appearObserver.unobserve(el);
+                    });
+                }, observerOptions);
+
+                const observeAll = () => {
+                    // 不观察 .entry-item/.detail-entry 等条目，避免“入场模糊/缩放”
+                    document.querySelectorAll('.stat-card, .sidebar > *')
+                        .forEach((el) => {
+                            if (el.dataset.enhancedObserved === '1') return;
+                            el.dataset.enhancedObserved = '1';
+                            appearObserver.observe(el);
+                        });
+                };
+
+                observeAll();
+                window.refreshEnhancedAnimations = observeAll;
+            };
+
+            // 搜索框：输入时轻微“呼吸”反馈
+            const enhanceSearchBreathe = () => {
+                const el = document.getElementById('search-input');
+                if (!el) return;
+                const box = document.getElementById('search-box') || el.parentElement;
+                let t;
+                el.addEventListener('input', () => {
+                    clearTimeout(t);
+                    el.classList.add('animate-breathe');
+                    t = setTimeout(() => el.classList.remove('animate-breathe'), 800);
+                });
+
+                // 搜索框外层容器：聚焦时启用“流体波动”
+                if (box) {
+                    el.addEventListener('focus', () => box.classList.add('animate-fluid-wave'));
+                    el.addEventListener('blur', () => box.classList.remove('animate-fluid-wave'));
+                }
+            };
             
             // 初始化效果（已移除统计卡片浮动动画，避免数据统计框跳来跳去）
             setTimeout(() => {
                 add3DHoverEffect();
                 addRippleEffect();
+                initEnhancedAnimations();
+                enhanceSearchBreathe();
             }, 500);
             
             // 添加视差滚动效果
