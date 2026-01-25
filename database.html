@@ -4808,10 +4808,7 @@
                     <button class="primary-btn" onclick="toggleBulkMode()">批量操作</button>
                 </div>
                 <div style="display:inline-block;margin-left:10px">
-                    <select id="viewMode" onchange="changeViewMode(this.value)">
-                        <option value="list">目录视图</option>
-                        <option value="detail">详细视图</option>
-                    </select>
+                    <button type="button" class="primary-btn" id="toggle-view-btn" onclick="toggleViewMode()">切换视图</button>
                 </div>
                 <div style="display:inline-block;margin-left:10px">
                     <select id="pageSize" onchange="changePageSize(this.value)" style="padding:6px 12px">
@@ -9996,8 +9993,28 @@
         // 切换视图模式
         function changeViewMode(mode) {
             currentViewMode = mode;
+            updateViewToggleButton();
             renderEntries();
         }
+        
+        // 切换视图（在两种视图间切换）
+        function toggleViewMode() {
+            const newMode = currentViewMode === 'list' ? 'detail' : 'list';
+            changeViewMode(newMode);
+        }
+        
+        // 更新视图切换按钮文本
+        function updateViewToggleButton() {
+            const btn = document.getElementById('toggle-view-btn');
+            if (btn) {
+                btn.textContent = currentViewMode === 'list' ? '切换到详细视图' : '切换到目录视图';
+            }
+        }
+        
+        // 页面加载时初始化视图切换按钮文本
+        document.addEventListener('DOMContentLoaded', function() {
+            updateViewToggleButton();
+        });
 
         // 新增 checkDraft 函数
         async function checkDraft() {
