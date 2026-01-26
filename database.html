@@ -71,14 +71,20 @@
             --accent-2-rgb: 190, 209, 207;
             --text-primary-rgb: 140, 69, 79;
             
+            /* 主题色阴影和渐变变量（默认主题一：粉/蓝色调） */
+            --primary-gradient: linear-gradient(135deg, #E78895 0%, #BED1CF 100%);
+            --shadow-soft: 0 8px 30px rgba(231, 136, 149, 0.08);
+            --shadow-hover: 0 15px 40px rgba(231, 136, 149, 0.12);
+            --shadow-card: 0 5px 20px rgba(231, 136, 149, 0.05);
+            
             /* 3D效果变量 */
             --shadow-3d: 0 10px 30px rgba(0, 0, 0, 0.15);
             --shadow-3d-hover: 0 20px 50px rgba(0, 0, 0, 0.25);
             --shadow-3d-inset: inset 0 2px 8px rgba(0, 0, 0, 0.1);
             --shadow-3d-card: 0 15px 35px rgba(0, 0, 0, 0.2);
-            --depth-1: 0 2px 10px rgba(0, 0, 0, 0.1);
-            --depth-2: 0 8px 30px rgba(0, 0, 0, 0.15);
-            --depth-3: 0 15px 50px rgba(0, 0, 0, 0.2);
+            --depth-1: 0 4px 15px rgba(231, 136, 149, 0.05);
+            --depth-2: 0 10px 30px rgba(231, 136, 149, 0.08);
+            --depth-3: 0 15px 40px rgba(231, 136, 149, 0.12);
             /* 性能优化：简化阴影变量 */
             --shadow-light: 0 2px 8px rgba(0,0,0,0.1);
             --shadow-medium: 0 4px 12px rgba(0,0,0,0.15);
@@ -90,6 +96,726 @@
             --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
             --ease-morph: cubic-bezier(0.76, 0, 0.24, 1);
             --ease-blob: cubic-bezier(0.34, 1.56, 0.64, 1);
+            
+            /* 渐变边框颜色 - 主题色加深版 */
+            --accent-1-dark: #C96B7A;  /* 珊瑚红加深版 */
+            --accent-2-dark: #9FB5B3;  /* 灰蓝绿加深版 */
+        }
+        
+        /* 通用渐变边框样式 - 使用伪元素实现对角线渐变边框 */
+        /* 两端白色，中间为主题色加深版，沿对角线渐变 */
+        
+        /* 为所有有边框的元素添加渐变边框效果 */
+        /* 使用 ::after 伪元素创建渐变边框层 */
+        
+        /* 通用按钮渐变边框 */
+        button:not(.primary-btn):not(.danger-btn) {
+            position: relative;
+            border: 2px solid transparent !important;
+        }
+        
+        button:not(.primary-btn):not(.danger-btn)::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 输入框渐变边框 */
+        input[type="text"],
+        input[type="date"],
+        textarea,
+        select {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        input[type="text"]::after,
+        input[type="date"]::after,
+        textarea::after,
+        select::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 搜索框渐变边框 */
+        #search-input {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        #search-input::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 主按钮容器渐变边框 */
+        .main-content .action-buttons {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .main-content .action-buttons::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 主按钮渐变边框 */
+        .primary-btn {
+            position: relative;
+            border: none !important;
+        }
+        
+        .primary-btn::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        /* 确保 primary-btn 的内容在渐变边框之上 */
+        .primary-btn > * {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 危险按钮渐变边框 */
+        .danger-btn {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .danger-btn::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                #B71C1C 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 头部和侧边栏渐变边框 */
+        .header,
+        .sidebar {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .header::after,
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 返回按钮和主题选择器按钮渐变边框 */
+        .header .back-btn,
+        .header .theme-selector button {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .header .back-btn::after,
+        .header .theme-selector button::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 表单和编辑器容器渐变边框 */
+        .form-popup,
+        .category-manager,
+        .ql-toolbar,
+        .ql-container,
+        #editor-container,
+        #log-editor-container,
+        .category-section,
+        .category-item,
+        .log-item {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .form-popup::before,
+        .category-manager::before,
+        .ql-toolbar::before,
+        .ql-container::before,
+        #editor-container::before,
+        #log-editor-container::before,
+        .category-section::before,
+        .category-item::before,
+        .log-item::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        /* entry-item 和 detail-entry 使用 ::before 作为渐变边框（因为 ::after 已用于光泽效果） */
+        .entry-item,
+        .detail-entry,
+        .draft-item {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .entry-item::before,
+        .detail-entry::before,
+        .draft-item::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        /* tag-item 渐变边框 */
+        .tag-item {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .tag-item::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 主题选项渐变边框 */
+        .header .theme-selector .theme-option {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .header .theme-selector .theme-option::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        /* 主题预览小框框渐变边框 */
+        .header .theme-selector .theme-preview {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .header .theme-selector .theme-preview::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 关键词标签渐变边框 */
+        .keyword-tag {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .keyword-tag::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 数据统计小框渐变边框 */
+        .stat-card {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 翻页信息渐变边框（使用 ::after，因为 ::before 已用于光泽效果） */
+        .pagination-info {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .pagination-info::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 跳转容器渐变边框 */
+        .page-jump {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .page-jump::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 跳转输入框渐变边框 */
+        .page-jump input {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .page-jump input::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 高级检索面板中的按钮渐变边框 */
+        .advanced-search .primary-btn,
+        .advanced-search .danger-btn {
+            position: relative;
+        }
+        
+        /* 确保高级检索面板中的按钮也有渐变边框 */
+        .advanced-search .primary-btn::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .advanced-search .danger-btn::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                #B71C1C 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        /* 高级检索面板容器渐变边框 */
+        .advanced-panel {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .advanced-panel::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 高级检索面板中的搜索行渐变边框 */
+        .advanced-panel .search-row {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .advanced-panel .search-row::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 全文检索输入框渐变边框 */
+        #fulltext-search {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        #fulltext-search::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 表单按钮渐变边框 */
+        .form-popup button,
+        .category-manager button,
+        .ql-toolbar button {
+            position: relative;
+            border: 2px solid transparent !important;
+        }
+        
+        .form-popup button::after,
+        .category-manager button::after,
+        .ql-toolbar button::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* 下拉选择框渐变边框 */
+        .main-content .action-buttons select {
+            position: relative;
+            border: 1px solid transparent !important;
+        }
+        
+        .main-content .action-buttons select::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
         }
 
         /* 暗色模式变量 */
@@ -235,7 +961,7 @@
                 rgba(255, 255, 255, 0.25),
                 rgba(255, 255, 255, 0.1)
             ) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 16px !important;
             color: var(--input-text) !important;
             font-size: 1em;
@@ -374,7 +1100,7 @@
                 rgba(255, 255, 255, 0.25),
                 rgba(255, 255, 255, 0.1)
             ) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 16px !important;
             color: var(--input-text) !important;
             font-size: 0.95em;
@@ -479,7 +1205,7 @@
                 rgba(255, 255, 255, 0.25),
                 rgba(255, 255, 255, 0.1)
             ) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 16px !important;
             color: var(--glass-text) !important;
             font-weight: 600;
@@ -686,6 +1412,8 @@
             --accent-2: #BED1CF;
             --text-primary: #8C454F;
             --text-secondary: #4F6B68;
+            --accent-1-rgb: 231, 136, 149;
+            --accent-2-rgb: 190, 209, 207;
             --glass-bg: rgba(255, 247, 241, 0.88);
             --glass-border: rgba(231, 136, 149, 0.15);
             --glass-shadow: 0 4px 20px -10px rgba(231, 136, 149, 0.12);
@@ -703,6 +1431,17 @@
             --primary-bg: #E78895;
             --primary-hover: #D32F2F;
             --primary-active: #C2185B;
+            --primary-gradient: linear-gradient(135deg, #E78895 0%, #BED1CF 100%);
+            --shadow-soft: 0 8px 30px rgba(231, 136, 149, 0.08);
+            --shadow-hover: 0 15px 40px rgba(231, 136, 149, 0.12);
+            --shadow-card: 0 5px 20px rgba(231, 136, 149, 0.05);
+            --depth-1: 0 4px 15px rgba(231, 136, 149, 0.05);
+            --depth-2: 0 10px 30px rgba(231, 136, 149, 0.08);
+            --depth-3: 0 15px 40px rgba(231, 136, 149, 0.12);
+            --accent-1-15: rgba(231, 136, 149, 0.15);
+            --accent-1-25: rgba(231, 136, 149, 0.25);
+            --accent-1-dark: #C96B7A;  /* 珊瑚红加深版 */
+            --accent-2-dark: #9FB5B3;  /* 灰蓝绿加深版 */
         }
 
         :root[data-theme="theme2"] {
@@ -712,6 +1451,8 @@
             --accent-2: #6B5B4D;
             --text-primary: #4A3B32;
             --text-secondary: #6B5B4D;
+            --accent-1-rgb: 139, 115, 85;
+            --accent-2-rgb: 107, 91, 77;
             --glass-bg: rgba(248, 244, 232, 0.88);
             --glass-border: rgba(139, 115, 85, 0.15);
             --glass-shadow: 0 4px 20px -10px rgba(107, 91, 77, 0.12);
@@ -730,156 +1471,217 @@
             --primary-hover: #6B4C3B;
             --primary-active: #5D4037;
             --table-header-bg: rgba(139, 115, 85, 0.25); /* 加深的表头背景 */
+            --primary-gradient: linear-gradient(135deg, #8B7355 0%, #6B5B4D 100%);
+            --shadow-soft: 0 8px 30px rgba(139, 115, 85, 0.08);
+            --shadow-hover: 0 15px 40px rgba(139, 115, 85, 0.12);
+            --shadow-card: 0 5px 20px rgba(139, 115, 85, 0.05);
+            --depth-1: 0 4px 15px rgba(139, 115, 85, 0.05);
+            --depth-2: 0 10px 30px rgba(139, 115, 85, 0.08);
+            --depth-3: 0 15px 40px rgba(139, 115, 85, 0.12);
+            --accent-1-15: rgba(139, 115, 85, 0.15);
+            --accent-1-25: rgba(139, 115, 85, 0.25);
+            --accent-1-dark: #6B5B4D;  /* 棕色加深版 */
+            --accent-2-dark: #5A4A3C;  /* 深棕加深版 */
         }
 
         :root[data-theme="theme3"] {
-            --base-1: #f8fbff;
-            --base-2: #EFF5FC;
-            --accent-1: #7b90b5;
-            --accent-2: #A3B8D9;
-            --text-primary: #2b6168;
-            --text-secondary: #9e3d28;
-            --glass-bg: rgba(248, 251, 255, 0.92);
-            --glass-border: rgba(92,199,210,0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(92, 199, 210,0.12);
-            --glass-hover: rgba(92, 199, 210,, 0.2);
-            --glass-active: rgba(92, 199, 210,, 0.3);
+            --base-1: #F8F5F0;
+            --base-2: #F0EBE2;
+            --accent-1: #D7C4B8;
+            --accent-2: #B8A89E;
+            --text-primary: #5D4037;
+            --text-secondary: #795548;
+            --accent-1-rgb: 215, 196, 184;
+            --accent-2-rgb: 184, 168, 158;
+            --glass-bg: rgba(248, 245, 240, 0.92);
+            --glass-border: rgba(215, 196, 184, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(215, 196, 184, 0.12);
+            --glass-hover: rgba(215, 196, 184, 0.2);
+            --glass-active: rgba(215, 196, 184, 0.3);
             --glass-text: var(--text-primary);
-            --glass-text-hover: #14363a;
+            --glass-text-hover: #3E2723;
             --input-bg: rgba(255, 255, 255, 0.92);
-            --input-border: rgba(92, 199, 210, 0.25);
-            --input-text: #2b6168;
+            --input-border: rgba(215, 196, 184, 0.25);
+            --input-text: #5D4037;
             --danger-bg: #F44336;
             --danger-hover: #D32F2F;
             --cancel-bg: #B0BEC5;
             --cancel-hover: #90A4AE;
-            --primary-bg: #5cc7d2;
-            --primary-hover: #4aa3ab;
-            --primary-active: #438868d;
-            --table-header-bg: rgba(123, 144, 181, 0.25); /* 加深的表头背景 */
+            --primary-bg: #D7C4B8;
+            --primary-hover: #C4B0A3;
+            --primary-active: #B8A89E;
+            --table-header-bg: rgba(215, 196, 184, 0.25);
+            --primary-gradient: linear-gradient(135deg, #D7C4B8 0%, #B8A89E 100%);
+            --shadow-soft: 0 8px 30px rgba(215, 196, 184, 0.08);
+            --shadow-hover: 0 15px 40px rgba(215, 196, 184, 0.12);
+            --shadow-card: 0 5px 20px rgba(215, 196, 184, 0.05);
+            --depth-1: 0 4px 15px rgba(215, 196, 184, 0.05);
+            --depth-2: 0 10px 30px rgba(215, 196, 184, 0.08);
+            --depth-3: 0 15px 40px rgba(215, 196, 184, 0.12);
+            --accent-1-15: rgba(215, 196, 184, 0.15);
+            --accent-1-25: rgba(215, 196, 184, 0.25);
+            --accent-1-dark: #B8A89E;  /* 米色加深版 */
+            --accent-2-dark: #9B8A7E;  /* 灰米加深版 */
         }
 
         :root[data-theme="theme4"] {
-            --base-1: #FFF5E6;
-            --base-2: #FFE8CC;
-            --accent-1: #E6A35C;
-            --accent-2: #B3743C;
-            --text-primary: #5E473C;
-            --text-secondary: #B3743C;
-            --glass-bg: rgba(255, 245, 230, 0.88);
-            --glass-border: rgba(230, 163, 92, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(179, 116, 60, 0.12);
-            --glass-hover: rgba(255, 232, 204, 0.2);
-            --glass-active: rgba(255, 232, 204, 0.3);
-            --glass-text: #5E473C;
-            --glass-text-hover: #B3743C;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(230, 163, 92, 0.2);
-            --input-text: #5E473C;
-            --danger-bg: #D32F2F;
+            --base-1: #FFFFFF;
+            --base-2: #F5F5F5;
+            --accent-1: #757575;
+            --accent-2: #424242;
+            --text-primary: #212121;
+            --text-secondary: #616161;
+            --accent-1-rgb: 117, 117, 117;
+            --accent-2-rgb: 66, 66, 66;
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(117, 117, 117, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(117, 117, 117, 0.12);
+            --glass-hover: rgba(117, 117, 117, 0.2);
+            --glass-active: rgba(117, 117, 117, 0.3);
+            --glass-text: var(--text-primary);
+            --glass-text-hover: #000000;
+            --input-bg: rgba(255, 255, 255, 0.92);
+            --input-border: rgba(117, 117, 117, 0.25);
+            --input-text: #212121;
+            --danger-bg: #F44336;
             --danger-hover: #D32F2F;
-            --cancel-bg: #6D4C41;
-            --cancel-hover: #5D4037;
-            --primary-bg: #E6A35C;
-            --primary-hover: #D47A43;
-            --primary-active: #B3743C;
+            --cancel-bg: #9E9E9E;
+            --cancel-hover: #757575;
+            --primary-bg: #757575;
+            --primary-hover: #616161;
+            --primary-active: #424242;
+            --table-header-bg: rgba(117, 117, 117, 0.25);
+            --primary-gradient: linear-gradient(135deg, #757575 0%, #424242 100%);
+            --shadow-soft: 0 8px 30px rgba(117, 117, 117, 0.08);
+            --shadow-hover: 0 15px 40px rgba(117, 117, 117, 0.12);
+            --shadow-card: 0 5px 20px rgba(117, 117, 117, 0.05);
+            --depth-1: 0 4px 15px rgba(117, 117, 117, 0.05);
+            --depth-2: 0 10px 30px rgba(117, 117, 117, 0.08);
+            --depth-3: 0 15px 40px rgba(117, 117, 117, 0.12);
+            --accent-1-15: rgba(117, 117, 117, 0.15);
+            --accent-1-25: rgba(117, 117, 117, 0.25);
+            --accent-1-dark: #616161;  /* 灰色加深版 */
+            --accent-2-dark: #424242;  /* 深灰加深版 */
         }
 
         :root[data-theme="theme5"] {
-            --base-1: #FAF7F0;
-            --base-2: #D8D2C2;
-            --accent-1: #B17457;
-            --accent-2: #4A4947;
-            --text-primary: #4A4947;
-            --text-secondary: #B17457;
-            --glass-bg: rgba(250, 247, 240, 0.8);
-            --glass-border: rgba(177, 116, 87, 0.2);
-            --glass-shadow: 0 4px 20px -10px rgba(74, 73, 71, 0.15);
-            --glass-hover: rgba(177, 116, 87, 0.1);
-            --glass-active: rgba(177, 116, 87, 0.2);
-            --glass-text: #4A4947;
-            --glass-text-hover: #B17457;
-            --input-bg: rgba(255, 255, 255, 0.7);
-            --input-border: rgba(177, 116, 87, 0.3);
-            --input-text: #4A4947;
-            --danger-bg: #D32F2F;
+            --base-1: #DDE0CD;
+            --base-2: #D4D7C4;
+            --accent-1: #5F7A85;
+            --accent-2: #AEC0CD;
+            --text-primary: #2C3E50;
+            --text-secondary: #5F7A85;
+            --accent-1-rgb: 95, 122, 133;
+            --accent-2-rgb: 174, 192, 205;
+            --glass-bg: rgba(221, 224, 205, 0.92);
+            --glass-border: rgba(95, 122, 133, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(95, 122, 133, 0.12);
+            --glass-hover: rgba(95, 122, 133, 0.2);
+            --glass-active: rgba(95, 122, 133, 0.3);
+            --glass-text: var(--text-primary);
+            --glass-text-hover: #1A252F;
+            --input-bg: rgba(255, 255, 255, 0.92);
+            --input-border: rgba(95, 122, 133, 0.25);
+            --input-text: #2C3E50;
+            --danger-bg: #F44336;
             --danger-hover: #D32F2F;
-            --cancel-bg: #78909C;
-            --cancel-hover: #607D8B;
-            --primary-bg: #B17457;
-            --primary-hover: #8E5D4B;
-            --primary-active: #6E4B3B;
+            --cancel-bg: #B0BEC5;
+            --cancel-hover: #90A4AE;
+            --primary-bg: #5F7A85;
+            --primary-hover: #4E6670;
+            --primary-active: #3D525C;
+            --table-header-bg: rgba(95, 122, 133, 0.25);
+            --primary-gradient: linear-gradient(135deg, #5F7A85 0%, #AEC0CD 100%);
+            --shadow-soft: 0 8px 30px rgba(95, 122, 133, 0.08);
+            --shadow-hover: 0 15px 40px rgba(95, 122, 133, 0.12);
+            --shadow-card: 0 5px 20px rgba(95, 122, 133, 0.05);
+            --depth-1: 0 4px 15px rgba(95, 122, 133, 0.05);
+            --depth-2: 0 10px 30px rgba(95, 122, 133, 0.08);
+            --depth-3: 0 15px 40px rgba(95, 122, 133, 0.12);
+            --accent-1-15: rgba(95, 122, 133, 0.15);
+            --accent-1-25: rgba(95, 122, 133, 0.25);
+            --accent-1-dark: #4E6670;  /* 蓝灰加深版 */
+            --accent-2-dark: #8FA8B5;  /* 浅蓝灰加深版 */
         }
 
         :root[data-theme="theme6"] {
-            --base-1: #f2f9f1;
-            --base-2: #E6F3E4;
-            
-            /* 强调色 */
-            --accent-1: #88b588;
-            --accent-2: #a8c9a8;
-            
-            /* 透明度扩展 */
-            --base-1-80: rgba(212, 210, 189, 0.8);
-            --accent-1-15: rgba(62, 168, 138, 0.15);
-            
-            /* 文字系统 */
-            --text-primary: #1f5849;
-            --text-secondary: #8f4a6a;
-            
-            /* 玻璃拟态组件 */
-            --glass-bg: rgba(242, 249, 241, 0.9);
-            --glass-border: rgba(62, 168, 138, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(62, 168, 138, 0.12);
-            --glass-hover: rgba(62, 168, 138, 0.2);
-            --glass-active: rgba(62, 168, 138, 0.3);
+            --base-1: #F6F0E7;
+            --base-2: #eee8df;
+            --accent-1: #A9BA88;
+            --accent-2: #8FA26E;
+            --text-primary: #33691E;
+            --text-secondary: #558B2F;
+            --accent-1-rgb: 169, 186, 136;
+            --accent-2-rgb: 143, 162, 110;
+            --glass-bg: rgba(246, 240, 231, 0.92);
+            --glass-border: rgba(169, 186, 136, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(169, 186, 136, 0.12);
+            --glass-hover: rgba(169, 186, 136, 0.2);
+            --glass-active: rgba(169, 186, 136, 0.3);
             --glass-text: var(--text-primary);
-            --glass-text-hover: #0d3128;
-            
-            /* 输入控件 */
-            --input-bg: rgba(255, 255, 255, 0.85);
-            --input-border: rgba(62, 168, 138, 0.25);
-            --input-text: #1f5849;
-            
-            /* 功能按钮 */
+            --glass-text-hover: #1B5E20;
+            --input-bg: rgba(255, 255, 255, 0.92);
+            --input-border: rgba(169, 186, 136, 0.25);
+            --input-text: #33691E;
             --danger-bg: #F44336;
             --danger-hover: #D32F2F;
-            --danger-active: #B71C1C;
             --cancel-bg: #B0BEC5;
             --cancel-hover: #90A4AE;
-            --cancel-active: #78909C;
-            
-            /* 主操作按钮 */
-            --primary-bg: #3ea88a;
-            --primary-hover: #328670;
-            --primary-active: #256955;
+            --primary-bg: #A9BA88;
+            --primary-hover: #95A874;
+            --primary-active: #829661;
+            --table-header-bg: rgba(169, 186, 136, 0.25);
+            --primary-gradient: linear-gradient(135deg, #A9BA88 0%, #8FA26E 100%);
+            --shadow-soft: 0 8px 30px rgba(169, 186, 136, 0.08);
+            --shadow-hover: 0 15px 40px rgba(169, 186, 136, 0.12);
+            --shadow-card: 0 5px 20px rgba(169, 186, 136, 0.05);
+            --depth-1: 0 4px 15px rgba(169, 186, 136, 0.05);
+            --depth-2: 0 10px 30px rgba(169, 186, 136, 0.08);
+            --depth-3: 0 15px 40px rgba(169, 186, 136, 0.12);
+            --accent-1-15: rgba(169, 186, 136, 0.15);
+            --accent-1-25: rgba(169, 186, 136, 0.25);
+            --accent-1-dark: #8FA26E;  /* 绿色加深版 */
+            --accent-2-dark: #7A8F5A;  /* 深绿加深版 */
         }
 
         :root[data-theme="theme7"] {
-            --base-1: #F9F7FD;
-            --base-2: #f1ecf7;
-            --accent-1: #9E9BC9;
-            --accent-2: #B9B6DF;
-            --text-primary: #4F4C6B;
-            --text-secondary: #7875A3;
-            --glass-bg: rgba(249, 247, 253, 0.95);
-            --glass-border: rgba(163, 159, 206, 0.15);
-            --glass-shadow: 0 4px 20px -10px rgba(120, 117, 163, 0.12);
-            --glass-hover: rgba(237, 230, 242, 0.2);
-            --glass-active: rgba(237, 230, 242, 0.3);
-            --glass-text: #4F4C6B;
-            --glass-text-hover: #7875A3;
-            --input-bg: rgba(255, 255, 255, 0.82);
-            --input-border: rgba(163, 159, 206, 0.2);
-            --input-text: #4F4C6B;
-            --danger-bg: #D32F2F;
+            --base-1: #E2DED0;
+            --base-2: #dad6c8;
+            --accent-1: #647C90;
+            --accent-2: #4E4F50;
+            --text-primary: #263238;
+            --text-secondary: #455A64;
+            --accent-1-rgb: 100, 124, 144;
+            --accent-2-rgb: 78, 79, 80;
+            --glass-bg: rgba(226, 222, 208, 0.92);
+            --glass-border: rgba(100, 124, 144, 0.15);
+            --glass-shadow: 0 4px 20px -10px rgba(100, 124, 144, 0.12);
+            --glass-hover: rgba(100, 124, 144, 0.2);
+            --glass-active: rgba(100, 124, 144, 0.3);
+            --glass-text: var(--text-primary);
+            --glass-text-hover: #0D0D0D;
+            --input-bg: rgba(255, 255, 255, 0.92);
+            --input-border: rgba(100, 124, 144, 0.25);
+            --input-text: #263238;
+            --danger-bg: #F44336;
             --danger-hover: #D32F2F;
-            --cancel-bg: #8E24AA;
-            --cancel-hover: #7B1FA2;
-            --primary-bg: #A39FCE;
-            --primary-hover: #7B1FA2;
-            --primary-active: #6A1B9A;
-            --table-header-bg: rgba(163, 159, 206, 0.25); /* 加深的表头背景 */
+            --cancel-bg: #B0BEC5;
+            --cancel-hover: #90A4AE;
+            --primary-bg: #647C90;
+            --primary-hover: #536A7E;
+            --primary-active: #43586C;
+            --table-header-bg: rgba(100, 124, 144, 0.25);
+            --primary-gradient: linear-gradient(135deg, #647C90 0%, #4E4F50 100%);
+            --shadow-soft: 0 8px 30px rgba(100, 124, 144, 0.08);
+            --shadow-hover: 0 15px 40px rgba(100, 124, 144, 0.12);
+            --shadow-card: 0 5px 20px rgba(100, 124, 144, 0.05);
+            --depth-1: 0 4px 15px rgba(100, 124, 144, 0.05);
+            --depth-2: 0 10px 30px rgba(100, 124, 144, 0.08);
+            --depth-3: 0 15px 40px rgba(100, 124, 144, 0.12);
+            --accent-1-15: rgba(100, 124, 144, 0.15);
+            --accent-1-25: rgba(100, 124, 144, 0.25);
+            --accent-1-dark: #536A7E;  /* 蓝灰加深版 */
+            --accent-2-dark: #3E4F5A;  /* 深蓝灰加深版 */
         }
 
         .main-content {
@@ -1021,7 +1823,7 @@
                 rgba(255, 255, 255, 0.25),
                 rgba(255, 255, 255, 0.1)
             ) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 16px !important;
             color: var(--glass-text) !important;
             font-weight: 600;
@@ -1354,7 +2156,7 @@
             background: linear-gradient(145deg,
                 rgba(var(--accent-1-rgb), 0.18),
                 rgba(var(--accent-2-rgb), 0.10)) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             color: var(--text-primary) !important;
             font-weight: 700 !important;
             border-radius: 16px !important;
@@ -1384,7 +2186,7 @@
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05)) !important;
             backdrop-filter: blur(22px);
             -webkit-backdrop-filter: blur(22px);
-            border: 1px solid var(--glass-border);
+            border: 1px solid transparent !important;
             border-radius: 20px;
             padding: 24px !important;
             margin: 12px 0 !important;
@@ -1398,7 +2200,7 @@
             padding: 18px;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.05));
             border-radius: 16px;
-            border: 1px solid var(--glass-border);
+            border: 1px solid transparent !important;
             transition: all 0.3s var(--ease-smooth);
             position: relative;
             overflow: hidden;
@@ -1469,7 +2271,7 @@
             width: 100%;
             padding: 14px 40px 14px 14px !important;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 12px !important;
             color: var(--text-primary) !important;
             font-size: 1em;
@@ -1751,7 +2553,7 @@
             width: 100%;
             padding: 14px 14px 14px 42px !important;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 12px !important;
             color: var(--text-primary) !important;
             transition: all 0.3s var(--ease-smooth);
@@ -1769,7 +2571,7 @@
         #keywordLogic {
             padding: 12px 18px !important;
             border-radius: 12px !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
             color: var(--text-primary) !important;
             cursor: pointer;
@@ -1822,7 +2624,7 @@
             width: 100%;
             padding: 14px 14px 14px 42px !important;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 12px !important;
             color: var(--text-primary) !important;
             font-size: 1.05em;
@@ -1855,7 +2657,7 @@
             min-width: 150px;
             padding: 12px 18px !important;
             border-radius: 12px !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.10)) !important;
             color: var(--text-primary) !important;
             cursor: pointer;
@@ -2235,7 +3037,7 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 20px;
-            border: 1px solid var(--glass-border);
+            border: 1px solid transparent !important;
             box-shadow: 
                 0 10px 40px rgba(0, 0, 0, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.6),
@@ -2336,7 +3138,7 @@
                 rgba(255, 255, 255, 0.25),
                 rgba(255, 255, 255, 0.1)
             ) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             color: var(--glass-text) !important;
             border-radius: 12px;
             font-weight: 600;
@@ -2463,7 +3265,7 @@
             height: 36px;
             padding: 0 12px;
             background: var(--input-bg) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 8px;
             color: var(--input-text);
             font-size: 0.95em;
@@ -2513,23 +3315,28 @@
             transform: scale(1.2);
         }
 
-        /* 分页按钮的3D效果 */
+        /* 分页按钮的3D效果和渐变边框合并 */
         .page-btn::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                135deg,
-                transparent,
-                rgba(255, 255, 255, 0.1),
-                transparent
-            );
-            transform: translateZ(-1px);
+            inset: -1px;
             border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            z-index: -1;
+            pointer-events: none;
             opacity: 0;
+            transform: translateZ(-1px);
             transition: opacity 0.3s ease;
         }
 
@@ -2569,30 +3376,44 @@
             100% { transform: scale(1.05) translateY(0) translateZ(10px); }
         }
 
-        /* 分页容器的呼吸灯效果 */
+        /* 分页容器的呼吸灯效果和渐变边框合并 */
         .pagination::after {
             content: '';
             position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(
-                45deg,
-                var(--accent-1),
-                var(--accent-2),
-                var(--accent-1)
-            );
-            border-radius: 22px;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 20%, 
+                var(--accent-1-dark) 50%, 
+                #ffffff 80%, 
+                #ffffff 100%);
+            -webkit-mask: 
+                linear-gradient(#fff 0 0) content-box, 
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
             z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            animation: gradientBorder 3s ease infinite;
-            background-size: 200% 200%;
+            pointer-events: none;
+            opacity: 0.8;
         }
 
         .pagination:hover::after {
-            opacity: 0.3;
+            opacity: 1;
+            background: linear-gradient(135deg, 
+                #ffffff 0%, 
+                #ffffff 15%, 
+                var(--accent-1-dark) 40%, 
+                var(--accent-2-dark) 50%, 
+                var(--accent-1-dark) 60%, 
+                #ffffff 85%, 
+                #ffffff 100%);
+            background-size: 200% 200%;
+            animation: gradientBorder 3s ease infinite;
         }
 
         @keyframes gradientBorder {
@@ -2690,7 +3511,7 @@
             ) !important;
             backdrop-filter: blur(30px) saturate(200%);
             -webkit-backdrop-filter: blur(30px) saturate(200%);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid transparent !important;
             box-shadow: 
                 0 20px 60px rgba(0, 0, 0, 0.15),
                 0 8px 32px rgba(0, 0, 0, 0.1),
@@ -2852,7 +3673,7 @@
         /* 编辑器工具栏样式 */
         .ql-toolbar {
             background: var(--glass-bg);
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 8px 8px 0 0;
             padding: 8px;
         }
@@ -2878,7 +3699,7 @@
 
         /* 编辑器内容区域 */
         .ql-container {
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             border-radius: 0 0 8px 8px;
             background: var(--input-bg);
         }
@@ -3583,7 +4404,7 @@
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1px solid transparent !important;
             box-shadow: var(--shadow-3d-card);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
@@ -3620,7 +4441,7 @@
             box-shadow: 
                 0 25px 60px rgba(0, 0, 0, 0.25),
                 0 8px 20px rgba(0, 0, 0, 0.15);
-            border-color: var(--accent-1);
+            border-color: transparent !important;
         }
 
         /* 卡片装饰线 - 使用左侧边框 */
@@ -3887,7 +4708,7 @@
         }
         .ql-snow .ql-picker-options {
              background: var(--glass-bg) !important;
-             border: 1px solid var(--glass-border) !important;
+             border: 1px solid transparent !important;
              border-radius: 0 0 8px 8px;
              box-shadow: var(--glass-shadow);
              padding: 5px;
@@ -4344,7 +5165,7 @@
             background: linear-gradient(145deg,
                 rgba(var(--accent-1-rgb), 0.18),
                 rgba(var(--accent-2-rgb), 0.10)) !important;
-            border: 1px solid var(--glass-border) !important;
+            border: 1px solid transparent !important;
             color: var(--text-primary) !important;
             font-weight: 600 !important;
             transition: all 0.3s var(--ease-bounce) !important;
@@ -5109,46 +5930,46 @@
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme3')">
                         <div class="theme-preview">
-                            <div style="background: #F0F4F8"></div>
-                            <div style="background: #E6ECF2"></div>
-                            <div style="background: #7B90B5"></div>
-                            <div style="background: #2E3B51"></div>
+                            <div style="background: #F8F5F0"></div>
+                            <div style="background: #F0EBE2"></div>
+                            <div style="background: #D7C4B8"></div>
+                            <div style="background: #B8A89E"></div>
                         </div>
                         <span>主题三</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme4')">
                         <div class="theme-preview">
-                            <div style="background: #FFF5E6"></div>
-                            <div style="background: #FFE8CC"></div>
-                            <div style="background: #E6A35C"></div>
-                            <div style="background: #B3743C"></div>
+                            <div style="background: #FFFFFF"></div>
+                            <div style="background: #F5F5F5"></div>
+                            <div style="background: #757575"></div>
+                            <div style="background: #424242"></div>
                         </div>
                         <span>主题四</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme5')">
                         <div class="theme-preview">
-                            <div style="background: #FAF7F0"></div>
-                            <div style="background: #D8D2C2"></div>
-                            <div style="background: #B17457"></div>
-                            <div style="background: #4A4947"></div>
+                            <div style="background: #DDE0CD"></div>
+                            <div style="background: #D4D7C4"></div>
+                            <div style="background: #5F7A85"></div>
+                            <div style="background: #AEC0CD"></div>
                         </div>
                         <span>主题五</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme6')">
                         <div class="theme-preview">
-                            <div style="background: #F0F8E6"></div>
-                            <div style="background: #E6F0D2"></div>
-                            <div style="background: #88B588"></div>
-                            <div style="background: #4A6B4A"></div>
+                            <div style="background: #F6F0E7"></div>
+                            <div style="background: #eee8df"></div>
+                            <div style="background: #A9BA88"></div>
+                            <div style="background: #8FA26E"></div>
                         </div>
                         <span>主题六</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme7')">
                         <div class="theme-preview">
-                            <div style="background: #F5F0F8"></div>
-                            <div style="background: #EDE6F2"></div>
-                            <div style="background: #A39FCE"></div>
-                            <div style="background: #7875A3"></div>
+                            <div style="background: #E2DED0"></div>
+                            <div style="background: #dad6c8"></div>
+                            <div style="background: #647C90"></div>
+                            <div style="background: #4E4F50"></div>
                         </div>
                         <span>主题七</span>
                     </div>

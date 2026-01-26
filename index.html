@@ -61,6 +61,23 @@
             --depth-1: 0 4px 15px rgba(var(--accent-1-rgb), 0.05);
             --depth-2: 0 10px 30px rgba(var(--accent-1-rgb), 0.08);
             --depth-3: 0 15px 40px rgba(var(--accent-1-rgb), 0.12);
+            
+            /* 动效缓动曲线 */
+            --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+            --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            
+            /* 玻璃质感变量 */
+            --glass-edge-glow-primary: 0 0 0 1px rgba(var(--accent-1-rgb), 0.3),
+                                      0 0 12px rgba(var(--accent-1-rgb), 0.2),
+                                      0 0 24px rgba(var(--accent-2-rgb), 0.15);
+            --glass-edge-glow-hover: 0 0 0 2px rgba(var(--accent-1-rgb), 0.5),
+                                    0 0 16px rgba(var(--accent-1-rgb), 0.4),
+                                    0 0 32px rgba(var(--accent-2-rgb), 0.25),
+                                    0 0 48px rgba(var(--accent-1-rgb), 0.1);
+            --glass-edge-glow-active: 0 0 0 2px rgba(var(--accent-1-rgb), 0.7),
+                                     0 0 20px rgba(var(--accent-1-rgb), 0.6),
+                                     0 0 40px rgba(var(--accent-2-rgb), 0.4),
+                                     0 0 60px rgba(var(--accent-1-rgb), 0.2);
         }
 
         /* 基础重置与字体 */
@@ -190,15 +207,30 @@
         }
 
         .stat-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(10px);
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.25),
+                rgba(255, 255, 255, 0.1)
+            );
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-radius: var(--radius-large);
             padding: 25px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--glass-border);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 
+                /* 核心高光带 */
+                0 0 0 1px rgba(255, 255, 255, 0.3),
+                /* 边缘光感 */
+                0 0 20px rgba(var(--accent-1-rgb), 0.15),
+                0 0 40px rgba(var(--accent-2-rgb), 0.1),
+                /* 环境反射层 */
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+                /* 深度阴影 */
+                0 8px 32px rgba(0, 0, 0, 0.12);
+            transition: all 0.4s var(--ease-smooth);
             position: relative;
             overflow: hidden;
+            transform-style: preserve-3d;
         }
 
         .stat-card::before {
@@ -208,12 +240,48 @@
             left: 0;
             width: 100%;
             height: 6px;
-            background: var(--primary-gradient);
+            background: linear-gradient(90deg,
+                var(--accent-1),
+                var(--accent-2),
+                var(--accent-1)
+            );
+            opacity: 0.8;
+            box-shadow: 0 0 12px rgba(var(--accent-1-rgb), 0.4);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(
+                circle at var(--light-x, 50%) var(--light-y, 50%),
+                rgba(255, 255, 255, 0.2) 0%,
+                rgba(255, 255, 255, 0.05) 40%,
+                transparent 70%
+            );
+            opacity: 0;
+            transition: opacity 0.6s var(--ease-smooth);
+            pointer-events: none;
+            z-index: 1;
         }
 
         .stat-card:hover {
-            transform: translateY(-10px);
-            box-shadow: var(--shadow-hover);
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 
+                0 0 0 2px rgba(255, 255, 255, 0.4),
+                0 0 32px rgba(var(--accent-1-rgb), 0.3),
+                0 0 64px rgba(var(--accent-2-rgb), 0.2),
+                0 0 96px rgba(var(--accent-1-rgb), 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+                0 16px 48px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card:hover::after {
+            opacity: 1;
         }
 
         .stat-icon {
@@ -248,18 +316,66 @@
 
         /* 主内容卡片 */
         .content-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(10px);
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.25),
+                rgba(255, 255, 255, 0.1)
+            );
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-radius: var(--radius-large);
             padding: 30px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--glass-border);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 
+                /* 核心高光带 */
+                0 0 0 1px rgba(255, 255, 255, 0.3),
+                /* 边缘光感 */
+                0 0 20px rgba(var(--accent-1-rgb), 0.15),
+                0 0 40px rgba(var(--accent-2-rgb), 0.1),
+                /* 环境反射层 */
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+                /* 深度阴影 */
+                0 8px 32px rgba(0, 0, 0, 0.12);
             margin-bottom: 30px;
-            transition: all 0.3s ease;
+            transition: all 0.4s var(--ease-smooth);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(
+                circle at var(--light-x, 50%) var(--light-y, 50%),
+                rgba(255, 255, 255, 0.2) 0%,
+                rgba(255, 255, 255, 0.05) 40%,
+                transparent 70%
+            );
+            opacity: 0;
+            transition: opacity 0.6s var(--ease-smooth);
+            pointer-events: none;
+            z-index: 1;
         }
 
         .content-card:hover {
-            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 
+                0 0 0 2px rgba(255, 255, 255, 0.4),
+                0 0 32px rgba(var(--accent-1-rgb), 0.25),
+                0 0 64px rgba(var(--accent-2-rgb), 0.15),
+                0 0 96px rgba(var(--accent-1-rgb), 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+                0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .content-card:hover::before {
+            opacity: 1;
         }
 
         .card-header {
@@ -284,12 +400,112 @@
             color: var(--accent-1);
         }
 
-        /* 按钮样式 - 现代Soft-Neo风格 */
+        /* ========== 极致玻璃质感基础系统 ========== */
+        /* 液态玻璃基底 - 适用于所有交互组件 */
+        .glass-surface {
+            position: relative;
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.25),
+                rgba(255, 255, 255, 0.1)
+            );
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 
+                /* 核心高光带 - 最外缘锐利亮边 */
+                0 0 0 1px rgba(255, 255, 255, 0.4),
+                /* 次级辉光层 - 柔和弥散 */
+                0 0 20px rgba(var(--accent-1-rgb), 0.15),
+                0 0 40px rgba(var(--accent-2-rgb), 0.1),
+                /* 环境反射层 - 表面倒影 */
+                inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+                /* 深度阴影 */
+                0 8px 32px rgba(0, 0, 0, 0.12);
+            transition: all 0.4s var(--ease-smooth);
+            transform-style: preserve-3d;
+            overflow: hidden;
+        }
+
+        /* 曲面边缘 - 2.5D玻璃效果 */
+        .glass-surface::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(
+                circle at var(--light-x, 50%) var(--light-y, 50%),
+                rgba(255, 255, 255, 0.3) 0%,
+                rgba(255, 255, 255, 0.1) 30%,
+                transparent 70%
+            );
+            opacity: 0;
+            transition: opacity 0.6s var(--ease-smooth);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 边缘光感层 */
+        .glass-surface::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg,
+                rgba(var(--accent-1-rgb), 0.4),
+                rgba(var(--accent-2-rgb), 0.3),
+                rgba(var(--accent-1-rgb), 0.4)
+            );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-smooth);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* 悬停时激活光感 */
+        .glass-surface:hover::before {
+            opacity: 1;
+        }
+
+        .glass-surface:hover::after {
+            opacity: 1;
+        }
+
+        /* 点击时的涟漪脉冲效果 */
+        @keyframes glassRipple {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .glass-surface:active::before {
+            animation: glassRipple 0.6s var(--ease-smooth);
+        }
+
+        /* 按钮样式 - 极致玻璃质感 */
         .btn {
             padding: 12px 24px;
             border-radius: var(--radius-medium);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s var(--ease-smooth);
             font-weight: 600;
             font-size: 14px;
             display: inline-flex;
@@ -300,77 +516,306 @@
             text-decoration: none;
             position: relative;
             overflow: hidden;
+            transform-style: preserve-3d;
         }
 
         .btn-primary {
-            background: var(--primary-gradient);
+            background: linear-gradient(145deg,
+                var(--accent-1),
+                var(--accent-2),
+                var(--accent-1)
+            );
             color: white;
-            box-shadow: 0 5px 20px rgba(var(--accent-1-rgb), 0.3);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: 
+                /* 核心高光带 */
+                0 0 0 1px rgba(255, 255, 255, 0.5),
+                /* 边缘光感 */
+                0 0 16px rgba(var(--accent-1-rgb), 0.4),
+                0 0 32px rgba(var(--accent-2-rgb), 0.25),
+                0 0 48px rgba(var(--accent-1-rgb), 0.15),
+                /* 深度阴影 */
+                0 8px 24px rgba(var(--accent-1-rgb), 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg,
+                rgba(255, 255, 255, 0.2) 0%,
+                transparent 50%,
+                rgba(255, 255, 255, 0.1) 100%
+            );
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-smooth);
+            pointer-events: none;
         }
 
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(var(--accent-1-rgb), 0.4);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+                0 0 0 2px rgba(255, 255, 255, 0.6),
+                0 0 24px rgba(var(--accent-1-rgb), 0.6),
+                0 0 48px rgba(var(--accent-2-rgb), 0.4),
+                0 0 72px rgba(var(--accent-1-rgb), 0.25),
+                0 12px 36px rgba(var(--accent-1-rgb), 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary:hover::before {
+            opacity: 1;
         }
 
         .btn-primary:active {
-            transform: translateY(0);
+            transform: translateY(-1px) scale(0.98);
+            box-shadow: 
+                0 0 0 2px rgba(255, 255, 255, 0.7),
+                0 0 32px rgba(var(--accent-1-rgb), 0.8),
+                0 0 64px rgba(var(--accent-2-rgb), 0.6),
+                0 4px 16px rgba(var(--accent-1-rgb), 0.5),
+                inset 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .btn-secondary {
-            background: var(--accent-1-15);
+            background: linear-gradient(145deg,
+                rgba(var(--accent-1-rgb), 0.15),
+                rgba(var(--accent-1-rgb), 0.08)
+            );
             color: var(--accent-1);
-            border: 1px solid var(--input-border);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(var(--accent-1-rgb), 0.2);
+            box-shadow: 
+                0 0 0 1px rgba(var(--accent-1-rgb), 0.2),
+                0 0 12px rgba(var(--accent-1-rgb), 0.15),
+                0 0 24px rgba(var(--accent-2-rgb), 0.1),
+                0 4px 16px rgba(var(--accent-1-rgb), 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-secondary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg,
+                rgba(255, 255, 255, 0.3) 0%,
+                transparent 50%
+            );
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-smooth);
+            pointer-events: none;
         }
 
         .btn-secondary:hover {
-            background: var(--glass-hover);
-            transform: translateY(-2px);
+            background: linear-gradient(145deg,
+                rgba(var(--accent-1-rgb), 0.25),
+                rgba(var(--accent-1-rgb), 0.15)
+            );
+            border-color: rgba(var(--accent-1-rgb), 0.4);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 0 0 2px rgba(var(--accent-1-rgb), 0.3),
+                0 0 20px rgba(var(--accent-1-rgb), 0.25),
+                0 0 40px rgba(var(--accent-2-rgb), 0.15),
+                0 6px 20px rgba(var(--accent-1-rgb), 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-secondary:hover::before {
+            opacity: 1;
         }
 
         .btn-outline {
-            background: transparent;
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.1),
+                rgba(255, 255, 255, 0.05)
+            );
             color: var(--accent-1);
-            border: 2px solid var(--glass-active);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 2px solid rgba(var(--accent-1-rgb), 0.3);
+            box-shadow: 
+                0 0 0 1px rgba(var(--accent-1-rgb), 0.2),
+                0 0 12px rgba(var(--accent-1-rgb), 0.15),
+                0 0 24px rgba(var(--accent-2-rgb), 0.1),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-outline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg,
+                rgba(var(--accent-1-rgb), 0.1) 0%,
+                transparent 50%
+            );
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-smooth);
+            pointer-events: none;
         }
 
         .btn-outline:hover {
-            background: var(--accent-1-15);
-            border-color: var(--accent-1);
+            background: linear-gradient(145deg,
+                rgba(var(--accent-1-rgb), 0.15),
+                rgba(var(--accent-1-rgb), 0.08)
+            );
+            border-color: rgba(var(--accent-1-rgb), 0.6);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 0 0 2px rgba(var(--accent-1-rgb), 0.4),
+                0 0 20px rgba(var(--accent-1-rgb), 0.3),
+                0 0 40px rgba(var(--accent-2-rgb), 0.2),
+                0 6px 20px rgba(var(--accent-1-rgb), 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-outline:hover::before {
+            opacity: 1;
         }
 
         .btn-danger {
-            background: var(--danger-bg);
+            background: linear-gradient(145deg,
+                #F44336,
+                #D32F2F,
+                #F44336
+            );
             color: white;
-            box-shadow: 0 5px 20px rgba(244, 67, 54, 0.3);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.3),
+                0 0 16px rgba(244, 67, 54, 0.4),
+                0 0 32px rgba(211, 47, 47, 0.25),
+                0 8px 24px rgba(244, 67, 54, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-danger::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg,
+                rgba(255, 255, 255, 0.2) 0%,
+                transparent 50%
+            );
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-smooth);
+            pointer-events: none;
         }
 
         .btn-danger:hover {
-            background: var(--danger-hover);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(211, 47, 47, 0.4);
+            background: linear-gradient(145deg,
+                #D32F2F,
+                #C62828,
+                #D32F2F
+            );
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 
+                0 0 0 2px rgba(255, 255, 255, 0.4),
+                0 0 24px rgba(244, 67, 54, 0.6),
+                0 0 48px rgba(211, 47, 47, 0.4),
+                0 12px 36px rgba(244, 67, 54, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-danger:hover::before {
+            opacity: 1;
         }
 
         .btn-cancel {
-            background: var(--cancel-bg);
+            background: linear-gradient(145deg,
+                rgba(176, 190, 197, 0.8),
+                rgba(144, 164, 174, 0.6)
+            );
             color: #37474F;
-            border: 1px solid var(--cancel-hover);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(144, 164, 174, 0.3);
+            box-shadow: 
+                0 0 0 1px rgba(144, 164, 174, 0.2),
+                0 0 12px rgba(144, 164, 174, 0.15),
+                0 4px 16px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-cancel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg,
+                rgba(255, 255, 255, 0.2) 0%,
+                transparent 50%
+            );
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-smooth);
+            pointer-events: none;
         }
 
         .btn-cancel:hover {
-            background: var(--cancel-hover);
-            transform: translateY(-2px);
+            background: linear-gradient(145deg,
+                rgba(144, 164, 174, 0.9),
+                rgba(120, 144, 156, 0.7)
+            );
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 0 0 2px rgba(144, 164, 174, 0.3),
+                0 0 20px rgba(144, 164, 174, 0.25),
+                0 6px 20px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
         }
 
-        /* 表格样式 */
+        .btn-cancel:hover::before {
+            opacity: 1;
+        }
+
+        /* 表格样式 - 玻璃质感 */
         .data-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            background: var(--bg-card);
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.2),
+                rgba(255, 255, 255, 0.1)
+            );
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-radius: var(--radius-medium);
             overflow: hidden;
-            box-shadow: var(--shadow-card);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.2),
+                0 0 20px rgba(var(--accent-1-rgb), 0.1),
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
 
         .data-table thead {
@@ -406,11 +851,277 @@
             text-align: center;
         }
 
-        .checkbox-cell input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--accent-1);
+        .checkbox-cell .select-entry-container {
+            margin: 0 auto;
+        }
+
+        /* ========== 立体圆形复选框样式 ========== */
+        .select-entry-container {
+            position: relative;
+            display: inline-block;
             cursor: pointer;
+            width: 24px;
+            height: 24px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .select-entry {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        /* 自定义圆形复选框 - 基础样式 */
+        .custom-checkbox {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.8),
+                rgba(255, 255, 255, 0.4)
+            );
+            border: 2px solid var(--glass-border);
+            /* 双重阴影效果 + 边缘光感 */
+            box-shadow: 
+                0 0 0 1px rgba(var(--accent-1-rgb), 0.2),
+                0 0 8px rgba(var(--accent-1-rgb), 0.15),
+                0 2px 8px rgba(0, 0, 0, 0.15),
+                0 4px 16px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+            transition: all 0.3s var(--ease-smooth);
+            transform-style: preserve-3d;
+            perspective: 500px;
+            overflow: hidden;
+        }
+
+        /* 3D深度效果 - 增强内部高光反射 */
+        .custom-checkbox::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(
+                circle at 30% 30%,
+                rgba(255, 255, 255, 0.8) 0%,
+                rgba(255, 255, 255, 0.3) 40%,
+                transparent 75%
+            );
+            border-radius: 50%;
+            z-index: 1;
+            pointer-events: none;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        /* 内阴影效果 - 增强深度 */
+        .custom-checkbox::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 85%;
+            border-radius: 50%;
+            background: transparent;
+            box-shadow: 
+                inset 0 2px 6px rgba(0, 0, 0, 0.15),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        /* 悬停效果 - 增强3D和光泽变化 + 边缘光感增强 */
+        .select-entry-container:hover .custom-checkbox {
+            transform: scale(1.08) translateZ(8px);
+            border-color: var(--accent-1);
+            /* 双重阴影增强 + 边缘光感增强 */
+            box-shadow: 
+                0 0 0 2px rgba(var(--accent-1-rgb), 0.4),
+                0 0 12px rgba(var(--accent-1-rgb), 0.3),
+                0 0 20px rgba(var(--accent-1-rgb), 0.15),
+                0 4px 12px rgba(var(--accent-1-rgb), 0.25),
+                0 8px 24px rgba(var(--accent-1-rgb), 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        /* 悬停时增强高光 */
+        .select-entry-container:hover .custom-checkbox::before {
+            background: radial-gradient(
+                circle at 30% 30%,
+                rgba(255, 255, 255, 0.95) 0%,
+                rgba(255, 255, 255, 0.5) 40%,
+                transparent 75%
+            );
+        }
+
+        /* 选中状态 - 填充整个复选框，无对勾 + 强烈边缘光感 */
+        .select-entry:checked ~ .custom-checkbox {
+            background: linear-gradient(145deg,
+                var(--accent-1),
+                var(--accent-2),
+                var(--accent-1)
+            );
+            border-color: transparent;
+            /* 双重阴影 + 3D底阴影 + 强烈边缘光感 */
+            box-shadow: 
+                0 0 0 2px rgba(var(--accent-1-rgb), 0.6),
+                0 0 16px rgba(var(--accent-1-rgb), 0.5),
+                0 0 24px rgba(var(--accent-2-rgb), 0.3),
+                0 4px 16px rgba(var(--accent-1-rgb), 0.35),
+                0 8px 32px rgba(var(--accent-1-rgb), 0.2),
+                0 3px 0 rgba(var(--accent-1-rgb), 0.5),
+                inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+            animation: checkboxPop 0.4s var(--ease-bounce), checkboxPulse 2s ease-in-out infinite 0.5s, edgeGlow 2s ease-in-out infinite 0.5s;
+        }
+
+        /* 选中后的内阴影变化 - 增强深度 */
+        .select-entry:checked ~ .custom-checkbox::after {
+            box-shadow: 
+                inset 0 3px 8px rgba(0, 0, 0, 0.25),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 选中时增强高光反射 */
+        .select-entry:checked ~ .custom-checkbox::before {
+            background: radial-gradient(
+                circle at 30% 30%,
+                rgba(255, 255, 255, 0.6) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                transparent 80%
+            );
+            animation: highlightPulse 2s ease-in-out infinite 0.5s, rippleEffect 0.8s ease-out;
+        }
+
+        /* 复选框弹出动画 - 更流畅 */
+        @keyframes checkboxPop {
+            0% {
+                transform: scale(0.75);
+                opacity: 0.4;
+            }
+            50% {
+                transform: scale(1.15);
+            }
+            70% {
+                transform: scale(0.95);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* 呼吸动画（pulse effect） */
+        @keyframes checkboxPulse {
+            0%, 100% {
+                box-shadow: 
+                    0 0 0 2px rgba(var(--accent-1-rgb), 0.6),
+                    0 0 16px rgba(var(--accent-1-rgb), 0.5),
+                    0 0 24px rgba(var(--accent-2-rgb), 0.3),
+                    0 4px 16px rgba(var(--accent-1-rgb), 0.35),
+                    0 8px 32px rgba(var(--accent-1-rgb), 0.2),
+                    0 3px 0 rgba(var(--accent-1-rgb), 0.5),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                    inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+            }
+            50% {
+                box-shadow: 
+                    0 0 0 3px rgba(var(--accent-1-rgb), 0.8),
+                    0 0 20px rgba(var(--accent-1-rgb), 0.7),
+                    0 0 32px rgba(var(--accent-2-rgb), 0.5),
+                    0 6px 20px rgba(var(--accent-1-rgb), 0.45),
+                    0 12px 40px rgba(var(--accent-1-rgb), 0.3),
+                    0 4px 0 rgba(var(--accent-1-rgb), 0.6),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+                    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        /* 边缘光感呼吸动画 */
+        @keyframes edgeGlow {
+            0%, 100% {
+                box-shadow: 
+                    0 0 0 2px rgba(var(--accent-1-rgb), 0.6),
+                    0 0 16px rgba(var(--accent-1-rgb), 0.5),
+                    0 0 24px rgba(var(--accent-2-rgb), 0.3),
+                    0 4px 16px rgba(var(--accent-1-rgb), 0.35),
+                    0 8px 32px rgba(var(--accent-1-rgb), 0.2),
+                    0 3px 0 rgba(var(--accent-1-rgb), 0.5),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                    inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+            }
+            50% {
+                box-shadow: 
+                    0 0 0 3px rgba(var(--accent-1-rgb), 0.8),
+                    0 0 20px rgba(var(--accent-1-rgb), 0.7),
+                    0 0 32px rgba(var(--accent-2-rgb), 0.5),
+                    0 4px 16px rgba(var(--accent-1-rgb), 0.35),
+                    0 8px 32px rgba(var(--accent-1-rgb), 0.2),
+                    0 3px 0 rgba(var(--accent-1-rgb), 0.5),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                    inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+            }
+        }
+
+        /* 高光呼吸动画 */
+        @keyframes highlightPulse {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(1.1);
+            }
+        }
+
+        /* 选中时的涟漪效果 */
+        @keyframes rippleEffect {
+            0% {
+                box-shadow: 
+                    0 0 0 0 rgba(var(--accent-1-rgb), 0.5),
+                    0 0 0 0 rgba(var(--accent-1-rgb), 0.3);
+            }
+            50% {
+                box-shadow: 
+                    0 0 0 8px rgba(var(--accent-1-rgb), 0),
+                    0 0 0 12px rgba(var(--accent-1-rgb), 0);
+            }
+            100% {
+                box-shadow: 
+                    0 0 0 0 rgba(var(--accent-1-rgb), 0),
+                    0 0 0 0 rgba(var(--accent-1-rgb), 0);
+            }
+        }
+
+        /* 焦点状态 - 增强反馈 + 边缘光感 */
+        .select-entry:focus ~ .custom-checkbox {
+            outline: none;
+            box-shadow: 
+                0 0 0 2px rgba(var(--accent-1-rgb), 0.5),
+                0 0 12px rgba(var(--accent-1-rgb), 0.4),
+                0 0 0 3px rgba(var(--accent-1-rgb), 0.25),
+                0 4px 12px rgba(var(--accent-1-rgb), 0.25),
+                0 8px 24px rgba(var(--accent-1-rgb), 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        /* 禁用状态 */
+        .select-entry:disabled ~ .custom-checkbox {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
         }
 
         /* 标签样式 */
@@ -435,17 +1146,34 @@
             width: 100%;
             padding: 14px 20px 14px 50px;
             border-radius: var(--radius-medium);
-            border: 1px solid var(--input-border);
-            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.25),
+                rgba(255, 255, 255, 0.1)
+            );
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             color: var(--text-primary);
             font-size: 14px;
-            transition: all 0.3s ease;
+            transition: all 0.4s var(--ease-smooth);
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.2),
+                0 0 12px rgba(var(--accent-1-rgb), 0.1),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
         }
 
         .search-input:focus {
             outline: none;
-            border-color: var(--accent-1);
-            box-shadow: 0 0 0 3px var(--accent-1-15);
+            border-color: rgba(var(--accent-1-rgb), 0.5);
+            box-shadow: 
+                0 0 0 2px rgba(var(--accent-1-rgb), 0.3),
+                0 0 20px rgba(var(--accent-1-rgb), 0.25),
+                0 0 40px rgba(var(--accent-2-rgb), 0.15),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
         }
 
         .search-icon {
@@ -533,24 +1261,80 @@
             align-items: center;
             justify-content: center;
             border-radius: var(--radius-medium);
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.25),
+                rgba(255, 255, 255, 0.1)
+            );
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s var(--ease-smooth);
             color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.2),
+                0 0 12px rgba(var(--accent-1-rgb), 0.1),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        .page-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(
+                circle at var(--light-x, 50%) var(--light-y, 50%),
+                rgba(255, 255, 255, 0.2) 0%,
+                transparent 70%
+            );
+            opacity: 0;
+            transition: opacity 0.4s var(--ease-smooth);
+            pointer-events: none;
         }
 
         .page-btn:hover:not(:disabled) {
-            background: var(--primary-gradient);
+            background: linear-gradient(145deg,
+                var(--accent-1),
+                var(--accent-2),
+                var(--accent-1)
+            );
             color: white;
-            border-color: var(--accent-1);
-            transform: translateY(-2px);
+            border-color: transparent;
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 
+                0 0 0 2px rgba(255, 255, 255, 0.4),
+                0 0 20px rgba(var(--accent-1-rgb), 0.4),
+                0 0 40px rgba(var(--accent-2-rgb), 0.25),
+                0 6px 20px rgba(var(--accent-1-rgb), 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .page-btn:hover:not(:disabled)::before {
+            opacity: 1;
         }
 
         .page-btn.active {
-            background: var(--primary-gradient);
+            background: linear-gradient(145deg,
+                var(--accent-1),
+                var(--accent-2),
+                var(--accent-1)
+            );
             color: white;
-            box-shadow: 0 5px 15px rgba(var(--accent-1-rgb), 0.3);
+            border-color: transparent;
+            box-shadow: 
+                0 0 0 2px rgba(255, 255, 255, 0.5),
+                0 0 24px rgba(var(--accent-1-rgb), 0.5),
+                0 0 48px rgba(var(--accent-2-rgb), 0.3),
+                0 8px 24px rgba(var(--accent-1-rgb), 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2);
         }
 
         .page-btn:disabled {
@@ -670,17 +1454,34 @@
             width: 100%;
             padding: 14px 18px;
             border-radius: var(--radius-medium);
-            border: 1px solid var(--input-border);
-            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.25),
+                rgba(255, 255, 255, 0.1)
+            );
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             color: var(--text-primary);
             font-size: 16px;
-            transition: all 0.3s ease;
+            transition: all 0.4s var(--ease-smooth);
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.2),
+                0 0 12px rgba(var(--accent-1-rgb), 0.1),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
         }
 
         .form-input:focus {
             outline: none;
-            border-color: var(--accent-1);
-            box-shadow: 0 0 0 3px var(--accent-1-15);
+            border-color: rgba(var(--accent-1-rgb), 0.5);
+            box-shadow: 
+                0 0 0 2px rgba(var(--accent-1-rgb), 0.3),
+                0 0 20px rgba(var(--accent-1-rgb), 0.25),
+                0 0 40px rgba(var(--accent-2-rgb), 0.15),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
         }
 
         /* 工具提示 */
@@ -808,22 +1609,45 @@
         select {
             padding: 10px 16px;
             border-radius: var(--radius-medium);
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.25),
+                rgba(255, 255, 255, 0.1)
+            );
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: var(--text-primary);
             font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s var(--ease-smooth);
+            box-shadow: 
+                0 0 0 1px rgba(255, 255, 255, 0.2),
+                0 0 12px rgba(var(--accent-1-rgb), 0.1),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
         }
 
         select:focus {
-            border-color: var(--accent-1);
-            box-shadow: 0 0 0 3px var(--accent-1-15);
+            border-color: rgba(var(--accent-1-rgb), 0.5);
+            box-shadow: 
+                0 0 0 2px rgba(var(--accent-1-rgb), 0.3),
+                0 0 20px rgba(var(--accent-1-rgb), 0.25),
+                0 0 40px rgba(var(--accent-2-rgb), 0.15),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
             outline: none;
         }
 
         select:hover {
-            border-color: var(--accent-2);
+            border-color: rgba(var(--accent-2-rgb), 0.4);
+            box-shadow: 
+                0 0 0 1px rgba(var(--accent-2-rgb), 0.3),
+                0 0 16px rgba(var(--accent-2-rgb), 0.2),
+                0 4px 16px rgba(0, 0, 0, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.05);
         }
 
         /* 加载遮罩 */
@@ -924,6 +1748,56 @@
                 transform: scale(4);
                 opacity: 0;
             }
+        }
+
+        /* 光波脉冲动画 - 点击时的光波扩散 */
+        @keyframes lightPulse {
+            0% {
+                box-shadow: 
+                    0 0 0 1px rgba(255, 255, 255, 0.3),
+                    0 0 20px rgba(var(--accent-1-rgb), 0.15),
+                    0 0 40px rgba(var(--accent-2-rgb), 0.1);
+            }
+            50% {
+                box-shadow: 
+                    0 0 0 3px rgba(255, 255, 255, 0.5),
+                    0 0 40px rgba(var(--accent-1-rgb), 0.4),
+                    0 0 80px rgba(var(--accent-2-rgb), 0.3),
+                    0 0 120px rgba(var(--accent-1-rgb), 0.15);
+            }
+            100% {
+                box-shadow: 
+                    0 0 0 1px rgba(255, 255, 255, 0.3),
+                    0 0 20px rgba(var(--accent-1-rgb), 0.15),
+                    0 0 40px rgba(var(--accent-2-rgb), 0.1);
+            }
+        }
+
+        .light-pulse {
+            animation: lightPulse 0.6s var(--ease-smooth);
+        }
+
+        /* 呼吸感动画 - 微妙的边缘光感变化 */
+        @keyframes breathe {
+            0%, 100% {
+                filter: brightness(1) saturate(1);
+                box-shadow: 
+                    0 0 0 1px rgba(255, 255, 255, 0.3),
+                    0 0 20px rgba(var(--accent-1-rgb), 0.15),
+                    0 0 40px rgba(var(--accent-2-rgb), 0.1);
+            }
+            50% {
+                filter: brightness(1.05) saturate(1.1);
+                box-shadow: 
+                    0 0 0 2px rgba(255, 255, 255, 0.4),
+                    0 0 24px rgba(var(--accent-1-rgb), 0.2),
+                    0 0 48px rgba(var(--accent-2-rgb), 0.15);
+            }
+        }
+
+        /* 为所有玻璃组件添加呼吸感 */
+        .btn, .stat-card, .content-card {
+            animation: breathe 4s ease-in-out infinite;
         }
     </style>
 </head>
@@ -1457,8 +2331,11 @@
                 <thead>
                     <tr>
                         <th class="checkbox-cell">
-                            <input type="checkbox" onchange="toggleSelectAll(this)" 
-                                   ${selectedProjects.size === paginatedProjects.length && paginatedProjects.length > 0 ? 'checked' : ''}>
+                            <div class="select-entry-container">
+                                <input type="checkbox" class="select-entry" onchange="toggleSelectAll(this)" 
+                                       ${selectedProjects.size === paginatedProjects.length && paginatedProjects.length > 0 ? 'checked' : ''}>
+                                <div class="custom-checkbox"></div>
+                            </div>
                         </th>
                         <th>项目名称</th>
                         <th style="width:180px">创建时间</th>
@@ -1470,9 +2347,12 @@
                     ${paginatedProjects.length > 0 ? paginatedProjects.map(project => `
                         <tr>
                             <td class="checkbox-cell">
-                                <input type="checkbox" 
-                                       ${selectedProjects.has(project.id) ? 'checked' : ''} 
-                                       onchange="toggleProjectSelection('${project.id}')">
+                                <div class="select-entry-container">
+                                    <input type="checkbox" class="select-entry" 
+                                           ${selectedProjects.has(project.id) ? 'checked' : ''} 
+                                           onchange="toggleProjectSelection('${project.id}')">
+                                    <div class="custom-checkbox"></div>
+                                </div>
                             </td>
                             <td>
                                 <a href="javascript:void(0)" 
@@ -2065,6 +2945,97 @@
                     setTimeout(() => ripple.remove(), 600);
                 });
             });
+
+            /*********************
+             * 动态光感效果系统
+             *********************/
+            
+            // 获取所有需要光感效果的组件
+            const glassElements = document.querySelectorAll('.btn, .stat-card, .content-card, .data-table, .custom-checkbox, .search-input, .page-btn, select, .form-input');
+            
+            // 鼠标移动时的光感跟随效果
+            document.addEventListener('mousemove', function(e) {
+                glassElements.forEach(element => {
+                    const rect = element.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    
+                    // 更新CSS变量以控制光感位置
+                    element.style.setProperty('--light-x', x + '%');
+                    element.style.setProperty('--light-y', y + '%');
+                });
+            });
+
+            // 陀螺仪支持（移动设备）
+            if (window.DeviceOrientationEvent) {
+                let lastBeta = 0;
+                let lastGamma = 0;
+                
+                window.addEventListener('deviceorientation', function(e) {
+                    // 平滑处理陀螺仪数据
+                    const beta = e.beta || 0;
+                    const gamma = e.gamma || 0;
+                    
+                    // 使用缓动函数平滑变化
+                    lastBeta = lastBeta * 0.7 + beta * 0.3;
+                    lastGamma = lastGamma * 0.7 + gamma * 0.3;
+                    
+                    // 将陀螺仪数据转换为光感位置（0-100%）
+                    const lightX = 50 + (lastGamma / 90) * 30; // -30% 到 +30%
+                    const lightY = 50 + (lastBeta / 90) * 30;
+                    
+                    glassElements.forEach(element => {
+                        element.style.setProperty('--light-x', Math.max(0, Math.min(100, lightX)) + '%');
+                        element.style.setProperty('--light-y', Math.max(0, Math.min(100, lightY)) + '%');
+                    });
+                });
+            }
+
+            // 环境光传感器支持（如果可用）
+            if ('AmbientLightSensor' in window) {
+                try {
+                    const sensor = new AmbientLightSensor();
+                    sensor.addEventListener('reading', function() {
+                        const illuminance = sensor.illuminance;
+                        // 根据环境光调整光感强度
+                        const intensity = Math.min(1, illuminance / 1000);
+                        document.documentElement.style.setProperty('--light-intensity', intensity);
+                    });
+                    sensor.start();
+                } catch (error) {
+                    console.log('环境光传感器不可用');
+                }
+            }
+
+            // 点击时的光波扩散效果
+            glassElements.forEach(element => {
+                element.addEventListener('click', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 100;
+                    const y = ((e.clientY - rect.top) / rect.height) * 100;
+                    
+                    // 创建光波扩散动画
+                    this.style.setProperty('--light-x', x + '%');
+                    this.style.setProperty('--light-y', y + '%');
+                    
+                    // 添加脉冲类
+                    this.classList.add('light-pulse');
+                    setTimeout(() => {
+                        this.classList.remove('light-pulse');
+                    }, 600);
+                });
+            });
+
+            // 为所有玻璃组件添加呼吸感
+            setInterval(() => {
+                glassElements.forEach((element, index) => {
+                    // 错开动画时间，创造自然的呼吸感
+                    const delay = index * 0.1;
+                    setTimeout(() => {
+                        element.style.setProperty('--breathe-phase', Math.sin(Date.now() / 2000 + delay) * 0.5 + 0.5);
+                    }, delay * 1000);
+                });
+            }, 100);
         });
     </script>
 </body>
