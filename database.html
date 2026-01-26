@@ -4,14 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>史料数据库</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet"> <!-- 恢复 Quill CSS -->
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <!-- 资源预加载提示 -->
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.quilljs.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    
+    <!-- CSS 资源（阻塞渲染，但必需） -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></noscript>
+    
+    <!-- Firebase SDK - 使用 defer 延迟加载，不阻塞渲染 -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js" defer></script>
+    
+    <!-- XLSX 库 - 延迟加载，仅在需要时加载 -->
+    <script>
+        // 动态加载 XLSX 库（仅在需要导出时加载）
+        window.loadXLSX = function() {
+            return new Promise((resolve, reject) => {
+                if (window.XLSX) {
+                    resolve(window.XLSX);
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js';
+                script.async = true;
+                script.onload = () => resolve(window.XLSX);
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        };
+    </script>
     
     <style>
         /* 更新根变量 */
@@ -320,14 +346,16 @@
             transform: translateX(100%);
         }
 
+        /* 与「编辑」按钮一致的悬停：背景与字体颜色变化（brightness 提亮） */
         .main-content .action-buttons .primary-btn:hover {
-            background: linear-gradient(145deg, var(--accent-2), var(--accent-1)) !important;
-            transform: translateY(-4px) translateZ(10px);
+            background: linear-gradient(145deg, var(--accent-1), var(--accent-2)) !important;
+            color: white !important;
+            filter: brightness(1.05);
+            transform: translateY(-4px) scale(1.02) translateZ(10px);
             box-shadow: 
-                0 15px 40px rgba(var(--accent-1-rgb), 0.5),
-                0 8px 0 rgba(var(--accent-1-rgb), 0.7),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+                0 15px 35px rgba(var(--accent-1-rgb), 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                0 6px 0 var(--accent-1);
         }
 
         .main-content .action-buttons .primary-btn:active {
@@ -3052,8 +3080,89 @@
         .bulk-select label {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
             cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: background 0.2s var(--ease-smooth);
+        }
+
+        .bulk-select label:hover {
+            background: rgba(var(--accent-1-rgb), 0.05);
+        }
+
+        /* 批量操作栏复选框统一样式 */
+        .bulk-select input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 1;
+            width: 24px;
+            height: 24px;
+            margin: 0;
+        }
+
+        /* 批量操作栏复选框容器 */
+        .bulk-select .select-entry-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 批量操作栏复选框选中状态 - 与条目复选框统一样式 */
+        .bulk-select input[type="checkbox"]:checked ~ .custom-checkbox {
+            background: linear-gradient(145deg,
+                var(--accent-1),
+                var(--accent-2),
+                var(--accent-1)
+            );
+            border-color: transparent;
+            box-shadow: 
+                0 4px 16px rgba(var(--accent-1-rgb), 0.35),
+                0 8px 32px rgba(var(--accent-1-rgb), 0.2),
+                0 3px 0 rgba(var(--accent-1-rgb), 0.5),
+                inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+            animation: checkboxPop 0.4s var(--ease-bounce), checkboxPulse 2s ease-in-out infinite 0.5s;
+        }
+
+        .bulk-select input[type="checkbox"]:checked ~ .custom-checkbox::after {
+            box-shadow: 
+                inset 0 3px 8px rgba(0, 0, 0, 0.25),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .bulk-select input[type="checkbox"]:checked ~ .custom-checkbox::before {
+            background: radial-gradient(
+                circle at 30% 30%,
+                rgba(255, 255, 255, 0.6) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                transparent 80%
+            );
+            animation: highlightPulse 2s ease-in-out infinite 0.5s, rippleEffect 0.8s ease-out;
+        }
+
+        /* 批量操作栏复选框悬停效果 */
+        .bulk-select .select-entry-container:hover .custom-checkbox {
+            transform: scale(1.08) translateZ(8px);
+            border-color: var(--accent-1);
+            box-shadow: 
+                0 4px 12px rgba(var(--accent-1-rgb), 0.25),
+                0 8px 24px rgba(var(--accent-1-rgb), 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .bulk-select .select-entry-container:hover .custom-checkbox::before {
+            background: radial-gradient(
+                circle at 30% 30%,
+                rgba(255, 255, 255, 0.95) 0%,
+                rgba(255, 255, 255, 0.5) 40%,
+                transparent 75%
+            );
         }
 
         .bulk-operations {
@@ -3074,11 +3183,6 @@
             position: absolute;
             left: 10px;
             top: 15px;
-        }
-
-        .entry-item.bulk-mode .select-entry {
-            width: 18px;
-            height: 18px;
         }
 
         .entry-item.selected {
@@ -3197,6 +3301,274 @@
             left: 10px; /* 或根据需要调整 */
             top: 20px;  /* 或根据需要调整 */
             z-index: 1; /* 确保在内容之上 */
+        }
+
+        /* ========== 立体圆形复选框样式 ========== */
+        .select-entry-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .select-entry {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+        }
+
+        /* 自定义圆形复选框 - 基础样式 */
+        .custom-checkbox {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(145deg,
+                rgba(255, 255, 255, 0.8),
+                rgba(255, 255, 255, 0.4)
+            );
+            border: 2px solid var(--glass-border);
+            /* 双重阴影效果 - 增加立体感 */
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.15),
+                0 4px 16px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+            transition: all 0.3s var(--ease-smooth);
+            transform-style: preserve-3d;
+            perspective: 500px;
+            overflow: hidden;
+        }
+
+        /* 3D深度效果 - 增强内部高光反射 */
+        .custom-checkbox::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(
+                circle at 30% 30%,
+                rgba(255, 255, 255, 0.8) 0%,
+                rgba(255, 255, 255, 0.3) 40%,
+                transparent 75%
+            );
+            border-radius: 50%;
+            z-index: 1;
+            pointer-events: none;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        /* 内阴影效果 - 增强深度 */
+        .custom-checkbox::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            height: 85%;
+            border-radius: 50%;
+            background: transparent;
+            box-shadow: 
+                inset 0 2px 6px rgba(0, 0, 0, 0.15),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        /* 悬停效果 - 增强3D和光泽变化 */
+        .select-entry-container:hover .custom-checkbox {
+            transform: scale(1.08) translateZ(8px);
+            border-color: var(--accent-1);
+            /* 双重阴影增强 */
+            box-shadow: 
+                0 4px 12px rgba(var(--accent-1-rgb), 0.25),
+                0 8px 24px rgba(var(--accent-1-rgb), 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        /* 悬停时增强高光 */
+        .select-entry-container:hover .custom-checkbox::before {
+            background: radial-gradient(
+                circle at 30% 30%,
+                rgba(255, 255, 255, 0.95) 0%,
+                rgba(255, 255, 255, 0.5) 40%,
+                transparent 75%
+            );
+        }
+
+        /* 选中状态 - 填充整个复选框，无对勾 */
+        .select-entry:checked ~ .custom-checkbox {
+            background: linear-gradient(145deg,
+                var(--accent-1),
+                var(--accent-2),
+                var(--accent-1)
+            );
+            border-color: transparent;
+            /* 双重阴影 + 3D底阴影 */
+            box-shadow: 
+                0 4px 16px rgba(var(--accent-1-rgb), 0.35),
+                0 8px 32px rgba(var(--accent-1-rgb), 0.2),
+                0 3px 0 rgba(var(--accent-1-rgb), 0.5),
+                inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+            animation: checkboxPop 0.4s var(--ease-bounce), checkboxPulse 2s ease-in-out infinite 0.5s;
+        }
+
+        /* 选中后的内阴影变化 - 增强深度 */
+        .select-entry:checked ~ .custom-checkbox::after {
+            box-shadow: 
+                inset 0 3px 8px rgba(0, 0, 0, 0.25),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 选中时增强高光反射 */
+        .select-entry:checked ~ .custom-checkbox::before {
+            background: radial-gradient(
+                circle at 30% 30%,
+                rgba(255, 255, 255, 0.6) 0%,
+                rgba(255, 255, 255, 0.2) 50%,
+                transparent 80%
+            );
+            animation: highlightPulse 2s ease-in-out infinite 0.5s;
+        }
+
+        /* 复选框弹出动画 - 更流畅 */
+        @keyframes checkboxPop {
+            0% {
+                transform: scale(0.75);
+                opacity: 0.4;
+            }
+            50% {
+                transform: scale(1.15);
+            }
+            70% {
+                transform: scale(0.95);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* 呼吸动画（pulse effect） */
+        @keyframes checkboxPulse {
+            0%, 100% {
+                box-shadow: 
+                    0 4px 16px rgba(var(--accent-1-rgb), 0.35),
+                    0 8px 32px rgba(var(--accent-1-rgb), 0.2),
+                    0 3px 0 rgba(var(--accent-1-rgb), 0.5),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+                    inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+            }
+            50% {
+                box-shadow: 
+                    0 6px 20px rgba(var(--accent-1-rgb), 0.45),
+                    0 12px 40px rgba(var(--accent-1-rgb), 0.3),
+                    0 4px 0 rgba(var(--accent-1-rgb), 0.6),
+                    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+                    inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        /* 高光呼吸动画 */
+        @keyframes highlightPulse {
+            0%, 100% {
+                opacity: 0.6;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(1.1);
+            }
+        }
+
+        /* 焦点状态 - 增强反馈 */
+        .select-entry:focus ~ .custom-checkbox {
+            outline: none;
+            box-shadow: 
+                0 0 0 3px rgba(var(--accent-1-rgb), 0.25),
+                0 4px 12px rgba(var(--accent-1-rgb), 0.25),
+                0 8px 24px rgba(var(--accent-1-rgb), 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        /* 禁用状态 */
+        .select-entry:disabled ~ .custom-checkbox {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(0.5);
+        }
+
+        /* 触摸设备 - 更大的点击区域 */
+        @media (hover: none) and (pointer: coarse) {
+            .select-entry-container {
+                width: 32px;
+                height: 32px;
+                padding: 4px;
+            }
+            
+            .custom-checkbox {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        /* 选中时的涟漪效果 - 改进扩散 */
+        .select-entry:checked ~ .custom-checkbox {
+            position: relative;
+        }
+
+        .select-entry:checked ~ .custom-checkbox::before {
+            animation: rippleEffect 0.8s ease-out;
+        }
+
+        @keyframes rippleEffect {
+            0% {
+                box-shadow: 
+                    0 0 0 0 rgba(var(--accent-1-rgb), 0.5),
+                    0 0 0 0 rgba(var(--accent-1-rgb), 0.3);
+            }
+            50% {
+                box-shadow: 
+                    0 0 0 8px rgba(var(--accent-1-rgb), 0),
+                    0 0 0 12px rgba(var(--accent-1-rgb), 0);
+            }
+            100% {
+                box-shadow: 
+                    0 0 0 0 rgba(var(--accent-1-rgb), 0),
+                    0 0 0 0 rgba(var(--accent-1-rgb), 0);
+            }
+        }
+
+        /* 暗色模式适配 */
+        @media (prefers-color-scheme: dark) {
+            .custom-checkbox {
+                background: linear-gradient(145deg,
+                    rgba(255, 255, 255, 0.1),
+                    rgba(255, 255, 255, 0.05)
+                );
+                border-color: var(--glass-border);
+            }
+            
+            .select-entry-container:hover .custom-checkbox {
+                border-color: var(--accent-1);
+                background: linear-gradient(145deg,
+                    rgba(255, 255, 255, 0.15),
+                    rgba(255, 255, 255, 0.08)
+                );
+            }
         }
 
         /* 增强卡片效果 - 3D效果 */
@@ -4654,26 +5026,35 @@
             document.body.classList.add(theme);
         }
 
-        // 页面加载时设置主题
-        document.addEventListener('DOMContentLoaded', setThemeByDay);
-
-        // 每天凌晨自动更新主题
-        function scheduleThemeUpdate() {
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            tomorrow.setHours(0, 0, 0, 0);
+        // 合并所有 DOMContentLoaded 监听器，优化性能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置主题
+            setThemeByDay();
             
-            const timeUntilMidnight = tomorrow - now;
-            
-            setTimeout(() => {
-                setThemeByDay();
-                scheduleThemeUpdate(); // 设置下一天的更新
-            }, timeUntilMidnight);
-        }
+            // 初始化主题
+            const savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        });
 
-        // 启动主题自动更新
-        scheduleThemeUpdate();
+        // 每天凌晨自动更新主题（延迟初始化，不阻塞页面加载）
+        setTimeout(() => {
+            function scheduleThemeUpdate() {
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0);
+                
+                const timeUntilMidnight = tomorrow - now;
+                
+                setTimeout(() => {
+                    setThemeByDay();
+                    scheduleThemeUpdate();
+                }, timeUntilMidnight);
+            }
+            scheduleThemeUpdate();
+        }, 1000);
 
         // 主题切换相关函数
         function toggleThemeOptions() {
@@ -4686,17 +5067,6 @@
             localStorage.setItem('selectedTheme', themeName);
             toggleThemeOptions();
         }
-
-        // 初始化主题
-        function initTheme() {
-            const savedTheme = localStorage.getItem('selectedTheme');
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-            }
-        }
-
-        // 页面加载时初始化主题
-        document.addEventListener('DOMContentLoaded', initTheme);
 
         // 点击其他地方关闭主题选择器
         document.addEventListener('click', (e) => {
@@ -4824,8 +5194,6 @@
             
             <!-- 快速筛选标签 -->
             <div class="quick-filters" id="quick-filters">
-                <button class="quick-filter-btn" onclick="applyQuickFilter('today', event)">今日新增</button>
-                <button class="quick-filter-btn" onclick="applyQuickFilter('week', event)">最近一周</button>
                 <button class="quick-filter-btn" onclick="applyQuickFilter('noAnalysis', event)">待分析</button>
                 <button class="quick-filter-btn" onclick="applyQuickFilter('noKeywords', event)">无关键词</button>
                 <button class="quick-filter-btn" onclick="applyQuickFilter('reset', event)">显示全部</button>
@@ -4836,11 +5204,17 @@
             <div id="bulk-actions-bar" class="bulk-actions-bar" style="display:none;">
                 <div class="bulk-select">
                     <label>
-                        <input type="checkbox" id="select-page" onclick="toggleSelectAll(true)">
+                        <div class="select-entry-container">
+                            <input type="checkbox" id="select-page" onclick="toggleSelectAll(true)">
+                            <div class="custom-checkbox"></div>
+                        </div>
                         选择当前页
                     </label>
                     <label>
-                        <input type="checkbox" id="select-all" onclick="toggleSelectAll(false)">
+                        <div class="select-entry-container">
+                            <input type="checkbox" id="select-all" onclick="toggleSelectAll(false)">
+                            <div class="custom-checkbox"></div>
+                        </div>
                         选择全部
                     </label>
                 </div>
@@ -5138,23 +5512,50 @@
         </div>
     </div>
 
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script> <!-- 恢复 Quill JS -->
-    <!-- <script src="https://cdn.ckeditor.com/ckeditor5/41.1.0/super-build/ckeditor.js"></script> --> <!-- 移除 CKEditor JS -->
+    <!-- Quill JS - 延迟加载，不阻塞初始渲染 -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js" defer></script>
+    
     <script>
-        // Firebase初始化
-        const firebaseConfig = {
-            apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
-            authDomain: "slsj-54760.firebaseapp.com",
-            databaseURL: "https://slsj-54760-default-rtdb.firebaseio.com",
-            projectId: "slsj-54760",
-            storageBucket: "slsj-54760.firebasestorage.app",
-            messagingSenderId: "890890573955",
-            appId: "1:890890573955:web:328c0ed09af23d634b23b6"
-        };
+        // 等待 Firebase SDK 加载完成后再初始化
+        (function() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyC5zQ6We55GvT8xexlQOLPpoTZip9Xac9k",
+                authDomain: "slsj-54760.firebaseapp.com",
+                databaseURL: "https://slsj-54760-default-rtdb.firebaseio.com",
+                projectId: "slsj-54760",
+                storageBucket: "slsj-54760.firebasestorage.app",
+                messagingSenderId: "890890573955",
+                appId: "1:890890573955:web:328c0ed09af23d634b23b6"
+            };
 
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.database();
+            // 等待 Firebase 加载完成
+            function initFirebase() {
+                if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0) {
+                    window.app = firebase.initializeApp(firebaseConfig);
+                    window.auth = firebase.auth();
+                    window.db = firebase.database();
+                    
+                    // 触发 Firebase 就绪事件
+                    window.dispatchEvent(new CustomEvent('firebaseReady'));
+                } else if (typeof firebase !== 'undefined') {
+                    // Firebase 已加载，直接初始化
+                    window.app = firebase.initializeApp(firebaseConfig);
+                    window.auth = firebase.auth();
+                    window.db = firebase.database();
+                    window.dispatchEvent(new CustomEvent('firebaseReady'));
+                } else {
+                    // 延迟重试
+                    setTimeout(initFirebase, 50);
+                }
+            }
+
+            // 如果 DOM 已加载，立即尝试初始化；否则等待
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initFirebase);
+            } else {
+                initFirebase();
+            }
+        })();
 
         // 全局数据监听器
         let unsubscribeEntries = null;
@@ -5183,30 +5584,42 @@
             } catch (e) {}
         })();
 
-        // 获取项目路径
+        // 获取项目路径 - 优化：优先使用 sessionStorage 中的预加载项目ID
         function getProjectPath(subPath = "") {
-            const user = auth.currentUser;
+            if (!window.auth) {
+                console.warn('认证未初始化');
+                return '';
+            }
+            const user = window.auth.currentUser;
             if (!user) {
                 alert("用户未登录，即将跳转");
                 window.location.href = "index.html";
                 return;
             }
-            // 优先从 URL 参数获取 projectId
-            const urlParams = new URLSearchParams(window.location.search);
-            let projectId = urlParams.get('project');
-
-            // 如果 URL 参数没有，再尝试从 localStorage 获取 (作为备选)
+            
+            // 优先级：1. sessionStorage（预加载） 2. URL参数 3. localStorage 4. default
+            let projectId = sessionStorage.getItem('pendingProjectId');
+            
+            if (!projectId) {
+                const urlParams = new URLSearchParams(window.location.search);
+                projectId = urlParams.get('project');
+            }
+            
             if (!projectId) {
                 projectId = localStorage.getItem('currentProject');
             }
             
-            // 如果都没有，使用 'default' (或者可以报错提示)
             if (!projectId) {
                 console.error("无法确定项目 ID！");
-                projectId = 'default'; // 或者 return; 阻止后续操作
+                projectId = 'default';
             }
-
-            // 保存当前项目 ID 到 localStorage，以便某些情况下可以恢复状态
+            
+            // 清理 sessionStorage（已使用）
+            if (sessionStorage.getItem('pendingProjectId')) {
+                sessionStorage.removeItem('pendingProjectId');
+            }
+            
+            // 保存当前项目 ID 到 localStorage
             localStorage.setItem('currentProject', projectId);
 
             return `users/${user.uid}/projects/${projectId}/${subPath}`;
@@ -5214,8 +5627,14 @@
 
         // 初始化数据监听
         function initDataListeners() {
+            if (!window.db) {
+                console.warn('数据库未初始化，延迟初始化数据监听器');
+                setTimeout(initDataListeners, 100);
+                return;
+            }
+            
             let initialEntriesLoaded = false; // 添加标志位
-            unsubscribeEntries = db.ref(getProjectPath('entries')).on('value', (snapshot) => {
+            unsubscribeEntries = window.db.ref(getProjectPath('entries')).on('value', (snapshot) => {
                 try {
                     entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
                         // 为可能缺失的字段提供默认值
@@ -5238,7 +5657,7 @@
                 showAlert('加载数据失败: ' + error.message, 'error');
             });
 
-            unsubscribeCategories = db.ref(getProjectPath('categories')).on('value', (snapshot) => {
+            unsubscribeCategories = window.db.ref(getProjectPath('categories')).on('value', (snapshot) => {
                 try {
                     categories = snapshot.val() || { main: {} };
                     updateCategorySelectors();
@@ -5251,31 +5670,57 @@
             });
         }
 
-        // 认证状态监听
-        auth.onAuthStateChanged(async user => {
-            if (user) {
-                const projectId = new URLSearchParams(window.location.search).get('project');
-                
-                // 从Firebase实时数据库获取项目名称
-                const projectRef = db.ref(`users/${user.uid}/projects/${projectId}`);
-                const snapshot = await projectRef.once('value');
-                const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
-                
-                document.title = `${projectName} - 史料数据库`;
-                document.getElementById('projectTitle').textContent = projectName;
-                
-                showLoading('正在加载数据...'); // 显示加载提示
-                initDataListeners();
-                // initTimeTracking(); // 暂时注释掉，函数未定义
-                restoreCachedSessions();
-                initAutoSave(); // 添加自动保存功能初始化
-             
+        // 等待 Firebase 就绪后再初始化认证监听
+        function initAuthListener() {
+            if (window.auth && window.db) {
+                window.auth.onAuthStateChanged(async user => {
+                    if (user) {
+                        // 优先使用 sessionStorage 中的项目ID（从 index.html 预加载）
+                        let projectId = sessionStorage.getItem('pendingProjectId');
+                        if (!projectId) {
+                            const urlParams = new URLSearchParams(window.location.search);
+                            projectId = urlParams.get('project');
+                        }
+                        if (!projectId) {
+                            projectId = localStorage.getItem('currentProject');
+                        }
+                        
+                        // 从Firebase实时数据库获取项目名称
+                        const projectRef = window.db.ref(`users/${user.uid}/projects/${projectId}`);
+                        const snapshot = await projectRef.once('value');
+                        const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
+                        
+                        document.title = `${projectName} - 史料数据库`;
+                        const titleEl = document.getElementById('projectTitle');
+                        if (titleEl) titleEl.textContent = projectName;
+                        
+                        showLoading('正在加载数据...'); // 显示加载提示
+                        initDataListeners();
+                        // initTimeTracking(); // 暂时注释掉，函数未定义
+                        restoreCachedSessions();
+                        initAutoSave(); // 添加自动保存功能初始化
+                     
+                    } else {
+                        window.location.href = 'index.html';
+                        if (typeof clearInterval === 'function' && typeof trackingInterval !== 'undefined') {
+                            clearInterval(trackingInterval);
+                        }
+                        localStorage.removeItem('currentSession');
+                    }
+                });
             } else {
-                window.location.href = 'index.html';
-                clearInterval(trackingInterval);
-                localStorage.removeItem('currentSession');
+                // Firebase 尚未就绪，延迟重试
+                setTimeout(initAuthListener, 50);
             }
-        });
+        }
+
+        // 监听 Firebase 就绪事件
+        window.addEventListener('firebaseReady', initAuthListener);
+        
+        // 如果 Firebase 已经就绪（在事件监听器添加之前），立即初始化
+        if (window.auth && window.db) {
+            initAuthListener();
+        }
 
         // 全局变量
         let entries = [];
@@ -6319,6 +6764,7 @@
                              <input type="checkbox" class="select-entry" 
                                     ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''} 
                                     onchange="handleEntrySelection('${entry.id}', this.checked)">
+                             <div class="custom-checkbox"></div>
                          </div>`;
                  }
 
@@ -6363,6 +6809,9 @@
                                    <input type="checkbox" class="select-entry" 
                                           ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''} 
                                           onchange="handleEntrySelection('${entry.id}', this.checked)">
+                                   <div class="custom-checkbox">
+                                       <div class="checkmark"></div>
+                                   </div>
                                </div>`;
                        }
 
@@ -6452,26 +6901,21 @@
             exportExcel(entriesToExport, format); // 调用通用导出函数
         }
 
-        function exportExcel(entriesToExport, format) { // 增加 format 参数虽然当前只有excel，但保持一致性
+        async function exportExcel(entriesToExport, format) { // 改为 async，支持动态加载 XLSX
             showLoading('正在准备导出数据...');
             try {
+                // 动态加载 XLSX 库（如果尚未加载）
+                if (!window.XLSX) {
+                    showLoading('正在加载导出工具...');
+                    await window.loadXLSX();
+                }
+                
                 // 数据格式预验证
-                // 移除对 entries 的内部检查，因为它现在是参数
                 if (!Array.isArray(entriesToExport)) {
                     showAlert('导出数据格式错误', 'error');
                     hideLoading();
                     return;
                 }
-
-                // // 修改：允许导出空列表以导出分类结构 (按需保留或移除)
-                // if (entriesToExport.length === 0) {
-                //     if (confirm('未选择任何条目。是否仅导出分类结构？')) {
-                //         // 继续执行，但只创建分类表
-                //     } else {
-                //         hideLoading();
-                //         return; // 用户取消
-                //     }
-                // }
                 
                 const wb = XLSX.utils.book_new();
 
@@ -9149,7 +9593,18 @@
         }
 
         // Excel导入功能
-        function importExcel() {
+        async function importExcel() {
+            // 动态加载 XLSX 库（如果尚未加载）
+            if (!window.XLSX) {
+                showLoading('正在加载导入工具...');
+                try {
+                    await window.loadXLSX();
+                } catch (error) {
+                    showAlert('加载导入工具失败，请刷新页面重试', 'error');
+                    return;
+                }
+            }
+            
             // 创建一个隐藏的文件输入框
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
