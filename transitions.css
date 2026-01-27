@@ -1,0 +1,1004 @@
+/* transitions.css - 增强界面转场效果 */
+/* 版本 1.0 - 专为历史研究数据库设计 */
+
+/* ==================== 基础动画定义 ==================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        visibility: hidden;
+    }
+    to {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        visibility: visible;
+    }
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(30px) scale(0.98);
+    }
+}
+
+@keyframes slideOutLeft {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-30px) scale(0.98);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes scaleOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+@keyframes blurIn {
+    from {
+        opacity: 0;
+        filter: blur(10px);
+        transform: scale(1.05);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
+        transform: scale(1);
+    }
+}
+
+@keyframes blurOut {
+    from {
+        opacity: 1;
+        filter: blur(0);
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        filter: blur(10px);
+        transform: scale(1.05);
+    }
+}
+
+@keyframes glassMorphIn {
+    0% {
+        opacity: 0;
+        backdrop-filter: blur(0px) saturate(100%);
+        transform: translateY(20px) scale(0.95);
+        box-shadow: 0 0 0 0 rgba(231, 136, 149, 0);
+    }
+    70% {
+        opacity: 1;
+        backdrop-filter: blur(5px) saturate(150%);
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 10px 30px rgba(231, 136, 149, 0.2);
+    }
+    100% {
+        opacity: 1;
+        backdrop-filter: blur(20px) saturate(180%);
+        transform: translateY(0) scale(1);
+        box-shadow: 0 0 0 1px rgba(231, 136, 149, 0.3),
+                  0 0 12px rgba(231, 136, 149, 0.2),
+                  0 0 24px rgba(190, 209, 207, 0.15);
+    }
+}
+
+@keyframes glassMorphOut {
+    0% {
+        opacity: 1;
+        backdrop-filter: blur(20px) saturate(180%);
+        transform: translateY(0) scale(1);
+        box-shadow: 0 0 0 1px rgba(231, 136, 149, 0.3),
+                  0 0 12px rgba(231, 136, 149, 0.2),
+                  0 0 24px rgba(190, 209, 207, 0.15);
+    }
+    30% {
+        opacity: 1;
+        backdrop-filter: blur(5px) saturate(150%);
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 10px 30px rgba(231, 136, 149, 0.3);
+    }
+    100% {
+        opacity: 0;
+        backdrop-filter: blur(0px) saturate(100%);
+        transform: translateY(20px) scale(0.95);
+        box-shadow: 0 0 0 0 rgba(231, 136, 149, 0);
+    }
+}
+
+@keyframes rippleTransition {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+        border-radius: 50%;
+    }
+    50% {
+        opacity: 1;
+        border-radius: 50%;
+    }
+    100% {
+        opacity: 1;
+        transform: scale(2);
+        border-radius: 0%;
+    }
+}
+
+@keyframes pageLoadWave {
+    0% {
+        transform: translateX(-100%) skewX(-15deg);
+    }
+    100% {
+        transform: translateX(200%) skewX(-15deg);
+    }
+}
+
+/* ==================== 页面级转场效果 ==================== */
+
+/* 页面容器转场效果 */
+.page-transition-container {
+    position: relative;
+    overflow: hidden;
+}
+
+/* 进入页面时的效果 */
+.page-enter {
+    animation: blurIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 离开页面时的效果 */
+.page-exit {
+    animation: blurOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 登录页面特殊转场 */
+.auth-page-enter {
+    animation: glassMorphIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.auth-page-exit {
+    animation: glassMorphOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 主页特殊转场 */
+.main-page-enter {
+    animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.main-page-exit {
+    animation: slideOutLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 数据库页面特殊转场 */
+.database-page-enter {
+    animation: slideInLeft 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.database-page-exit {
+    animation: slideOutRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 加载遮罩转场 */
+.loading-mask-enter {
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.loading-mask-exit {
+    animation: fadeOut 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 页面切换时的遮罩层 */
+.page-transition-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #E78895 0%, #BED1CF 100%);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-transition-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.page-transition-overlay .wave-effect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        transparent 100%);
+    animation: pageLoadWave 1s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(-100%);
+}
+
+/* ==================== 组件级转场效果 ==================== */
+
+/* 卡片出现效果 */
+.card-enter {
+    animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 卡片消失效果 */
+.card-exit {
+    animation: scaleOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 统计卡片特殊效果 */
+.stat-card-enter {
+    animation: glassMorphIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation-delay: calc(var(--card-index, 0) * 0.1s);
+}
+
+.stat-card-exit {
+    animation: glassMorphOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 表格行效果 */
+.table-row-enter {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation-delay: calc(var(--row-index, 0) * 0.05s);
+}
+
+.table-row-exit {
+    animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 按钮点击效果增强 */
+.btn-transition {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-transition::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-transition:active::after {
+    animation: rippleTransition 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 模态框/弹窗转场 */
+.modal-enter {
+    animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.modal-exit {
+    animation: scaleOut 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 回收站弹窗特殊效果 */
+.recycle-bin-enter {
+    animation: glassMorphIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.recycle-bin-exit {
+    animation: glassMorphOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 表单元素转场 */
+.form-group-enter {
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+    animation-delay: calc(var(--form-index, 0) * 0.08s);
+}
+
+.form-group-exit {
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 用户信息区域转场 */
+.user-info-enter {
+    animation: slideInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.user-info-exit {
+    animation: slideOutLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 搜索框转场 */
+.search-box-enter {
+    animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.search-box-exit {
+    animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 工具栏转场 */
+.toolbar-enter {
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.toolbar-exit {
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 分页组件转场 */
+.pagination-enter {
+    animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.pagination-exit {
+    animation: fadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 批量操作栏转场 */
+.bulk-actions-enter {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.bulk-actions-exit {
+    animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ==================== 页面加载骨架屏 ==================== */
+
+/* 骨架屏基础样式 */
+.skeleton-screen {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg,
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.05)
+    );
+    border-radius: 16px;
+}
+
+/* 骨架屏动画 */
+@keyframes skeletonShimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.skeleton-screen::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+    );
+    animation: skeletonShimmer 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 特定骨架屏样式 */
+.skeleton-header {
+    height: 60px;
+    margin-bottom: 30px;
+}
+
+.skeleton-stat-card {
+    height: 160px;
+    margin-bottom: 20px;
+}
+
+.skeleton-table-row {
+    height: 60px;
+    margin-bottom: 10px;
+}
+
+.skeleton-table-header {
+    height: 50px;
+    margin-bottom: 15px;
+}
+
+/* ==================== 导航转场效果 ==================== */
+
+/* 链接悬停效果 */
+.nav-link-transition {
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-link-transition::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #E78895, #BED1CF);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-link-transition:hover::before {
+    width: 100%;
+}
+
+/* 项目链接特殊效果 */
+.project-link-transition {
+    position: relative;
+    display: inline-block;
+}
+
+.project-link-transition::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, #E78895, transparent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.project-link-transition:hover::after {
+    transform: scaleX(1);
+}
+
+/* ==================== 数据加载转场 ==================== */
+
+/* 数据加载动画 */
+@keyframes dataLoadIn {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+        filter: blur(5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+.data-load-enter {
+    animation: dataLoadIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 数据更新效果 */
+@keyframes dataUpdatePulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(231, 136, 149, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(231, 136, 149, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(231, 136, 149, 0);
+    }
+}
+
+.data-updated {
+    animation: dataUpdatePulse 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==================== 状态变化转场 ==================== */
+
+/* 选中状态转场 */
+.selected-enter {
+    animation: scaleIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.selected-exit {
+    animation: scaleOut 0.15s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 归档状态转场 */
+.archived-enter {
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.archived-exit {
+    animation: fadeOut 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 删除状态转场 */
+.deleted-enter {
+    animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.deleted-exit {
+    animation: slideInLeft 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ==================== 错误状态转场 ==================== */
+
+/* 错误提示效果 */
+@keyframes errorShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+.error-transition {
+    animation: errorShake 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* 错误消息出现 */
+.error-enter {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.error-exit {
+    animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ==================== 响应式转场调整 ==================== */
+
+@media (max-width: 768px) {
+    /* 移动设备上减少动画时间 */
+    .page-enter,
+    .page-exit,
+    .card-enter,
+    .card-exit,
+    .modal-enter,
+    .modal-exit {
+        animation-duration: 0.3s;
+    }
+    
+    /* 移动设备上减少延迟 */
+    .stat-card-enter {
+        animation-delay: calc(var(--card-index, 0) * 0.05s);
+    }
+    
+    .table-row-enter {
+        animation-delay: calc(var(--row-index, 0) * 0.02s);
+    }
+    
+    .form-group-enter {
+        animation-delay: calc(var(--form-index, 0) * 0.04s);
+    }
+    
+    /* 移动设备上使用更简单的转场 */
+    .main-page-enter,
+    .main-page-exit,
+    .database-page-enter,
+    .database-page-exit {
+        animation-name: fadeIn, fadeOut;
+    }
+}
+
+/* ==================== 性能优化 ==================== */
+
+/* 减少低端设备上的动画 */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .skeleton-screen::after {
+        animation: none;
+    }
+}
+
+/* GPU加速优化 */
+.gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* 转场容器优化 */
+.transition-container {
+    will-change: transform, opacity;
+    contain: layout style paint;
+}
+
+/* ==================== 工具类 ==================== */
+
+/* 延迟显示 */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+
+/* 动画填充模式 */
+.animate-fill-both { animation-fill-mode: both; }
+.animate-fill-forwards { animation-fill-mode: forwards; }
+.animate-fill-backwards { animation-fill-mode: backwards; }
+
+/* 动画播放状态 */
+.animate-paused { animation-play-state: paused; }
+.animate-running { animation-play-state: running; }
+
+/* 动画方向 */
+.animate-normal { animation-direction: normal; }
+.animate-reverse { animation-direction: reverse; }
+.animate-alternate { animation-direction: alternate; }
+.animate-alternate-reverse { animation-direction: alternate-reverse; }
+
+/* 动画计时函数 */
+.animate-ease { animation-timing-function: ease; }
+.animate-ease-in { animation-timing-function: ease-in; }
+.animate-ease-out { animation-timing-function: ease-out; }
+.animate-ease-in-out { animation-timing-function: ease-in-out; }
+.animate-linear { animation-timing-function: linear; }
+.animate-smooth { animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+.animate-bounce { animation-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+/* ==================== 特殊效果类 ==================== */
+
+/* 3D翻转效果 */
+.flip-card {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+}
+
+.flip-card-inner {
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+    backface-visibility: hidden;
+}
+
+.flip-card-back {
+    transform: rotateY(180deg);
+}
+
+/* 视差滚动效果 */
+.parallax-container {
+    overflow-x: hidden;
+    overflow-y: auto;
+    perspective: 1px;
+    transform-style: preserve-3d;
+}
+
+.parallax-layer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.parallax-layer-back {
+    transform: translateZ(-1px) scale(2);
+}
+
+.parallax-layer-base {
+    transform: translateZ(0);
+}
+
+/* 渐变遮罩效果 */
+.gradient-mask {
+    mask-image: linear-gradient(to bottom, 
+        rgba(0, 0, 0, 1) 0%, 
+        rgba(0, 0, 0, 1) 85%, 
+        rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-image: linear-gradient(to bottom, 
+        rgba(0, 0, 0, 1) 0%, 
+        rgba(0, 0, 0, 1) 85%, 
+        rgba(0, 0, 0, 0) 100%);
+}
+
+/* ==================== 页面切换加载器 ==================== */
+
+.page-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #E78895, #BED1CF, #E78895);
+    z-index: 10000;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-loader.active {
+    transform: scaleX(0.7);
+    animation: pageLoaderProgress 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes pageLoaderProgress {
+    0% {
+        transform: scaleX(0);
+        transform-origin: left;
+    }
+    50% {
+        transform: scaleX(1);
+        transform-origin: left;
+    }
+    51% {
+        transform: scaleX(1);
+        transform-origin: right;
+    }
+    100% {
+        transform: scaleX(0);
+        transform-origin: right;
+    }
+}
+
+/* 圆形加载器 */
+.circular-loader {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(231, 136, 149, 0.15);
+    border-top: 3px solid #E78895;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ==================== 最终导出 ==================== */
+
+/* 确保所有转场效果都使用GPU加速 */
+.page-transition-container,
+.card-enter,
+.card-exit,
+.modal-enter,
+.modal-exit,
+.table-row-enter,
+.table-row-exit,
+.form-group-enter,
+.form-group-exit {
+    will-change: transform, opacity;
+}
+
+/* 禁用所有过渡和动画的类 */
+.no-transitions * {
+    transition: none !important;
+    animation: none !important;
+}
+
+/* ==================== 液态玻璃（SVG 扭曲 + 毛玻璃） ==================== */
+
+@keyframes liquidFloat {
+    0%   { transform: translate3d(-2%, -1%, 0) scale(1.02); }
+    50%  { transform: translate3d(2%,  1%, 0) scale(1.04); }
+    100% { transform: translate3d(-2%, -1%, 0) scale(1.02); }
+}
+
+@keyframes liquidShine {
+    0%   { transform: translateX(-60%) rotate(12deg); opacity: 0.0; }
+    25%  { opacity: 0.35; }
+    50%  { opacity: 0.15; }
+    100% { transform: translateX(160%) rotate(12deg); opacity: 0.0; }
+}
+
+/* 页面中注入的 SVG 滤镜容器（仅用于提供 filter id） */
+.liquid-glass-svg-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/*
+  使用方式：
+  - 给任意容器加 class="liquid-glass" 即可启用
+  - 本项目中将对常见玻璃容器做“自动增强”，不需要改 HTML
+*/
+
+.liquid-glass,
+.glass-container,
+.content-card,
+.stat-card,
+.data-table,
+.auth-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: inherit;
+    isolation: isolate;
+    /* 让颜色/阴影在主题切换时更顺滑 */
+    transition: background-color 0.6s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                box-shadow 0.6s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                border-color 0.6s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .liquid-glass,
+    .glass-container,
+    .content-card,
+    .stat-card,
+    .data-table,
+    .auth-container {
+        backdrop-filter: blur(18px) saturate(180%);
+        -webkit-backdrop-filter: blur(18px) saturate(180%);
+    }
+}
+
+/* 扭曲“液态层”（只作用在背景层，不影响文字/内容） */
+.liquid-glass::before,
+.glass-container::before,
+.content-card::before,
+.stat-card::before,
+.data-table::before,
+.auth-container::before {
+    content: '';
+    position: absolute;
+    inset: -22%;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: inherit;
+
+    /* 朦胧底色 + 柔和色散（不依赖 rgb 变量，兼容 login.html） */
+    background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(var(--accent-1-rgb, 231, 136, 149), 0.22), transparent 55%),
+        radial-gradient(900px 500px  at 85% 20%, rgba(var(--accent-2-rgb, 190, 209, 207), 0.20), transparent 60%),
+        radial-gradient(900px 700px  at 30% 90%, rgba(255, 255, 255, 0.14), transparent 60%),
+        linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+
+    /* 关键：SVG 流动扭曲（需要页面内注入对应 id 的 filter） */
+    filter: url(#liquidGlassDistortion);
+
+    opacity: 0.85;
+    mix-blend-mode: overlay;
+    animation: liquidFloat 10s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)) infinite;
+}
+
+/* 高光扫光层（玻璃质感） */
+.liquid-glass::after,
+.glass-container::after,
+.content-card::after,
+.stat-card::after,
+.data-table::after,
+.auth-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+
+    background:
+        linear-gradient(115deg,
+            rgba(255,255,255,0.00) 0%,
+            rgba(255,255,255,0.18) 18%,
+            rgba(255,255,255,0.06) 34%,
+            rgba(255,255,255,0.00) 55%);
+
+    transform: translateX(-60%) rotate(12deg);
+    animation: liquidShine 7.5s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)) infinite;
+}
+
+/* 内容层确保在液态层之上 */
+.liquid-glass > *,
+.glass-container > *,
+.content-card > *,
+.stat-card > *,
+.data-table > *,
+.auth-container > * {
+    position: relative;
+    z-index: 2;
+}
+
+/* 尊重“减少动态效果”偏好 */
+@media (prefers-reduced-motion: reduce) {
+    .liquid-glass::before,
+    .glass-container::before,
+    .content-card::before,
+    .stat-card::before,
+    .data-table::before,
+    .auth-container::before,
+    .liquid-glass::after,
+    .glass-container::after,
+    .content-card::after,
+    .stat-card::after,
+    .data-table::after,
+    .auth-container::after {
+        animation: none !important;
+    }
+}

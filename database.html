@@ -14,6 +14,8 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></noscript>
+    <!-- 界面转场效果 -->
+    <link rel="stylesheet" href="transitions.css">
     
     <!-- Firebase SDK - 使用 defer 延迟加载，不阻塞渲染 -->
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js" defer></script>
@@ -495,32 +497,8 @@
             pointer-events: none;
         }
         
-        /* 关键词标签渐变边框 */
-        .keyword-tag {
-            position: relative;
-            border: 1px solid transparent !important;
-        }
-        
-        .keyword-tag::after {
-            content: '';
-            position: absolute;
-            inset: -1px;
-            border-radius: inherit;
-            padding: 1px;
-            background: linear-gradient(135deg, 
-                #ffffff 0%, 
-                #ffffff 20%, 
-                var(--accent-1-dark) 50%, 
-                #ffffff 80%, 
-                #ffffff 100%);
-            -webkit-mask: 
-                linear-gradient(#fff 0 0) content-box, 
-                linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            z-index: -1;
-            pointer-events: none;
-        }
+        /* 关键词标签 - 移除渐变边框，使用简单边框 */
+        /* 渐变边框效果已移除，避免圆角溢出问题 */
         
         /* 数据统计小框渐变边框 */
         .stat-card {
@@ -885,10 +863,53 @@
             padding: 40px 20px;
             background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
             color: var(--text-primary);
-            transition: all 0.3s ease;
+            transition: 
+                background 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 16px;
             line-height: 1.7;
             letter-spacing: 0.2px;
+            position: relative;
+        }
+        
+        /* 使用伪元素实现渐变背景过渡效果 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
+            z-index: -1;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+            pointer-events: none;
+        }
+        
+        /* 主题切换时的渐变过渡效果 - 使用淡入淡出 */
+        html.theme-transitioning body::before {
+            opacity: 0;
+        }
+        
+        /* 添加第二个伪元素用于新主题的渐变 */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
+            z-index: -2;
+            opacity: 0;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        html.theme-transitioning body::after {
+            opacity: 1;
+            z-index: -1;
         }
 
         .container {
@@ -1404,6 +1425,46 @@
             flex: 1;
         }
 
+        /* 主题切换过渡动画 - 优化版本 */
+        html {
+            transition: color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 为关键元素添加颜色过渡效果 */
+        .header,
+        .sidebar,
+        .entry-item,
+        .detail-entry,
+        .form-popup,
+        .category-manager,
+        button:not(.primary-btn):not(.danger-btn),
+        input[type="text"],
+        input[type="date"],
+        textarea,
+        select {
+            transition: 
+                background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* 主题切换时的特殊过渡效果 */
+        html.theme-transitioning * {
+            transition:
+                background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        
+        /* 排除动画和过渡元素 */
+        html.theme-transitioning .spinner,
+        html.theme-transitioning .page-loader,
+        html.theme-transitioning .material-icons {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        
         /* 添加主题变量 */
         :root[data-theme="theme1"] {
             --base-1: #FFF7F1;
@@ -2877,11 +2938,14 @@
             border-bottom: 1px solid var(--glass-border);
         }
 
-        /* 关键词云样式优化 */
+        /* 关键词云样式优化 - 修复边框溢出问题 */
         #keyword-cloud {
+            position: relative;
             max-height: calc(100vh - 420px); /* 动态计算高度，充分利用屏幕空间 */
             min-height: 300px; /* 最小高度保证 */
+            overflow: hidden; /* 确保内容被圆角裁剪 */
             overflow-y: auto;
+            overflow-x: hidden;
             padding-right: 10px;
             margin: 0;
             scrollbar-width: thin;
@@ -2889,16 +2953,22 @@
             background: var(--glass-bg);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--glass-border) !important; /* 使用简单边框 */
             border-radius: 14px;
             padding: 20px;
             box-shadow: var(--glass-shadow);
+            box-sizing: border-box; /* 确保边框包含在尺寸内 */
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
             gap: 12px;
             opacity: 0;
             transform: translateY(-10px);
             transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        /* 移除关键词云容器的渐变边框效果 */
+        #keyword-cloud::after {
+            content: none !important;
         }
         
         #keyword-cloud.loaded {
@@ -2969,12 +3039,13 @@
         }
 
         .keyword-tag {
+            position: relative;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             min-height: 40px; /* 增加最小高度，提升可读性 */
             background: var(--glass-bg) !important;
-            border: 1px solid var(--glass-border);
+            border: 1px solid var(--glass-border) !important; /* 使用简单边框 */
             color: var(--glass-text);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
@@ -2983,6 +3054,7 @@
             margin: 6px;
             transition: all 0.3s ease;
             box-shadow: var(--glass-shadow);
+            box-sizing: border-box; /* 确保边框包含在尺寸内 */
             font-weight: 500;
             font-size: 0.95em;
             line-height: 1.4;
@@ -2990,10 +3062,16 @@
             word-break: break-word; /* 长关键词自动换行 */
             overflow-wrap: break-word;
             white-space: normal; /* 允许多行显示 */
+            max-width: 100%;
             /* 动画相关 */
             opacity: 0;
             transform: translateY(10px);
             animation: tagAppear 0.3s ease forwards;
+        }
+        
+        /* 移除关键词标签的渐变边框效果 */
+        .keyword-tag::after {
+            content: none !important;
         }
         
         @keyframes tagAppear {
@@ -4008,8 +4086,28 @@
 
         .entry-item.selected {
             border-left: 4px solid var(--accent-1);
-            background-color: var(--accent-1-05);
+            /* 默认选中态：明显加深，和未选中条目区分 */
+            background: linear-gradient(
+                135deg,
+                rgba(var(--accent-1-rgb), 0.18),
+                rgba(var(--accent-2-rgb), 0.10)
+            );
+            box-shadow:
+                0 10px 28px rgba(0, 0, 0, 0.10),
+                0 0 0 1px rgba(var(--accent-1-rgb), 0.18) inset;
             /* animation: pulse 2s infinite alternate; */ /* 移除脉冲动画 */
+        }
+
+        /* 批量模式下的选中态：再加深一点，强化“已选中” */
+        .entry-item.bulk-mode.selected {
+            background: linear-gradient(
+                135deg,
+                rgba(var(--accent-1-rgb), 0.24),
+                rgba(var(--accent-2-rgb), 0.14)
+            );
+            box-shadow:
+                0 14px 34px rgba(0, 0, 0, 0.14),
+                0 0 0 1px rgba(var(--accent-1-rgb), 0.22) inset;
         }
 
         /* 详细视图样式 */
@@ -5646,7 +5744,7 @@
                 inset 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        /* 3D标签云 */
+        /* 3D标签云 - 保持3D效果但使用简单边框 */
         #keyword-cloud {
             perspective: 1000px;
             transform-style: preserve-3d;
@@ -5658,9 +5756,10 @@
             background: linear-gradient(135deg, 
                 rgba(var(--accent-1-rgb), 0.2), 
                 rgba(var(--accent-2-rgb), 0.2)) !important;
-            border: 1px solid rgba(var(--accent-1-rgb), 0.3);
+            border: 1px solid var(--glass-border) !important; /* 使用简单边框，避免圆角溢出 */
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
+            box-sizing: border-box; /* 确保边框包含在尺寸内 */
         }
 
         .keyword-tag:hover {
@@ -5800,6 +5899,19 @@
     </style>
 </head>
 <body>
+    <!-- Liquid Glass SVG Filters (hidden defs) -->
+    <svg class="liquid-glass-svg-defs" aria-hidden="true" focusable="false">
+        <filter id="liquidGlassDistortion" x="-30%" y="-30%" width="160%" height="160%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="2" result="noise">
+                <animate attributeName="baseFrequency" dur="10s"
+                         values="0.012 0.018; 0.018 0.012; 0.012 0.018" repeatCount="indefinite" />
+                <animate attributeName="seed" dur="12s"
+                         values="2; 8; 2" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="18"
+                               xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
     <!-- 3D背景装饰 -->
     <div class="bg-3d" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; overflow: hidden;">
         <div style="position: absolute; top: 10%; left: 5%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(var(--accent-1-rgb), 0.1) 0%, transparent 70%); border-radius: 50%; filter: blur(40px); animation: float 8s ease-in-out infinite;"></div>
@@ -5807,27 +5919,8 @@
         <div style="position: absolute; top: 50%; left: 80%; width: 200px; height: 200px; background: radial-gradient(circle, rgba(var(--text-primary-rgb), 0.05) 0%, transparent 70%); border-radius: 50%; filter: blur(30px); animation: float 12s ease-in-out infinite;"></div>
     </div>
     
-    <!-- 加载提示 -->
-    <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center; color: white; font-size: 1.2em; flex-direction: column;">
-        <div id="loading-message">加载中...</div>
-        <!-- 可以在这里添加一个 spinner 动画 -->
-         <style>
-            .spinner {
-                border: 4px solid rgba(255, 255, 255, 0.3);
-                border-radius: 50%;
-                border-top: 4px solid #fff;
-                width: 40px;
-                height: 40px;
-                animation: spin 1s linear infinite;
-                margin-top: 15px;
-            }
-            @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-        </style>
-        <div class="spinner"></div>
-    </div>
+    <!-- 加载提示 - 顶部进度条形式 -->
+    <div class="page-loader" id="loading-overlay"></div>
 
     <script>
         // 添加特性检测
@@ -5884,8 +5977,25 @@
         }
 
         function changeTheme(themeName) {
-            document.documentElement.setAttribute('data-theme', themeName);
-            localStorage.setItem('selectedTheme', themeName);
+            // 添加过渡类，触发平滑过渡动画
+            document.documentElement.classList.add('theme-transitioning');
+            document.body.classList.add('theme-transitioning');
+            
+            // 使用 requestAnimationFrame 确保浏览器已应用过渡类
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // 设置新主题
+                    document.documentElement.setAttribute('data-theme', themeName);
+                    localStorage.setItem('selectedTheme', themeName);
+                    
+                    // 过渡完成后移除过渡类
+                    setTimeout(() => {
+                        document.documentElement.classList.remove('theme-transitioning');
+                        document.body.classList.remove('theme-transitioning');
+                    }, 850); // 略长于CSS过渡时间，确保动画完成
+                });
+            });
+            
             toggleThemeOptions();
         }
 
@@ -6414,7 +6524,7 @@
             const user = window.auth.currentUser;
             if (!user) {
                 alert("用户未登录，即将跳转");
-                window.location.href = "index.html";
+                window.location.href = "login.html";
                 return;
             }
             
@@ -6522,7 +6632,8 @@
                         initAutoSave(); // 添加自动保存功能初始化
                      
                     } else {
-                        window.location.href = 'index.html';
+                        // 用户未登录，跳转到登录页面
+                        window.location.href = 'login.html';
                         if (typeof clearInterval === 'function' && typeof trackingInterval !== 'undefined') {
                             clearInterval(trackingInterval);
                         }
@@ -6583,20 +6694,25 @@
             highlights: {}
         };
         
-        // --- 新增加载提示函数 ---
+        // --- 新增加载提示函数 - 顶部进度条形式 ---
         function showLoading(message = '加载中...') {
-            const overlay = document.getElementById('loading-overlay');
-            const msgElement = document.getElementById('loading-message');
-            if (overlay && msgElement) {
-                msgElement.textContent = message;
-                overlay.style.display = 'flex'; // 使用 flex 居中
+            const loader = document.getElementById('loading-overlay');
+            if (loader) {
+                loader.classList.add('active');
+                // 可选：在控制台显示加载消息（用于调试）
+                if (message && message !== '加载中...') {
+                    console.log(message);
+                }
             }
         }
 
         function hideLoading() {
-            const overlay = document.getElementById('loading-overlay');
-            if (overlay) {
-                overlay.style.display = 'none';
+            const loader = document.getElementById('loading-overlay');
+            if (loader) {
+                // 延迟移除，让进度条完成动画
+                setTimeout(() => {
+                    loader.classList.remove('active');
+                }, 300);
             }
         }
         // --- 结束加载提示函数 ---
