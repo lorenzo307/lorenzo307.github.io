@@ -882,7 +882,7 @@
             height: 100%;
             background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
             z-index: -1;
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 1.35s cubic-bezier(0.4, 0, 0.2, 1);
             opacity: 1;
             pointer-events: none;
         }
@@ -903,7 +903,7 @@
             background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
             z-index: -2;
             opacity: 0;
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: opacity 1.35s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
         }
         
@@ -1425,9 +1425,9 @@
             flex: 1;
         }
 
-        /* 主题切换过渡动画 - 优化版本 */
+        /* 主题切换过渡动画 - 优化版本（较慢过渡更流畅） */
         html {
-            transition: color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: color 1.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         /* 为关键元素添加颜色过渡效果 */
@@ -1443,19 +1443,19 @@
         textarea,
         select {
             transition: 
-                background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                background-color 1.35s cubic-bezier(0.4, 0, 0.2, 1),
+                color 1.35s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 1.35s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 1.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         /* 主题切换时的特殊过渡效果 */
         html.theme-transitioning * {
             transition:
-                background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                background-color 1.35s cubic-bezier(0.4, 0, 0.2, 1),
+                color 1.35s cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 1.35s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 1.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
         
         /* 排除动画和过渡元素 */
@@ -2475,7 +2475,7 @@
             gap: 8px;
             padding: 10px 14px;
             border-radius: 12px;
-            border: 1px solid var(--glass-border);
+            border: 1px solid transparent !important; /* 与全局 .tag-item::after 渐变边框配合 */
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.20), rgba(255, 255, 255, 0.10));
             color: var(--text-primary);
             cursor: pointer;
@@ -2483,7 +2483,7 @@
             transition: all 0.3s var(--ease-bounce);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            overflow: hidden;
+            overflow: visible; /* 不裁剪 ::after 渐变边框 */
             animation: tagAppear 0.28s var(--ease-bounce) both;
             animation-delay: calc(var(--index, 0) * 0.03s);
         }
@@ -2497,7 +2497,6 @@
         .tag-item:hover {
             transform: translateY(-2px) scale(1.03);
             box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
-            border-color: rgba(var(--accent-1-rgb), 0.55);
         }
 
         .tag-item.selected {
@@ -5992,7 +5991,7 @@
                     setTimeout(() => {
                         document.documentElement.classList.remove('theme-transitioning');
                         document.body.classList.remove('theme-transitioning');
-                    }, 850); // 略长于CSS过渡时间，确保动画完成
+                    }, 1500); // 略长于CSS过渡时间，确保动画完成
                 });
             });
             
@@ -6027,7 +6026,7 @@
                             <div style="background: #E78895"></div>
                             <div style="background: #BED1CF"></div>
                         </div>
-                        <span>主题一</span>
+                        <span>活力粉</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme2')">
                         <div class="theme-preview">
@@ -6036,7 +6035,7 @@
                             <div style="background: #8B7355"></div>
                             <div style="background: #6B5B4D"></div>
                         </div>
-                        <span>主题二</span>
+                        <span>暖咖棕</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme3')">
                         <div class="theme-preview">
@@ -6045,7 +6044,7 @@
                             <div style="background: #D7C4B8"></div>
                             <div style="background: #B8A89E"></div>
                         </div>
-                        <span>主题三</span>
+                        <span>雾米灰</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme4')">
                         <div class="theme-preview">
@@ -6054,7 +6053,7 @@
                             <div style="background: #757575"></div>
                             <div style="background: #424242"></div>
                         </div>
-                        <span>主题四</span>
+                        <span>极简灰</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme5')">
                         <div class="theme-preview">
@@ -6063,7 +6062,7 @@
                             <div style="background: #5F7A85"></div>
                             <div style="background: #AEC0CD"></div>
                         </div>
-                        <span>主题五</span>
+                        <span>青岚蓝</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme6')">
                         <div class="theme-preview">
@@ -6072,7 +6071,7 @@
                             <div style="background: #A9BA88"></div>
                             <div style="background: #8FA26E"></div>
                         </div>
-                        <span>主题六</span>
+                        <span>森野绿</span>
                     </div>
                     <div class="theme-option" onclick="changeTheme('theme7')">
                         <div class="theme-preview">
@@ -6081,7 +6080,7 @@
                             <div style="background: #647C90"></div>
                             <div style="background: #4E4F50"></div>
                         </div>
-                        <span>主题七</span>
+                        <span>暮钢蓝</span>
                     </div>
                 </div>
             </div>
@@ -6183,26 +6182,19 @@
                     </div>
                     
                     <div class="search-row">
-                        <label>包含标签</label>
+                        <label>标签交叉检索</label>
                         <div id="tag-selector" class="tag-selector-container empty"></div>
-                        <div id="tag-filter-summary" class="tag-filter-summary" style="display: none;">
-                            <span>已选择</span>
-                            <span id="selected-tags-count" class="tag-filter-count">0</span>
-                            <span>个标签</span>
-                            <button class="clear-tags-btn" onclick="clearAllTags()">清空选择</button>
-                        </div>
-                    </div>
-
-                    <div class="search-row">
-                        <label>全文关键词</label>
-                        <div class="keywords-input-group">
-                            <div class="keywords-input-wrapper">
-                                <input type="text" id="keywords" placeholder="多个词用空格分隔，如：历史 文化">
-                            </div>
-                            <select id="keywordLogic">
-                                <option value="AND">必须全部包含</option>
-                                <option value="OR">包含任意一个</option>
+                        <div class="keywords-input-group" style="margin-top: 10px;">
+                            <select id="keywordLogic" title="标签逻辑（与 / 或）">
+                                <option value="AND">必须全部包含 (与)</option>
+                                <option value="OR">包含任意一个 (或)</option>
                             </select>
+                            <div id="tag-filter-summary" class="tag-filter-summary" style="display: none;">
+                                <span>已选择</span>
+                                <span id="selected-tags-count" class="tag-filter-count">0</span>
+                                <span>个标签</span>
+                                <button class="clear-tags-btn" onclick="clearAllTags()">清空选择</button>
+                            </div>
                         </div>
                     </div>
 
@@ -6575,6 +6567,34 @@
                         ...entry // 原始数据会覆盖默认值
                     })) : [];
                     renderEntries();
+
+                    // 将最新 entries 压缩为“轻量索引”，写入本地缓存，供下次秒开使用
+                    try {
+                        const indexEntries = entries.map(e => ({
+                            id: e.id,
+                            date: e.date,
+                            mainCat: e.mainCat,
+                            subCat: e.subCat,
+                            title: e.title || '',
+                            keywords: e.keywords || []
+                        }));
+
+                        // 通过 getProjectPath 推断当前 projectId（users/<uid>/projects/<projectId>/...）
+                        const fullPath = getProjectPath(); // 不传子路径，得到完整路径
+                        const match = fullPath && fullPath.match(/projects\/([^\/]+)\//);
+                        const projectId = match ? match[1] : (localStorage.getItem('currentProject') || 'default');
+
+                        const payload = {
+                            version: 1,
+                            projectId,
+                            timestamp: Date.now(),
+                            entries: indexEntries
+                        };
+
+                        localStorage.setItem(`entries_index_${projectId}`, JSON.stringify(payload));
+                    } catch (cacheError) {
+                        console.warn('写入 entries 索引缓存失败:', cacheError);
+                    }
                 } catch (error) {
                     console.error('渲染条目失败:', error);
                 }
@@ -6606,7 +6626,7 @@
             if (window.auth && window.db) {
                 window.auth.onAuthStateChanged(async user => {
                     if (user) {
-                        // 优先使用 sessionStorage 中的项目ID（从 index.html 预加载）
+                        // 1. 统一确定项目 ID（优先 sessionStorage → URL → localStorage）
                         let projectId = sessionStorage.getItem('pendingProjectId');
                         if (!projectId) {
                             const urlParams = new URLSearchParams(window.location.search);
@@ -6615,21 +6635,46 @@
                         if (!projectId) {
                             projectId = localStorage.getItem('currentProject');
                         }
-                        
-                        // 从Firebase实时数据库获取项目名称
-                        const projectRef = window.db.ref(`users/${user.uid}/projects/${projectId}`);
-                        const snapshot = await projectRef.once('value');
-                        const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
-                        
-                        document.title = `${projectName} - 史料数据库`;
-                        const titleEl = document.getElementById('projectTitle');
-                        if (titleEl) titleEl.textContent = projectName;
-                        
-                        showLoading('正在加载数据...'); // 显示加载提示
+                        if (!projectId) {
+                            projectId = 'default';
+                        }
+                        localStorage.setItem('currentProject', projectId);
+
+                        // 2. 优先尝试读取本地缓存的“轻量 entries 列表”，实现秒开
+                        try {
+                            const cacheKey = `entries_index_${projectId}`;
+                            const cached = localStorage.getItem(cacheKey);
+                            if (cached) {
+                                const data = JSON.parse(cached);
+                                const isFresh = Date.now() - data.timestamp < 5 * 60 * 1000; // 5 分钟内
+                                if (isFresh && Array.isArray(data.entries)) {
+                                    entries = data.entries;
+                                    currentPage = 1;
+                                    renderEntries(); // 立即渲染上次的列表
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('读取 entries 索引缓存失败:', e);
+                        }
+
+                        // 3. 启动实时数据监听，在后台同步最新数据
+                        showLoading('正在同步最新数据...');
                         initDataListeners();
                         // initTimeTracking(); // 暂时注释掉，函数未定义
                         restoreCachedSessions();
-                        initAutoSave(); // 添加自动保存功能初始化
+
+                        // 4. 异步获取项目名称并更新标题，不阻塞列表渲染
+                        try {
+                            const projectRef = window.db.ref(`users/${user.uid}/projects/${projectId}`);
+                            const snapshot = await projectRef.once('value');
+                            const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
+
+                            document.title = `${projectName} - 史料数据库`;
+                            const titleEl = document.getElementById('projectTitle');
+                            if (titleEl) titleEl.textContent = projectName;
+                        } catch (nameError) {
+                            console.warn('获取项目名称失败:', nameError);
+                        }
                      
                     } else {
                         // 用户未登录，跳转到登录页面
@@ -6679,8 +6724,7 @@
             startDate: null,
             endDate: null,
             tags: [],
-            keywords: [],
-            keywordLogic: 'AND'
+            tagLogic: 'AND' // 标签交叉检索逻辑：AND/OR
         };
         let currentQuickFilter = null; // 快速筛选状态
         
@@ -8358,29 +8402,31 @@
                 const dateMatch = (!advancedFilter.startDate || entry.date >= advancedFilter.startDate) &&
                                 (!advancedFilter.endDate || entry.date <= advancedFilter.endDate);
                 
-                const tagMatch = advancedFilter.tags.length === 0 || 
-                                advancedFilter.tags.every(tag => (entry.keywords || []).includes(tag));
+                // 标签交叉检索：对 entry.keywords 使用 AND / OR 逻辑
+                const entryTags = entry.keywords || [];
+                let tagMatch = true;
+                if (advancedFilter.tags.length > 0) {
+                    if (advancedFilter.tagLogic === 'AND') {
+                        // 必须包含所有选中标签
+                        tagMatch = advancedFilter.tags.every(tag => entryTags.includes(tag));
+                    } else {
+                        // 只要包含任意一个选中标签即可
+                        tagMatch = advancedFilter.tags.some(tag => entryTags.includes(tag));
+                    }
+                }
                 
-                // 全文搜索：在标题、原文内容、分析解读三个字段中搜索关键词
+                // 全文搜索：在标题、原文内容、分析解读三个字段中搜索关键词（仅用于全文检索模块）
                 const titleText = (entry.title || '').toLowerCase();
                 const contentText = (entry.content || '').toLowerCase();
                 const analysisText = (entry.analysis || '').toLowerCase();
                 const fullText = `${titleText} ${contentText} ${analysisText}`;
-                
-                // 根据逻辑（AND/OR）进行交叉检索
-                const advKeywordMatch = advancedFilter.keywords.length === 0 || 
-                                   (advancedFilter.keywordLogic === 'AND' ? 
-                                    // AND：所有关键词都必须出现在全文中的任意位置
-                                    advancedFilter.keywords.every(kw => fullText.includes(kw.toLowerCase())) :
-                                    // OR：任意一个关键词出现在全文中即可
-                                    advancedFilter.keywords.some(kw => fullText.includes(kw.toLowerCase())));
                 
                 // 全文检索过滤（仅在详细视图模式下生效）
                 const fulltextMatch = currentViewMode === 'list' || // 目录视图：忽略全文检索
                                     fulltextSearch.results.length === 0 || 
                                     fulltextSearch.results.includes(entry.id);
                 
-                return keywordTagMatch && searchMatch && dateMatch && tagMatch && advKeywordMatch && fulltextMatch;
+                return keywordTagMatch && searchMatch && dateMatch && tagMatch && fulltextMatch;
             });
             
             // 应用快速筛选
@@ -8583,16 +8629,11 @@
 
         // 应用高级筛选
         function applyAdvancedSearch() {
-            // 全文关键词：按空格分割，过滤空字符串，并去除首尾空格
-            const keywordsInput = document.getElementById('keywords').value.trim();
-            const keywords = keywordsInput ? keywordsInput.split(/\s+/).filter(Boolean) : [];
-            
             advancedFilter = {
                 startDate: document.getElementById('startDate').value,
                 endDate: document.getElementById('endDate').value,
                 tags: Array.from(document.querySelectorAll('#tag-selector input:checked')).map(cb => cb.value),
-                keywords: keywords,
-                keywordLogic: document.getElementById('keywordLogic').value
+                tagLogic: document.getElementById('keywordLogic').value || 'AND'
             };
             
             currentPage = 1;
@@ -8604,7 +8645,6 @@
             document.getElementById('startDate').value = '';
             document.getElementById('endDate').value = '';
             document.querySelectorAll('#tag-selector input').forEach(cb => cb.checked = false);
-            document.getElementById('keywords').value = '';
             document.getElementById('keywordLogic').value = 'AND';
             clearDates();
             updateTagFilterSummary();
@@ -8613,8 +8653,7 @@
                 startDate: null,
                 endDate: null,
                 tags: [],
-                keywords: [],
-                keywordLogic: 'AND'
+                tagLogic: 'AND'
             };
             
             currentPage = 1;

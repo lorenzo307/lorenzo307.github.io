@@ -82,6 +82,228 @@
                                      0 0 60px rgba(var(--accent-1-rgb), 0.2);
         }
 
+        /* 与 database.html 一致的主题变量（共用 localStorage.selectedTheme） */
+        :root[data-theme="theme1"] {
+            --base-1: #FFF7F1;
+            --base-2: #FFE4C9;
+            --accent-1: #E78895;
+            --accent-2: #BED1CF;
+            --text-primary: #8C454F;
+            --text-secondary: #4F6B68;
+            --accent-1-rgb: 231, 136, 149;
+            --accent-2-rgb: 190, 209, 207;
+            --glass-bg: rgba(255, 247, 241, 0.88);
+            --glass-border: rgba(231, 136, 149, 0.15);
+            --primary-gradient: linear-gradient(135deg, #E78895 0%, #BED1CF 100%);
+            --accent-1-15: rgba(231, 136, 149, 0.15);
+            --accent-1-25: rgba(231, 136, 149, 0.25);
+            --accent-2-15: rgba(190, 209, 207, 0.15);
+            --base-1-80: rgba(255, 247, 241, 0.8);
+            --shadow-soft: 0 8px 30px rgba(231, 136, 149, 0.08);
+            --shadow-hover: 0 15px 40px rgba(231, 136, 149, 0.12);
+            --shadow-card: 0 5px 20px rgba(231, 136, 149, 0.05);
+            --depth-1: 0 4px 15px rgba(231, 136, 149, 0.05);
+            --depth-2: 0 10px 30px rgba(231, 136, 149, 0.08);
+            --depth-3: 0 15px 40px rgba(231, 136, 149, 0.12);
+        }
+        :root[data-theme="theme2"] {
+            --base-1: #F8F4E8;
+            --base-2: #F0E6D2;
+            --accent-1: #8B7355;
+            --accent-2: #6B5B4D;
+            --text-primary: #4A3B32;
+            --text-secondary: #6B5B4D;
+            --accent-1-rgb: 139, 115, 85;
+            --accent-2-rgb: 107, 91, 77;
+            --glass-bg: rgba(248, 244, 232, 0.88);
+            --glass-border: rgba(139, 115, 85, 0.15);
+            --primary-gradient: linear-gradient(135deg, #8B7355 0%, #6B5B4D 100%);
+            --accent-1-15: rgba(139, 115, 85, 0.15);
+            --accent-1-25: rgba(139, 115, 85, 0.25);
+            --accent-2-15: rgba(107, 91, 77, 0.15);
+            --base-1-80: rgba(248, 244, 232, 0.8);
+            --shadow-soft: 0 8px 30px rgba(139, 115, 85, 0.08);
+            --shadow-hover: 0 15px 40px rgba(139, 115, 85, 0.12);
+            --shadow-card: 0 5px 20px rgba(139, 115, 85, 0.05);
+            --depth-1: 0 4px 15px rgba(139, 115, 85, 0.05);
+            --depth-2: 0 10px 30px rgba(139, 115, 85, 0.08);
+            --depth-3: 0 15px 40px rgba(139, 115, 85, 0.12);
+        }
+        :root[data-theme="theme3"] {
+            --base-1: #F8F5F0;
+            --base-2: #F0EBE2;
+            --accent-1: #D7C4B8;
+            --accent-2: #B8A89E;
+            --text-primary: #5D4037;
+            --text-secondary: #795548;
+            --accent-1-rgb: 215, 196, 184;
+            --accent-2-rgb: 184, 168, 158;
+            --glass-bg: rgba(248, 245, 240, 0.92);
+            --glass-border: rgba(215, 196, 184, 0.15);
+            --primary-gradient: linear-gradient(135deg, #D7C4B8 0%, #B8A89E 100%);
+            --accent-1-15: rgba(215, 196, 184, 0.15);
+            --accent-1-25: rgba(215, 196, 184, 0.25);
+            --accent-2-15: rgba(184, 168, 158, 0.15);
+            --base-1-80: rgba(248, 245, 240, 0.8);
+            --shadow-soft: 0 8px 30px rgba(215, 196, 184, 0.08);
+            --shadow-hover: 0 15px 40px rgba(215, 196, 184, 0.12);
+            --shadow-card: 0 5px 20px rgba(215, 196, 184, 0.05);
+            --depth-1: 0 4px 15px rgba(215, 196, 184, 0.05);
+            --depth-2: 0 10px 30px rgba(215, 196, 184, 0.08);
+            --depth-3: 0 15px 40px rgba(215, 196, 184, 0.12);
+        }
+        :root[data-theme="theme4"] {
+            --base-1: #FFFFFF;
+            --base-2: #F5F5F5;
+            --accent-1: #757575;
+            --accent-2: #424242;
+            --text-primary: #212121;
+            --text-secondary: #616161;
+            --accent-1-rgb: 117, 117, 117;
+            --accent-2-rgb: 66, 66, 66;
+            --glass-bg: rgba(255, 255, 255, 0.92);
+            --glass-border: rgba(117, 117, 117, 0.15);
+            --primary-gradient: linear-gradient(135deg, #757575 0%, #424242 100%);
+            --accent-1-15: rgba(117, 117, 117, 0.15);
+            --accent-1-25: rgba(117, 117, 117, 0.25);
+            --accent-2-15: rgba(66, 66, 66, 0.15);
+            --base-1-80: rgba(255, 255, 255, 0.8);
+            --shadow-soft: 0 8px 30px rgba(117, 117, 117, 0.08);
+            --shadow-hover: 0 15px 40px rgba(117, 117, 117, 0.12);
+            --shadow-card: 0 5px 20px rgba(117, 117, 117, 0.05);
+            --depth-1: 0 4px 15px rgba(117, 117, 117, 0.05);
+            --depth-2: 0 10px 30px rgba(117, 117, 117, 0.08);
+            --depth-3: 0 15px 40px rgba(117, 117, 117, 0.12);
+        }
+        :root[data-theme="theme5"] {
+            --base-1: #DDE0CD;
+            --base-2: #D4D7C4;
+            --accent-1: #5F7A85;
+            --accent-2: #AEC0CD;
+            --text-primary: #2C3E50;
+            --text-secondary: #5F7A85;
+            --accent-1-rgb: 95, 122, 133;
+            --accent-2-rgb: 174, 192, 205;
+            --glass-bg: rgba(221, 224, 205, 0.92);
+            --glass-border: rgba(95, 122, 133, 0.15);
+            --primary-gradient: linear-gradient(135deg, #5F7A85 0%, #AEC0CD 100%);
+            --accent-1-15: rgba(95, 122, 133, 0.15);
+            --accent-1-25: rgba(95, 122, 133, 0.25);
+            --accent-2-15: rgba(174, 192, 205, 0.15);
+            --base-1-80: rgba(221, 224, 205, 0.8);
+            --shadow-soft: 0 8px 30px rgba(95, 122, 133, 0.08);
+            --shadow-hover: 0 15px 40px rgba(95, 122, 133, 0.12);
+            --shadow-card: 0 5px 20px rgba(95, 122, 133, 0.05);
+            --depth-1: 0 4px 15px rgba(95, 122, 133, 0.05);
+            --depth-2: 0 10px 30px rgba(95, 122, 133, 0.08);
+            --depth-3: 0 15px 40px rgba(95, 122, 133, 0.12);
+        }
+        :root[data-theme="theme6"] {
+            --base-1: #F6F0E7;
+            --base-2: #eee8df;
+            --accent-1: #A9BA88;
+            --accent-2: #8FA26E;
+            --text-primary: #33691E;
+            --text-secondary: #558B2F;
+            --accent-1-rgb: 169, 186, 136;
+            --accent-2-rgb: 143, 162, 110;
+            --glass-bg: rgba(246, 240, 231, 0.92);
+            --glass-border: rgba(169, 186, 136, 0.15);
+            --primary-gradient: linear-gradient(135deg, #A9BA88 0%, #8FA26E 100%);
+            --accent-1-15: rgba(169, 186, 136, 0.15);
+            --accent-1-25: rgba(169, 186, 136, 0.25);
+            --accent-2-15: rgba(143, 162, 110, 0.15);
+            --base-1-80: rgba(246, 240, 231, 0.8);
+            --shadow-soft: 0 8px 30px rgba(169, 186, 136, 0.08);
+            --shadow-hover: 0 15px 40px rgba(169, 186, 136, 0.12);
+            --shadow-card: 0 5px 20px rgba(169, 186, 136, 0.05);
+            --depth-1: 0 4px 15px rgba(169, 186, 136, 0.05);
+            --depth-2: 0 10px 30px rgba(169, 186, 136, 0.08);
+            --depth-3: 0 15px 40px rgba(169, 186, 136, 0.12);
+        }
+        :root[data-theme="theme7"] {
+            --base-1: #E2DED0;
+            --base-2: #dad6c8;
+            --accent-1: #647C90;
+            --accent-2: #4E4F50;
+            --text-primary: #263238;
+            --text-secondary: #455A64;
+            --accent-1-rgb: 100, 124, 144;
+            --accent-2-rgb: 78, 79, 80;
+            --glass-bg: rgba(226, 222, 208, 0.92);
+            --glass-border: rgba(100, 124, 144, 0.15);
+            --primary-gradient: linear-gradient(135deg, #647C90 0%, #4E4F50 100%);
+            --accent-1-15: rgba(100, 124, 144, 0.15);
+            --accent-1-25: rgba(100, 124, 144, 0.25);
+            --accent-2-15: rgba(78, 79, 80, 0.15);
+            --base-1-80: rgba(226, 222, 208, 0.8);
+            --shadow-soft: 0 8px 30px rgba(100, 124, 144, 0.08);
+            --shadow-hover: 0 15px 40px rgba(100, 124, 144, 0.12);
+            --shadow-card: 0 5px 20px rgba(100, 124, 144, 0.05);
+            --depth-1: 0 4px 15px rgba(100, 124, 144, 0.05);
+            --depth-2: 0 10px 30px rgba(100, 124, 144, 0.08);
+            --depth-3: 0 15px 40px rgba(100, 124, 144, 0.12);
+        }
+
+        /* 主题切换过渡（较慢过渡更流畅） */
+        html.theme-transitioning,
+        html.theme-transitioning body,
+        html.theme-transitioning .stat-card,
+        html.theme-transitioning .content-card,
+        html.theme-transitioning .btn,
+        html.theme-transitioning .user-info {
+            transition: background 1.35s var(--ease-smooth), color 1.35s var(--ease-smooth), border-color 1.35s var(--ease-smooth), box-shadow 1.35s var(--ease-smooth) !important;
+        }
+
+        /* 主题选择器（与 database 统一风格） */
+        .page-header .theme-selector {
+            position: relative;
+            margin-left: 12px;
+        }
+        .page-header .theme-selector .theme-options {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            min-width: 220px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-medium);
+            padding: 12px;
+            box-shadow: var(--shadow-hover);
+            z-index: 1000;
+        }
+        .page-header .theme-selector .theme-options.show {
+            display: block;
+        }
+        .page-header .theme-selector .theme-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: var(--radius-small);
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            margin-bottom: 4px;
+        }
+        .page-header .theme-selector .theme-option:last-child { margin-bottom: 0; }
+        .page-header .theme-selector .theme-option:hover {
+            background: var(--accent-1-15);
+        }
+        .page-header .theme-selector .theme-preview {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            flex-shrink: 0;
+        }
+        .page-header .theme-selector .theme-preview div { flex: 1; }
+
         /* 基础重置与字体 */
         * {
             margin: 0;
@@ -1675,6 +1897,67 @@
         .btn, .stat-card, .content-card {
             animation: breathe 4s ease-in-out infinite;
         }
+
+        /* ==================== 视差/3D 转场增强 ==================== */
+
+        /* 视差层定义 */
+        .parallax-layer-1 {
+            transform: translateZ(0);
+            will-change: transform, translate;
+        }
+
+        .parallax-layer-2 {
+            transform: translateZ(-10px);
+            will-change: transform, translate;
+        }
+
+        .parallax-layer-3 {
+            transform: translateZ(-20px);
+            will-change: transform, translate;
+        }
+
+        /* 3D透视容器 */
+        .perspective-container {
+            perspective: 1000px;
+            transform-style: preserve-3d;
+        }
+
+        /* 视差背景容器 */
+        .parallax-container {
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+        }
+
+        /* 鼠标移动视差效果 */
+        .mouse-parallax {
+            transition: transform 0.1s ease-out;
+        }
+
+        /* 滚动视差效果 */
+        .scroll-parallax {
+            will-change: transform;
+        }
+
+        /* 3D卡片效果增强 */
+        .stat-card, .content-card {
+            transform-style: preserve-3d;
+            transform: translateZ(0);
+            will-change: transform, translate;
+        }
+
+        /* 卡片内元素3D分层 */
+        .stat-icon {
+            transform: translateZ(20px);
+        }
+
+        .stat-value {
+            transform: translateZ(15px);
+        }
+
+        .stat-label {
+            transform: translateZ(10px);
+        }
     </style>
 </head>
 <body>
@@ -1710,6 +1993,76 @@
                             <i class="fas fa-sync-alt"></i> 同步
                         </button>
                     </div>
+                    <div class="theme-selector">
+                        <button type="button" class="btn btn-outline btn-transition" onclick="toggleThemeOptions()">
+                            <i class="fas fa-palette"></i> 主题
+                        </button>
+                        <div class="theme-options" id="themeOptions">
+                            <div class="theme-option" onclick="changeTheme('theme1')">
+                                <div class="theme-preview">
+                                    <div style="background:#FFF7F1"></div>
+                                    <div style="background:#FFE4C9"></div>
+                                    <div style="background:#E78895"></div>
+                                    <div style="background:#BED1CF"></div>
+                                </div>
+                                <span>活力粉</span>
+                            </div>
+                            <div class="theme-option" onclick="changeTheme('theme2')">
+                                <div class="theme-preview">
+                                    <div style="background:#F8F4E8"></div>
+                                    <div style="background:#F0E6D2"></div>
+                                    <div style="background:#8B7355"></div>
+                                    <div style="background:#6B5B4D"></div>
+                                </div>
+                                <span>暖咖棕</span>
+                            </div>
+                            <div class="theme-option" onclick="changeTheme('theme3')">
+                                <div class="theme-preview">
+                                    <div style="background:#F8F5F0"></div>
+                                    <div style="background:#F0EBE2"></div>
+                                    <div style="background:#D7C4B8"></div>
+                                    <div style="background:#B8A89E"></div>
+                                </div>
+                                <span>雾米灰</span>
+                            </div>
+                            <div class="theme-option" onclick="changeTheme('theme4')">
+                                <div class="theme-preview">
+                                    <div style="background:#FFFFFF"></div>
+                                    <div style="background:#F5F5F5"></div>
+                                    <div style="background:#757575"></div>
+                                    <div style="background:#424242"></div>
+                                </div>
+                                <span>极简灰</span>
+                            </div>
+                            <div class="theme-option" onclick="changeTheme('theme5')">
+                                <div class="theme-preview">
+                                    <div style="background:#DDE0CD"></div>
+                                    <div style="background:#D4D7C4"></div>
+                                    <div style="background:#5F7A85"></div>
+                                    <div style="background:#AEC0CD"></div>
+                                </div>
+                                <span>青岚蓝</span>
+                            </div>
+                            <div class="theme-option" onclick="changeTheme('theme6')">
+                                <div class="theme-preview">
+                                    <div style="background:#F6F0E7"></div>
+                                    <div style="background:#eee8df"></div>
+                                    <div style="background:#A9BA88"></div>
+                                    <div style="background:#8FA26E"></div>
+                                </div>
+                                <span>森野绿</span>
+                            </div>
+                            <div class="theme-option" onclick="changeTheme('theme7')">
+                                <div class="theme-preview">
+                                    <div style="background:#E2DED0"></div>
+                                    <div style="background:#dad6c8"></div>
+                                    <div style="background:#647C90"></div>
+                                    <div style="background:#4E4F50"></div>
+                                </div>
+                                <span>暮钢蓝</span>
+                            </div>
+                        </div>
+                    </div>
                     <div class="user-info">
                         <div class="user-avatar" id="userAvatar">A</div>
                         <div class="user-details">
@@ -1724,12 +2077,12 @@
             </div>
 
             <!-- 统计卡片区域 -->
-            <div class="stats-grid" id="statsContainer">
+            <div class="stats-grid parallax-container" id="statsContainer">
                 <!-- 将通过JS动态生成 -->
             </div>
 
             <!-- 项目列表卡片 -->
-            <div class="content-card">
+            <div class="content-card parallax-layer-1">
                 <div class="card-header">
                     <h2 class="card-title">
                         <i class="fas fa-list-check"></i>
@@ -2789,12 +3142,27 @@
 
         // 优化的导航函数 - 保存页面状态以便快速返回
         function navigateToDatabase(projectId) {
-            // 触发页面退出转场效果
-            triggerPageTransition('exit');
-            
+            // 获取项目名称用于显示
+            const projectToNavigate = projects.find(p => p.id === projectId);
+            const projectName = projectToNavigate ? projectToNavigate.name : `ID: ${projectId}`;
+
             // 显示即时加载提示，提升感知速度
-            showLoading('正在跳转...');
-            
+            showLoading('正在进入项目: ' + projectName);
+
+            // 创建视差转场效果
+            const appContainer = document.getElementById('appContainer');
+            const overlay = document.getElementById('pageTransitionOverlay');
+
+            // 添加退出类
+            if (appContainer) {
+                appContainer.classList.add('main-page-exit');
+            }
+
+            // 显示波浪遮罩层
+            if (overlay) {
+                overlay.classList.add('active');
+            }
+
             // 保存当前页面状态到 sessionStorage，以便返回时快速恢复
             const state = {
                 projects: projects,  // 保存当前项目数据
@@ -2806,25 +3174,25 @@
                 scrollY: window.scrollY
             };
             sessionStorage.setItem('cachedIndexState', JSON.stringify(state));
-            
+
             // 使用 requestIdleCallback 优化跳转时机（如果支持）
             const navigate = () => {
                 // 保存项目ID到sessionStorage，database.html可以立即使用
                 sessionStorage.setItem('pendingProjectId', projectId);
                 sessionStorage.setItem('navigationTimestamp', Date.now().toString());
-                
+
                 // 延迟跳转以显示转场效果
                 setTimeout(() => {
                     window.location.href = `database.html?project=${projectId}`;
-                }, 400);
+                }, 600); // 增加延迟时间让转场效果更明显
             };
-            
+
             // 如果浏览器支持，在下一个空闲时间执行跳转
             if (window.requestIdleCallback) {
-                requestIdleCallback(navigate, { timeout: 100 });
+                requestIdleCallback(navigate, { timeout: 150 });
             } else {
-                // 立即执行，但使用 setTimeout 让加载提示先显示
-                setTimeout(navigate, 50);
+                // 立即执行，但使用 setTimeout 让转场效果先显示
+                setTimeout(navigate, 200);
             }
         }
         
@@ -2856,10 +3224,76 @@
             });
         }
 
+        // 智能预加载系统
+        function initSmartPreloading() {
+            // 预加载关键页面
+            const criticalPages = ['database.html', 'login.html'];
+            
+            criticalPages.forEach(page => {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = page;
+                link.as = 'document';
+                document.head.appendChild(link);
+            });
+            
+            // 监听项目链接的悬停（兼容动态渲染）
+            document.addEventListener('mouseover', function(e) {
+                const projectLink = e.target.closest('a[onclick*="navigateToDatabase"]');
+                if (projectLink) {
+                    // 从onclick属性中提取项目ID
+                    const onclick = projectLink.getAttribute('onclick') || '';
+                    const projectIdMatch = onclick.match(/'([^']+)'/);
+                    if (projectIdMatch) {
+                        preloadDatabasePage(projectIdMatch[1]);
+                    }
+                }
+            }, { passive: true });
+        }
+
+        /*********************
+         * 主题切换（与 database 共用 localStorage.selectedTheme）
+         *********************/
+        function toggleThemeOptions() {
+            const options = document.getElementById('themeOptions');
+            if (options) options.classList.toggle('show');
+        }
+        function changeTheme(themeName) {
+            document.documentElement.classList.add('theme-transitioning');
+            document.body.classList.add('theme-transitioning');
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    document.documentElement.setAttribute('data-theme', themeName);
+                    localStorage.setItem('selectedTheme', themeName);
+                    setTimeout(function() {
+                        document.documentElement.classList.remove('theme-transitioning');
+                        document.body.classList.remove('theme-transitioning');
+                    }, 1500); // 与 CSS 过渡时长匹配，确保动画完成
+                });
+            });
+            toggleThemeOptions();
+        }
+
         /*********************
          * 交互效果
          *********************/
         document.addEventListener('DOMContentLoaded', function() {
+            // 应用已保存的主题（与 database 一致）
+            var savedTheme = localStorage.getItem('selectedTheme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+            // 点击页面其他区域关闭主题选择器
+            document.addEventListener('click', function(e) {
+                var sel = document.querySelector('.theme-selector');
+                var opt = document.getElementById('themeOptions');
+                if (sel && opt && !sel.contains(e.target)) {
+                    opt.classList.remove('show');
+                }
+            });
+
+            initSmartPreloading();
+
             // 为按钮添加点击涟漪效果
             const buttons = document.querySelectorAll('.btn');
             buttons.forEach(button => {
@@ -2978,6 +3412,104 @@
                     }, delay * 1000);
                 });
             }, 100);
+
+            /*********************
+             * 视差效果系统
+             *********************/
+
+            // 鼠标移动视差效果
+            function initMouseParallax() {
+                const parallaxElements = document.querySelectorAll('.parallax-layer-1, .parallax-layer-2, .parallax-layer-3');
+
+                document.addEventListener('mousemove', function(e) {
+                    const mouseX = e.clientX / window.innerWidth;
+                    const mouseY = e.clientY / window.innerHeight;
+
+                    parallaxElements.forEach(element => {
+                        const layer = parseInt(element.classList.toString().match(/parallax-layer-(\d)/)?.[1] || '1');
+                        const depth = layer * 15; // 深度因子
+
+                        const moveX = (mouseX - 0.5) * depth;
+                        const moveY = (mouseY - 0.5) * depth;
+
+                        // 使用独立 translate 属性，尽量避免覆盖原有 transform
+                        element.style.translate = `${moveX}px ${moveY}px`;
+                    });
+                }, { passive: true });
+            }
+
+            // 滚动视差效果
+            function initScrollParallax() {
+                const parallaxElements = document.querySelectorAll('.scroll-parallax');
+
+                function updateParallax() {
+                    const scrollTop = window.pageYOffset;
+
+                    parallaxElements.forEach(element => {
+                        const speed = parseFloat(element.dataset.speed || '0.5');
+                        const yPos = -(scrollTop * speed);
+                        element.style.transform = `translate3d(0, ${yPos}px, 0)`;
+                    });
+                }
+
+                window.addEventListener('scroll', updateParallax, { passive: true });
+                updateParallax(); // 初始更新
+            }
+
+            // 陀螺仪视差效果（移动设备）
+            function initGyroParallax() {
+                if (window.DeviceOrientationEvent) {
+                    let lastBeta = 0;
+                    let lastGamma = 0;
+
+                    window.addEventListener('deviceorientation', function(e) {
+                        const parallaxElements = document.querySelectorAll('.parallax-layer-1, .parallax-layer-2, .parallax-layer-3');
+
+                        // 平滑处理陀螺仪数据
+                        const beta = e.beta || 0;
+                        const gamma = e.gamma || 0;
+
+                        lastBeta = lastBeta * 0.7 + beta * 0.3;
+                        lastGamma = lastGamma * 0.7 + gamma * 0.3;
+
+                        parallaxElements.forEach(element => {
+                            const layer = parseInt(element.classList.toString().match(/parallax-layer-(\d)/)?.[1] || '1');
+                            const depth = layer * 2; // 移动设备减少深度
+
+                            const moveX = (lastGamma / 90) * depth * 20;
+                            const moveY = (lastBeta / 90) * depth * 20;
+
+                            element.style.translate = `${moveX}px ${moveY}px`;
+                        });
+                    }, { passive: true });
+                }
+            }
+
+            initMouseParallax();
+            initScrollParallax();
+            initGyroParallax();
+
+            // 为卡片添加深度感知
+            const cards = document.querySelectorAll('.stat-card, .content-card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+
+                    const rotateY = ((x - centerX) / centerX) * 3;
+                    const rotateX = ((centerY - y) / centerY) * 3;
+
+                    this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
+                });
+            });
         });
         
         /*********************

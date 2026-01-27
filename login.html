@@ -373,10 +373,16 @@
                     if (authContainer) {
                         authContainer.classList.remove('auth-page-enter');
                         authContainer.classList.add('auth-page-exit');
+                        
+                        // 显示加载动画
+                        document.getElementById('loading').style.display = 'flex';
+                        document.getElementById('loadingText').textContent = '登录成功，正在跳转...';
                     }
+                    
+                    // 延迟跳转以显示转场效果
                     setTimeout(() => {
                         window.location.href = 'index.html';
-                    }, 500);
+                    }, 800); // 增加延迟时间让转场效果更明显
                 } else {
                     // 用户未登录，显示登录界面（转场效果已在HTML中设置）
                 }

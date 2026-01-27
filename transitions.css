@@ -1002,3 +1002,36 @@
         animation: none !important;
     }
 }
+
+/* ==================== 视差动效增强（页面跳转丝滑感） ==================== */
+
+/* 卡片悬停视差效果 */
+.stat-card, .content-card, .glass-surface {
+    transition: transform 0.4s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1)),
+                box-shadow 0.4s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+}
+
+/* 深度感知视差效果 */
+.parallax-layer-1 {
+    transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.parallax-layer-2 {
+    transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.parallax-layer-3 {
+    transition: transform 1.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* 页面滚动视差效果（可选） */
+.parallax-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 120%;
+    background: linear-gradient(135deg, var(--base-1) 0%, var(--base-2) 100%);
+    z-index: -1;
+    transform: translateZ(-1px) scale(2);
+}
