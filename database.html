@@ -1335,7 +1335,7 @@
         }
         
         .sidebar {
-            height: calc(100vh - 120px);
+            min-height: calc(100vh - 120px);
             position: sticky;
             top: 80px;
             z-index: 50; /* 设置明确的 z-index，确保在搜索结果容器 (200) 之下 */
@@ -5035,14 +5035,14 @@
         }
         /* ========== 新增功能样式 ========== */
         
-        /* 统计数据卡片 */
+        /* 统计数据卡片（已不再统计分类数量） */
         .stats-panel {
             margin-bottom: 24px;
         }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(3, 1fr); /* 固定三列 */
             gap: 20px;
             margin: 20px 0;
         }
@@ -5061,8 +5061,8 @@
         }
         
         .sidebar .stats-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
             margin: 0;
         }
         
@@ -5416,7 +5416,7 @@
             }
 
             .sidebar .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
+                grid-template-columns: repeat(3, 1fr);
                 gap: 16px;
             }
 
@@ -5548,7 +5548,7 @@
             }
 
             .sidebar .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(3, 1fr);
                 gap: 14px;
             }
 
@@ -5690,11 +5690,7 @@
              
              /* 响应式统计卡片 */
              .stats-grid {
-                 grid-template-columns: 1fr 1fr;
-             }
-             
-             .sidebar .stats-grid {
-                 grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(3, 1fr);
              }
              
              .sidebar .sidebar-actions {
@@ -6282,7 +6278,7 @@
             <!-- 数据统计面板 -->
             <div id="stats-panel" class="stats-panel glass-container">
                 <h3 style="margin: 0 0 18px 0; text-align: center;">数据统计</h3>
-                <div class="stats-grid" style="grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="stats-grid">
                     <div class="stat-card">
                         <span class="stat-value" id="stat-total">0</span>
                         <span class="stat-label">总条目</span>
@@ -6290,10 +6286,6 @@
                     <div class="stat-card">
                         <span class="stat-value" id="stat-wordcount">0</span>
                         <span class="stat-label">总字数</span>
-                    </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-categories">0</span>
-                        <span class="stat-label">分类数</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-value" id="stat-keywords">0</span>
@@ -6308,7 +6300,7 @@
                 <button class="primary-btn" onclick="showStatisticsPanel()">详细统计</button>
                 <button class="primary-btn" onclick="showTimelineView()">时间线视图</button>
                 <button class="primary-btn" onclick="showDraftBox()">草稿箱</button>
-                <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
+                <button class="primary-btn" onclick="updateAllEntryCodes()" title="根据日期重新生成所有条目编号">更新条目代码</button>
                 <button class="primary-btn" onclick="showKeywordEditor()">关键词编辑器</button>
                 <button class="primary-btn" onclick="showLogViewer()">工作日志</button>
                 <button class="primary-btn" onclick="showRecycleBin()">回收站</button>
@@ -6338,18 +6330,6 @@
                 <div class="form-row">
                     <label>日期：</label>
                     <input type="date" name="date" required>
-                </div>
-
-                <div class="form-row">
-                    <label>主类：</label>
-                    <select name="main-cat" onchange="updateSubCats()" required>
-                        <!-- 动态加载选项 -->
-                    </select>
-                </div>
-
-                <div class="form-row">
-                    <label>子类：</label>
-                    <select name="sub-cat" id="sub-cat" required></select>
                 </div>
 
                 <div class="form-row">
@@ -6388,30 +6368,6 @@
             </form>
         </div>
 
-
-        <!-- 分类管理弹窗 -->
-        <div id="category-manager" class="category-manager">
-            <h3>分类管理</h3>
-            <div class="category-section">
-                <h4>主类管理</h4>
-                <div id="main-categories"></div>
-                <button class="primary-btn" onclick="addMainCategory()">＋ 添加主类</button>
-            </div>
-
-            <div class="category-section">
-                <h4>子类管理</h4>
-                <div id="sub-categories"></div>
-            </div>
-
-            <div class="action-buttons">
-                <button class="primary-btn btn-icon-only" onclick="saveCategories()" title="保存" aria-label="保存">
-                    <span class="material-icons">save</span>
-                </button>
-                <button class="danger-btn btn-icon-only" onclick="hideCategoryManager()" title="关闭" aria-label="关闭">
-                    <span class="material-icons">close</span>
-                </button>
-            </div>
-        </div>
 
         <!-- 关键词编辑器弹窗 -->
         <div id="keyword-editor" class="category-manager" style="display: none; width: 900px; max-width: 95vw;">
@@ -6557,7 +6513,6 @@
 
         // 全局数据监听器
         let unsubscribeEntries = null;
-        let unsubscribeCategories = null;
 
         /* 性能模式：减弱模糊/阴影、隐藏 3D 背景，降低内存与重绘 */
         function enablePerformanceMode() {
@@ -6655,8 +6610,7 @@
                             const write = () => {
                                 try {
                                     const indexEntries = entries.map(e => ({
-                                        id: e.id, date: e.date, mainCat: e.mainCat,
-                                        subCat: e.subCat, title: e.title || '', keywords: e.keywords || []
+                                        id: e.id, date: e.date, title: e.title || '', keywords: e.keywords || []
                                     }));
                                     const fullPath = getProjectPath();
                                     const match = fullPath && fullPath.match(/projects\/([^\/]+)\//);
@@ -6674,7 +6628,7 @@
                     window._flushEntriesCache = function() {
                         if (window._cacheWriteTimer) { clearTimeout(window._cacheWriteTimer); window._cacheWriteTimer = null; }
                         try {
-                            const idx = entries.map(e => ({ id: e.id, date: e.date, mainCat: e.mainCat, subCat: e.subCat, title: e.title || '', keywords: e.keywords || [] }));
+                            const idx = entries.map(e => ({ id: e.id, date: e.date, title: e.title || '', keywords: e.keywords || [] }));
                             const m = getProjectPath() && getProjectPath().match(/projects\/([^\/]+)\//);
                             const pid = m ? m[1] : (localStorage.getItem('currentProject') || 'default');
                             localStorage.setItem('entries_index_' + pid, JSON.stringify({ version: 1, projectId: pid, timestamp: Date.now(), entries: idx }));
@@ -6693,25 +6647,6 @@
                 showAlert('加载数据失败: ' + error.message, 'error');
             });
 
-            let categoriesRenderDebounceTimer = null;
-            const debouncedCategoriesUpdate = () => {
-                if (categoriesRenderDebounceTimer) clearTimeout(categoriesRenderDebounceTimer);
-                categoriesRenderDebounceTimer = setTimeout(() => {
-                    categoriesRenderDebounceTimer = null;
-                    updateCategorySelectors();
-                    renderEntries();
-                }, 80);
-            };
-            unsubscribeCategories = window.db.ref(getProjectPath('categories')).on('value', (snapshot) => {
-                try {
-                    categories = snapshot.val() || { main: {} };
-                    debouncedCategoriesUpdate();
-                } catch (error) {
-                    console.error('渲染分类失败:', error);
-                }
-            }, (error) => {
-                console.error('加载分类数据失败:', error);
-            });
         }
 
         // 等待 Firebase 就绪后再初始化认证监听
@@ -6794,7 +6729,6 @@
 
         // 全局变量
         let entries = [];
-        let categories = { main: {} };
         let quill = null; // 恢复 Quill 实例
         let logQuill = null; // 恢复 Quill 实例
         let currentPage = 1;
@@ -7432,34 +7366,9 @@
                     draftId = editingId;
                     baseId = editingId.split('-').slice(0, -1).join('-');
                 } 
-                // 新建模式：尝试从表单数据生成基础ID
+                // 新建模式：不再根据主类/子类生成 entryBaseId，仅尝试使用当前草稿ID
                 else {
-                    const formData = getFormData();
-                    if (formData.date && formData.mainCat && formData.subCat) {
-                        baseId = await generateBaseId({
-                            date: formData.date,
-                            mainCat: formData.mainCat,
-                            subCat: formData.subCat
-                        });
-                        
-                        // 查找是否有匹配的草稿
-                        const draftsRef = db.ref(getProjectPath('drafts'));
-                        const snapshot = await draftsRef.orderByChild('entryBaseId')
-                            .equalTo(baseId)
-                            .once('value');
-                        
-                        const drafts = snapshot.val();
-                        if (drafts) {
-                            // 如果找到多个草稿，使用最新的
-                            const latestDraft = Object.entries(drafts)
-                                .sort(([,a], [,b]) => b.updatedAt - a.updatedAt)[0];
-                            draftId = latestDraft[0];
-                        } else {
-                            draftId = currentDraftId;
-                        }
-                    } else {
-                        draftId = currentDraftId;
-                    }
+                    draftId = currentDraftId || localStorage.getItem('currentDraftId') || null;
                 }
                 
                 if (draftId) {
@@ -7471,7 +7380,7 @@
                         const saveTime = new Date(draft.updatedAt).toLocaleString();
                         const message = editingId ? 
                             `检测到本条目（${draftId}）的未提交修改（最后保存：${saveTime}），是否恢复？` :
-                            `检测到相同编号（${baseId || '临时ID'}）的未提交草稿（最后保存：${saveTime}），是否恢复？`;
+                            `检测到未提交草稿（最后保存：${saveTime}），是否恢复？`;
                             
                         if (confirm(message)) {
                             await populateForm(draft);
@@ -7505,21 +7414,9 @@
         }
 
         // 分类管理
-        function showCategoryManager() {
-            const manager = document.getElementById('category-manager');
-            manager.style.display = 'block';
-            manager.classList.remove('closing');
-            renderCategoryManager();
-        }
+        function showCategoryManager() {}
 
-        function hideCategoryManager() {
-            const manager = document.getElementById('category-manager');
-            manager.classList.add('closing');
-            setTimeout(() => {
-                manager.style.display = 'none';
-                manager.classList.remove('closing');
-            }, 200);
-        }
+        function hideCategoryManager() {}
 
         // ========== 关键词编辑器 ==========
         let keywordEditorSelectedKeyword = null;
@@ -7671,228 +7568,214 @@
             }
         }
 
-        function renderCategoryManager() {
-            const container = document.getElementById('main-categories');
-            container.innerHTML = Object.entries(categories.main)
-                .map(([code, data]) => `
-                    <div class="category-item">
-                        <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
-                        <button class="danger-btn btn-icon-only" onclick="removeMainCategory('${code}')" title="删除" aria-label="删除">
-                            <span class="material-icons">delete</span>
-                        </button>
-                        <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
-                    </div>
-                    ${data.sub.map(sub => `
-                        <div class="category-item" style="margin-left:20px">
-                            <input value="${sub.split('-')[1]}" 
-                                   onchange="updateSubCategory('${code}', '${sub}', this.value)">
-                            <button class="danger-btn btn-icon-only" 
-                                    onclick="removeSubCategory('${code}', '${sub}')" title="删除" aria-label="删除">
-                                <span class="material-icons">delete</span>
-                            </button>
+        // 分类管理相关功能已移除
+
+        /**
+         * 批量更新所有条目的 ID，使其符合新规则：YYYYMMDD-序号（按条目日期每天单独计数）
+         * 注意：仅适用于已经迁移到以 date 为基础的 ID 方案的项目。
+         * 增强：使用弹窗实时显示更新进度。
+         */
+        async function updateAllEntryCodes() {
+            if (!confirm('此操作将根据条目日期重新生成所有条目的编号（格式：YYYYMMDD-序号）。\n建议先导出备份，再执行。是否继续？')) {
+                return;
+            }
+
+            // 创建或获取进度弹窗
+            let dialog = document.getElementById('update-codes-dialog');
+            if (!dialog) {
+                dialog = document.createElement('div');
+                dialog.className = 'form-popup';
+                dialog.id = 'update-codes-dialog';
+                dialog.style.display = 'block';
+                dialog.style.width = '90%';
+                dialog.style.maxWidth = '600px';
+                dialog.innerHTML = `
+                    <h2>更新条目代码</h2>
+                    <div class="form-content" style="max-height: 50vh; overflow-y: auto;">
+                        <p id="update-codes-status">正在准备...</p>
+                        <p id="update-codes-detail" style="color: var(--text-secondary); font-size: 0.9em;"></p>
+                        <div id="update-codes-progress-bar" style="margin-top: 12px; height: 6px; border-radius: 999px; background: rgba(0,0,0,0.08); overflow: hidden;">
+                            <div id="update-codes-progress-inner" style="width:0%; height:100%; background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); transition: width 0.2s;"></div>
                         </div>
-                    `).join('')}
-                `).join('');
-        }
-
-        // 分类操作
-        function addMainCategory() {
-            const code = prompt("请输入主类代码（2位大写字母）：");
-            // 验证：必须是2位大写字母
-            if (code && /^[A-Z]{2}$/.test(code)) {
-                categories.main[code] = { name: '新分类', sub: [] };
-                renderCategoryManager();
+                    </div>
+                    <div class="action-buttons">
+                        <button class="primary-btn" id="update-codes-close-btn" disabled>正在执行，请稍候...</button>
+                    </div>
+                `;
+                document.body.appendChild(dialog);
             } else {
-                alert("主类代码格式错误，请输入2位大写字母。");
+                dialog.style.display = 'block';
+                dialog.classList.remove('closing');
             }
-        }
 
-        function removeMainCategory(code) {
-            if (confirm("确定要删除这个主类及其所有子类吗？")) {
-                delete categories.main[code];
-                renderCategoryManager();
-            }
-        }
+            const statusEl = dialog.querySelector('#update-codes-status');
+            const detailEl = dialog.querySelector('#update-codes-detail');
+            const progressInner = dialog.querySelector('#update-codes-progress-inner');
+            const closeBtn = dialog.querySelector('#update-codes-close-btn');
 
-        function addSubCategory(mainCode) {
-            const subCode = prompt("请输入子类代码（小写字母）：");
-            // 验证：必须是小写字母
-            if (subCode && /^[a-z]+$/.test(subCode)) {
-                const subName = prompt("请输入子类名称：");
-                if (subName) { // 确保子类名称不为空
-                   categories.main[mainCode].sub.push(`${subCode}-${subName}`);
-                   renderCategoryManager();
+            const setStatus = (text) => { if (statusEl) statusEl.textContent = text; };
+            const setDetail = (text) => { if (detailEl) detailEl.textContent = text; };
+            const setProgress = (ratio) => {
+                if (progressInner) {
+                    const percent = Math.max(0, Math.min(100, Math.round(ratio * 100)));
+                    progressInner.style.width = `${percent}%`;
                 }
-            } else {
-                 alert("子类代码格式错误，请输入小写字母。");
-            }
-        }
+            };
 
-        function removeSubCategory(mainCode, subCode) {
-            categories.main[mainCode].sub = categories.main[mainCode].sub.filter(
-                sc => sc !== subCode
-            );
-            renderCategoryManager();
-        }
-
-        async function updateMainCategory(code, newName) {
-            const oldCode = code; // 保存旧代码用于查找条目
-            
-            // 查询可能影响的条目数量
-            const entriesRef = db.ref(getProjectPath('entries'));
-            const snapshot = await entriesRef.once('value');
-            const entriesData = snapshot.val() || {};
-            const affectedEntries = Object.values(entriesData).filter(entry => entry.mainCat === oldCode).length;
-            
-            // 提示用户
-            const newCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的主类代码（2位大写字母）：`, code);
-            
-            // 验证新代码格式
-            if (newCode && /^[A-Z]{2}$/.test(newCode)) {
-                 if (newCode !== oldCode) {
-                     if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
-                         return;
-                     }
-                     
-                     // 更新分类数据
-                     categories.main[newCode] = {...categories.main[oldCode]};
-                     categories.main[newCode].name = newName;
-                     delete categories.main[oldCode];
-                     
-                     // 更新所有相关条目
-                     const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
-                         if (entry.mainCat === oldCode) {
-                             // 删除旧条目
-                             await entriesRef.child(id).remove();
-                             // 创建新条目
-                             entry.mainCat = newCode;
-                             entry.id = await generateID(entry); // 重新生成ID
-                             await entriesRef.child(entry.id).set(entry);
-                         }
-                     });
-                     
-                     await Promise.all(updatePromises);
-                     renderCategoryManager();
-                     
-                     // 提示更新成功
-                     if (affectedEntries > 0) {
-                         alert(`主类代码已从 ${oldCode} 更新为 ${newCode}，共更新了 ${affectedEntries} 个条目的编号。`);
-                     } else {
-                         alert(`主类代码已从 ${oldCode} 更新为 ${newCode}。`);
-                     }
-                 } else {
-                     // 仅修改名称
-                     categories.main[oldCode].name = newName;
-                     renderCategoryManager();
-                 }
-            } else {
-                alert("新主类代码格式错误，请输入2位大写字母。");
-            }
-        }
-
-        async function updateSubCategory(mainCode, oldSub, newName) {
-            const [oldSubCode] = oldSub.split('-');
-            
-            // 查询可能影响的条目数量
-            const entriesRef = db.ref(getProjectPath('entries'));
-            const snapshot = await entriesRef.once('value');
-            const entriesData = snapshot.val() || {};
-            const affectedEntries = Object.values(entriesData).filter(entry => 
-                entry.mainCat === mainCode && entry.subCat === oldSub
-            ).length;
-            
-            // 提示用户
-            const newSubCode = prompt(`修改代码将影响${affectedEntries}个条目的ID。请输入新的子类代码（小写字母）：`, oldSubCode);
-            
-            // 验证新子类代码格式
-            if (newSubCode && /^[a-z]+$/.test(newSubCode)) {
-                const index = categories.main[mainCode].sub.indexOf(oldSub);
-                const newSub = `${newSubCode}-${newName}`;
-                
-                // 检查代码是否真的变更
-                if (oldSubCode !== newSubCode) {
-                    if (!confirm(`确定要修改代码吗？这将更新${affectedEntries}个条目的编号。`)) {
-                        return;
-                    }
-                    
-                    // 更新分类数据
-                    categories.main[mainCode].sub[index] = newSub;
-                    
-                    // 更新所有相关条目
-                    const updatePromises = Object.entries(entriesData).map(async ([id, entry]) => {
-                        if (entry.mainCat === mainCode && entry.subCat === oldSub) {
-                            // 删除旧条目
-                            await entriesRef.child(id).remove();
-                            // 创建新条目
-                            entry.subCat = newSub;
-                            entry.id = await generateID(entry); // 重新生成ID
-                            await entriesRef.child(entry.id).set(entry);
+            const enableCloseButton = () => {
+                if (!closeBtn) return;
+                closeBtn.disabled = false;
+                closeBtn.textContent = '关闭';
+                closeBtn.onclick = () => {
+                    dialog.classList.add('closing');
+                    setTimeout(() => {
+                        if (dialog && dialog.parentElement) {
+                            dialog.parentElement.removeChild(dialog);
                         }
-                    });
-                    
-                    await Promise.all(updatePromises);
-                    
-                    // 提示更新成功
-                    if (affectedEntries > 0) {
-                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}，共更新了 ${affectedEntries} 个条目的编号。`);
-                    } else {
-                        alert(`子类代码已从 ${oldSubCode} 更新为 ${newSubCode}。`);
-                    }
-                } else {
-                    // 仅修改名称，不更改代码
-                    categories.main[mainCode].sub[index] = `${oldSubCode}-${newName}`;
-                }
-                
-                renderCategoryManager();
-            } else {
-                alert("新子类代码格式错误，请输入小写字母。");
-            }
-        }
+                    }, 200);
+                };
+            };
 
-        function saveCategories() {
             try {
-                db.ref(getProjectPath('categories')).set(categories);
-                updateCategorySelectors();
-                hideCategoryManager();
-                alert('分类保存成功！');
+                setStatus('正在读取条目数据...');
+                setDetail('');
+                setProgress(0);
+
+                const entriesRef = db.ref(getProjectPath('entries'));
+                const snapshot = await entriesRef.once('value');
+                const entriesData = snapshot.val() || {};
+
+                const idPattern = /^\d{8}-\d{2}$/; // 新 ID 格式：20250315-01
+                const updates = {};
+                const removals = [];
+
+                // 为每个日期单独维护一个计数器，避免依赖数据库 counters 旧状态
+                const dateCounters = {};
+
+                const allEntries = Object.entries(entriesData);
+                const total = allEntries.length;
+                let processed = 0;
+                let regenerated = 0;
+                let skipped = 0;
+
+                for (const [oldId, entry] of allEntries) {
+                    processed++;
+
+                    // 已经是新格式的 ID，则跳过
+                    if (idPattern.test(oldId)) {
+                        skipped++;
+                        continue;
+                    }
+
+                    if (!entry.date) {
+                        console.warn('条目缺少日期，无法重新生成 ID，已跳过：', oldId, entry);
+                        skipped++;
+                        continue;
+                    }
+
+                    const dateObj = new Date(entry.date);
+                    if (isNaN(dateObj.getTime())) {
+                        console.warn('条目日期无效，无法重新生成 ID，已跳过：', oldId, entry.date);
+                        skipped++;
+                        continue;
+                    }
+
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    const datePart = `${year}${month}${day}`;
+
+                    // 本次迁移过程中的临时计数器（不依赖原有 counters 节点）
+                    if (!dateCounters[datePart]) {
+                        dateCounters[datePart] = 1;
+                    } else {
+                        dateCounters[datePart] += 1;
+                    }
+
+                    const seq = dateCounters[datePart];
+                    const newId = `${datePart}-${seq.toString().padStart(2, '0')}`;
+
+                    // 如果新旧 ID 相同，跳过
+                    if (newId === oldId) {
+                        skipped++;
+                        continue;
+                    }
+
+                    const newEntry = { ...entry, id: newId };
+                    updates[newId] = newEntry;
+                    removals.push(oldId);
+                    regenerated++;
+
+                    // 定期刷新进度显示，避免阻塞 UI
+                    if (processed % 50 === 0 || processed === total) {
+                        setStatus(`正在处理条目 ${processed}/${total} ...`);
+                        setDetail(`已重新生成 ${regenerated} 条，跳过 ${skipped} 条`);
+                        setProgress(total > 0 ? processed / total : 1);
+                        // 让出事件循环以刷新界面
+                        await new Promise(resolve => setTimeout(resolve, 0));
+                    }
+                }
+
+                setStatus('正在写入数据库...');
+                setDetail(`准备写入 ${regenerated} 条新编号...`);
+                setProgress(0.95);
+
+                // 批量写入新条目
+                if (Object.keys(updates).length > 0) {
+                    await entriesRef.update(updates);
+                }
+
+                setStatus('正在清理旧编号...');
+                // 批量删除旧 ID
+                if (removals.length > 0) {
+                    await Promise.all(removals.map(id => entriesRef.child(id).remove()));
+                }
+
+                setProgress(1);
+                setStatus('条目编号更新完成');
+                setDetail(`本次共重新生成 ${regenerated} 个条目的 ID，跳过 ${skipped} 条。`);
+                enableCloseButton();
+
+                // 重新拉取并渲染最新数据
+                if (typeof debouncedRenderEntries === 'function') {
+                    debouncedRenderEntries();
+                }
+
+                showAlert(`条目编号更新完成。本次共重新生成 ${regenerated} 个条目的 ID。`, 'success');
             } catch (error) {
-                alert('保存失败: ' + error.message);
+                console.error('更新条目代码时发生错误：', error);
+                setStatus('更新条目代码失败');
+                setDetail(error.message || '未知错误');
+                enableCloseButton();
+                showAlert(`更新条目代码失败：${error.message}`, 'error');
             }
         }
 
-        // 核心功能
+        // 核心功能：根据“用户填写的日期”生成全局唯一 ID（格式：YYYYMMDD-序号）
         async function generateID(entry) {
-            // 强制校验
+            // 强制校验必填字段
             if (!entry.date) throw new Error('日期为必填项');
-            if (!entry.mainCat || !categories.main[entry.mainCat]) throw new Error('无效主分类');
 
-            // 获取分类代码
-            const mainCode = entry.mainCat;
-            const subCode = entry.subCat.split('-')[0];
-            
-            // 日期格式化为YYYYMMDD（使用用户输入的日期）
+            // 日期格式化为 YYYYMMDD（直接基于用户输入的日期）
             const dateObj = new Date(entry.date);
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0');
             const day = String(dateObj.getDate()).padStart(2, '0');
             const datePart = `${year}${month}${day}`;
 
-            // 生成基础编号前缀
-            const baseID = `${mainCode}-${subCode}-${datePart}`;
-            
-            // 使用事务确保序号唯一性
-            const counterRef = db.ref(getProjectPath(`counters/${baseID}`));
+            // 计数器以日期为基准：同一天内从 01 递增
+            const counterRef = db.ref(getProjectPath(`counters/${datePart}`));
             let seq = 1;
-            
+
             await counterRef.transaction(currentValue => {
                 if (currentValue === null) return 1; // 初始化计数器
-                return currentValue + 1; // 递增序号
+                return currentValue + 1;             // 递增序号
             }).then(({ committed, snapshot }) => {
                 if (committed) seq = snapshot.val();
             });
 
-            // 返回完整编号（示例：DF-S-20231015-01）
-            return `${baseID}-${seq.toString().padStart(2, '0')}`;
+            // 新 ID 格式示例：20250315-01
+            return `${datePart}-${seq.toString().padStart(2, '0')}`;
         }
 
         // 记录上一次渲染使用的页码（用于判断是否需要自动滚动到顶部）
@@ -8021,29 +7904,28 @@
 
                  // 目录视图：不显示内容预览，只显示标题、元数据和关键词
                  // 简化的条目内容
-                 entryContent += `
-                     <div class="entry-header">
-                         <h3 class="entry-title">${entry.title || ''}</h3>
-                         <div class="entry-meta">
-                             <span class="entry-id">${entry.id}</span>
-                             <span class="entry-date">${entry.date}</span>
-                             <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
-                                 </div>
-                         <div class="entry-actions">
-                                 <button class="primary-btn btn-icon-only" onclick="editEntry('${entry.id}')" title="编辑" aria-label="编辑">
-                                     <span class="material-icons">edit</span>
-                                 </button>
-                                 <button class="danger-btn btn-icon-only" onclick="deleteEntry('${entry.id}')" title="删除" aria-label="删除">
-                                     <span class="material-icons">delete</span>
-                                 </button>
-                         </div>
-                     </div>
-                     <div class="entry-footer">
-                         <div class="entry-keywords">
-                             ${(entry.keywords || []).map(kw => `<span class="keyword-tag" onclick="filterByKeyword('${kw}')">${kw}</span>`).join('')}
-                         </div>
-                     </div>
-                 `;
+                entryContent += `
+                    <div class="entry-header">
+                        <h3 class="entry-title">${entry.title || ''}</h3>
+                        <div class="entry-meta">
+                            <span class="entry-id">${entry.id}</span>
+                            <span class="entry-date">${entry.date}</span>
+                        </div>
+                        <div class="entry-actions">
+                            <button class="primary-btn btn-icon-only" onclick="editEntry('${entry.id}')" title="编辑" aria-label="编辑">
+                                <span class="material-icons">edit</span>
+                            </button>
+                            <button class="danger-btn btn-icon-only" onclick="deleteEntry('${entry.id}')" title="删除" aria-label="删除">
+                                <span class="material-icons">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="entry-footer">
+                        <div class="entry-keywords">
+                            ${(entry.keywords || []).map(kw => `<span class="keyword-tag" onclick="filterByKeyword('${kw}')">${kw}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
 
                  return `<div class="${elementClass}" data-id="${entry.id}">${entryContent}</div>`;
              }).join('');
@@ -8116,7 +7998,6 @@
                                <div class="entry-meta">
                                    <span class="entry-id">${entry.id}</span>
                                    <span class="entry-date">${entry.date}</span>
-                                   <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
                                </div>
                                <div class="entry-actions">
                                   <button class="primary-btn btn-icon-only" onclick="editEntry('${entry.id}')" title="编辑" aria-label="编辑">
@@ -8188,10 +8069,8 @@
                     }));
 
                     const data = validatedEntries.map(entry => ({
-                            ID: entry.id || '',
+                        ID: entry.id || '',
                         日期: entry.date || '',
-                        主分类: entry.mainCat || '',
-                        子分类: entry.subCat || '',
                         标题: entry.title || '',
                         原文内容: entry.content || '',
                         分析: entry.analysis || '',
@@ -8202,51 +8081,13 @@
                     XLSX.utils.book_append_sheet(wb, ws, "史料数据");
                 }
 
-                // 生成分类数据工作表 (这部分逻辑不变)
-                const categoriesData = [];
-                if (categories && categories.main) { // 添加检查确保categories.main存在
-                    Object.entries(categories.main).forEach(([mainCode, mainData]) => {
-                        // 确保 mainData 和 mainData.sub 存在
-                        if (mainData && Array.isArray(mainData.sub)) {
-                            mainData.sub.forEach(sub => {
-                                // 安全地分割子分类代码和名称
-                                const parts = typeof sub === 'string' ? sub.split('-') : [];
-                                const subCode = parts[0] || '';
-                                const subName = parts.slice(1).join('-') || ''; // 处理名称中可能含有的-
-                                
-                                categoriesData.push({
-                                    '主类代码': mainCode,
-                                    '主类名称': mainData.name || '', // 提供默认值
-                                    '子类代码': subCode,
-                                    '子类名称': subName
-                                });
-                            });
-                        } else if (mainData) { // 如果没有子分类，也导出主分类信息
-                           categoriesData.push({
-                               '主类代码': mainCode,
-                               '主类名称': mainData.name || '',
-                               '子类代码': '',
-                               '子类名称': ''
-                           });
-                        }
-                    });
-                }
-                
-                // 只有当有分类数据时才添加工作表
-                if (categoriesData.length > 0) {
-                   const categoriesSheet = XLSX.utils.json_to_sheet(categoriesData);
-                   XLSX.utils.book_append_sheet(wb, categoriesSheet, "分类结构");
-                } else {
-                   showAlert('没有分类数据可导出', 'info');
-                }
-
                 // 只有当至少有一个工作表时才生成文件
                 if (wb.SheetNames.length > 0) {
                 showLoading('正在生成 Excel 文件...'); // 更新提示
                 XLSX.writeFile(wb, `史料导出_${new Date().toISOString().slice(0,10)}.xlsx`);
-                   showAlert(`成功导出 ${entriesToExport.length} 条记录` + (categoriesData.length > 0 ? ' 及分类结构' : ''), 'success');
+                   showAlert(`成功导出 ${entriesToExport.length} 条记录`, 'success');
                 } else {
-                   showAlert('没有数据或分类可导出', 'warning');
+                   showAlert('没有数据可导出', 'warning');
                 }
                 
             } catch (error) {
@@ -8257,25 +8098,10 @@
             }
         }
 
-        function updateCategorySelectors() {
-            const mainSelect = document.querySelector('[name="main-cat"]');
-            mainSelect.innerHTML = Object.entries(categories.main)
-                .map(([code, data]) => `<option value="${code}">${data.name}</option>`)
-                .join('');
-            updateSubCats();
-        }
+        // 分类选择更新函数已废弃，保留空实现以兼容旧代码调用
+        function updateCategorySelectors() {}
 
-        function updateSubCats() {
-            const mainCat = document.querySelector('[name="main-cat"]').value;
-            const subSelect = document.getElementById('sub-cat');
-            subSelect.innerHTML = categories.main[mainCat]?.sub
-                .map(sc => `<option value="${sc}">${sc.split('-')[1]}</option>`)
-                .join('') || '';
-        }
-
-        function getCategoryName(code) {
-            return categories.main[code]?.name || '未知分类';
-        }
+        function updateSubCats() {}
 
         function updatePagination(totalPages) {
             document.getElementById('currentPage').textContent = currentPage;
@@ -8482,13 +8308,8 @@
             
             editingId = id; // 保留原始ID用于后续判断
             
-            // 填充表单数据
+            // 填充表单数据（主类/子类已从编辑表单中移除）
             document.querySelector('[name="date"]').value = entry.date || '';
-            document.querySelector('[name="main-cat"]').value = entry.mainCat || '';
-            updateSubCats();
-            setTimeout(() => {
-                document.querySelector('[name="sub-cat"]').value = entry.subCat || '';
-            }, 100);
             document.querySelector('[name="title"]').value = entry.title || '';
             // 添加检查确保 quill 实例存在
              if (quill && quill.root) {
@@ -9286,10 +9107,9 @@
             // 检查DOM元素是否存在
             const statTotal = document.getElementById('stat-total');
             const statWordcount = document.getElementById('stat-wordcount');
-            const statCategories = document.getElementById('stat-categories');
             const statKeywords = document.getElementById('stat-keywords');
             
-            if (!statTotal || !statCategories || !statKeywords) return;
+            if (!statTotal || !statKeywords) return;
             if (!entries) return;
             
             // 总条目数
@@ -9300,10 +9120,6 @@
                 const totalWordCount = entries.reduce((sum, e) => sum + countWords(e.content), 0);
                 statWordcount.textContent = formatNumber(totalWordCount);
             }
-            
-            // 分类数量
-            const categoriesCount = Object.keys(categories.main || {}).length;
-            statCategories.textContent = categoriesCount;
             
             // 关键词数量
             const keywordsCount = new Set(entries.flatMap(e => e.keywords || [])).size;
@@ -9356,10 +9172,6 @@
                             <span class="stat-label">平均字数/条</span>
                         </div>
                         <div class="stat-card">
-                            <span class="stat-value">${stats.categoriesCount}</span>
-                            <span class="stat-label">分类数量</span>
-                        </div>
-                        <div class="stat-card">
                             <span class="stat-value">${stats.keywordsCount}</span>
                             <span class="stat-label">关键词数</span>
                         </div>
@@ -9375,16 +9187,6 @@
                             <span class="stat-value">${stats.withAnalysis}</span>
                             <span class="stat-label">已分析</span>
                         </div>
-                    </div>
-                    
-                    <h3 style="margin-top: 24px;">分类分布</h3>
-                    <div class="category-stats">
-                        ${Object.entries(stats.categoryDistribution).map(([cat, count]) => `
-                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border);">
-                                <span>${cat}</span>
-                                <span style="font-weight: 600; color: var(--accent-1);">${count}</span>
-                            </div>
-                        `).join('')}
                     </div>
                     
                     <h3 style="margin-top: 24px;">热门关键词 (前10)</h3>
@@ -9404,7 +9206,7 @@
             document.body.appendChild(dialog);
         }
         
-        // 获取详细统计数据
+        // 获取详细统计数据（已不再统计分类）
         function getDetailedStatistics() {
             const now = new Date();
             const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -9427,24 +9229,15 @@
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 10);
             
-            // 分类分布
-            const categoryDistribution = {};
-            entries.forEach(entry => {
-                const catName = getCategoryName(entry.mainCat) || '未分类';
-                categoryDistribution[catName] = (categoryDistribution[catName] || 0) + 1;
-            });
-            
             return {
                 totalEntries: entries.length,
                 totalWordCount,
                 avgWordCount,
-                categoriesCount: Object.keys(categories.main || {}).length,
                 keywordsCount: new Set(entries.flatMap(e => e.keywords || [])).size,
                 thisWeek: entries.filter(e => e.createdAt && new Date(e.createdAt) >= oneWeekAgo).length,
                 thisMonth: entries.filter(e => e.createdAt && new Date(e.createdAt) >= oneMonthAgo).length,
                 withAnalysis: entries.filter(e => e.analysis && e.analysis.trim().length > 0).length,
-                topKeywords,
-                categoryDistribution
+                topKeywords
             };
         }
         
@@ -9525,15 +9318,6 @@
                         <label>批量移除关键词（逗号分隔）：</label>
                         <input type="text" id="bulk-remove-keywords" placeholder="例如: 临时, 草稿">
                     </div>
-                    <div class="form-group">
-                        <label>批量修改主分类：</label>
-                        <select id="bulk-change-category">
-                            <option value="">保持不变</option>
-                            ${Object.entries(categories.main || {}).map(([code, data]) => 
-                                `<option value="${code}">${data.name || code}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
                     <div class="action-buttons">
                         <button class="primary-btn" onclick="applyBulkEdit()">应用更改</button>
                         <button class="cancel-btn btn-icon-only" onclick="closeBulkEditForm()" title="取消" aria-label="取消">
@@ -9556,9 +9340,8 @@
                 .split(',').map(k => k.trim()).filter(Boolean);
             const removeKeywords = document.getElementById('bulk-remove-keywords').value
                 .split(',').map(k => k.trim()).filter(Boolean);
-            const newCategory = document.getElementById('bulk-change-category').value;
             
-            if (addKeywords.length === 0 && removeKeywords.length === 0 && !newCategory) {
+            if (addKeywords.length === 0 && removeKeywords.length === 0) {
                 showAlert('请至少填写一项更改', 'warning');
                 return;
             }
@@ -9591,11 +9374,6 @@
                     
                     updates[`${path}/keywords`] = entryKeywords;
                     updates[`${path}/updatedAt`] = Date.now();
-                    
-                    // 修改分类
-                    if (newCategory) {
-                        updates[`${path}/mainCat`] = newCategory;
-                    }
                 });
                 
                 await db.ref().update(updates);
@@ -9630,15 +9408,12 @@
                 exportDate: new Date().toISOString(),
                 projectName: document.getElementById('projectTitle').textContent,
                 totalEntries: entries.length,
-                categories: categories,
                 entries: entries.map(e => ({
                     id: e.id,
                     date: e.date,
                     title: e.title,
                     content: stripHtml(e.content || ''),
                     analysis: stripHtml(e.analysis || ''),
-                    mainCat: e.mainCat,
-                    subCat: e.subCat,
                     keywords: e.keywords,
                     links: e.links,
                     createdAt: e.createdAt,
@@ -9664,26 +9439,19 @@
             markdown += `> 共 ${entries.length} 条记录\n\n`;
             markdown += `---\n\n`;
             
-            // 按分类分组
-            const grouped = {};
-            entries.forEach(e => {
-                const cat = getCategoryName(e.mainCat) || '未分类';
-                if (!grouped[cat]) grouped[cat] = [];
-                grouped[cat].push(e);
-            });
+            // 不再按分类分组，直接按时间或原始顺序输出全部条目
+            const sorted = [...entries].sort((a, b) => (a.date || '0000-00-00').localeCompare(b.date || '0000-00-00'));
             
-            Object.entries(grouped).forEach(([cat, items]) => {
-                markdown += `## ${cat}\n\n`;
-                items.forEach(e => {
-                    markdown += `### ${e.title || '无标题'}\n\n`;
-                    markdown += `- **日期**: ${e.date || '未知'}\n`;
-                    markdown += `- **关键词**: ${(e.keywords || []).join(', ') || '无'}\n\n`;
-                    markdown += `**原文摘抄**:\n\n${stripHtml(e.content || '无内容')}\n\n`;
-                    if (e.analysis) {
-                        markdown += `**分析**:\n\n${stripHtml(e.analysis)}\n\n`;
-                    }
-                    markdown += `---\n\n`;
-                });
+            markdown += `## 全部条目\n\n`;
+            sorted.forEach(e => {
+                markdown += `### ${e.title || '无标题'}\n\n`;
+                markdown += `- **日期**: ${e.date || '未知'}\n`;
+                markdown += `- **关键词**: ${(e.keywords || []).join(', ') || '无'}\n\n`;
+                markdown += `**原文摘抄**:\n\n${stripHtml(e.content || '无内容')}\n\n`;
+                if (e.analysis) {
+                    markdown += `**分析**:\n\n${stripHtml(e.analysis)}\n\n`;
+                }
+                markdown += `---\n\n`;
             });
             
             const blob = new Blob([markdown], { type: 'text/markdown' });
@@ -10494,17 +10262,6 @@
                     return;
                 }
                 
-                // 检查分类是否存在
-                const categoriesSnapshot = await db.ref(getProjectPath('categories')).once('value');
-                const categories = categoriesSnapshot.val() || { main: {} };
-                
-                // 如果分类不存在，提示用户
-                if (!categories.main[deletedEntry.mainCat]) {
-                    if (!confirm(`条目的主分类 "${deletedEntry.mainCat}" 不存在。是否仍要恢复？`)) {
-                        return;
-                    }
-                }
-                
                 // 移除删除时间戳
                 delete deletedEntry.deletedAt;
                 
@@ -10823,121 +10580,6 @@
                             const fileData = event.target.result; // Use renamed parameter
                             const workbook = XLSX.read(fileData, { type: 'array' });
                             
-                            // 新增：处理分类结构表
-                            if (workbook.SheetNames.includes("分类结构")) {
-                                console.log("发现分类结构表，开始处理...");
-                                const categoriesSheet = workbook.Sheets["分类结构"];
-                                const importedCategoriesData = XLSX.utils.sheet_to_json(categoriesSheet);
-                                
-                                const tempCategories = { main: {} };
-                                importedCategoriesData.forEach(row => {
-                                    try {
-                                        // 智能编码处理与验证
-                                        const mainCodeRaw = row['主类代码']?.toString() || '';
-                                        const subCodeRaw = row['子类代码']?.toString() || '';
-                                        const mainName = row['主类名称'] || '';
-                                        const subName = row['子类名称'] || '';
-
-                                        // 跳过无效行
-                                        if (!mainCodeRaw || !mainName) {
-                                           console.warn("跳过无效分类行:", row); 
-                                            return;
-                                        }
-
-                                        // 强制转换大小写并验证/截断
-                                        const mainCode = mainCodeRaw.replace(/[^a-zA-Z0-9]/g, '').substring(0, 2).toUpperCase();
-                                        const subCode = subCodeRaw.replace(/[^a-zA-Z0-9]/g, '').toLowerCase(); // 强制小写
-
-                                        if (!mainCode || !/^[A-Z]{2}$/.test(mainCode)) {
-                                            console.warn("主类代码格式无效，跳过:", mainCodeRaw, row);
-                                            return; // 主类代码必须是2位大写
-                                        }
-                                        
-                                        if (!tempCategories.main[mainCode]) {
-                                            tempCategories.main[mainCode] = {
-                                                name: mainName.substring(0, 20), // 截断名称
-                                                sub: []
-                                            };
-                                        }
-                                        
-                                        // 仅当子类代码和名称都存在时才添加子类
-                                        if (subCode && /^[a-z]+$/.test(subCode) && subName) { // 验证子类代码是小写字母
-                                            const subEntry = `${subCode}-${subName.substring(0, 20)}`;
-                                            if (!tempCategories.main[mainCode].sub.includes(subEntry)) {
-                                                tempCategories.main[mainCode].sub.push(subEntry);
-                                            }
-                                        } else if (subCode || subName) {
-                                            // 如果提供了子类代码或名称，但格式不符或不完整，则记录警告
-                                            console.warn("子类信息不完整或格式错误，未添加:", { subCode, subName }, row);
-                                        }
-                                    } catch(catError) {
-                                       console.error('处理分类行时出错:', row, catError);
-                                    }
-                                });
-
-                                // --- 修改开始 ---
-                                // 直接使用导入的分类数据覆盖 Firebase 和本地缓存
-                                if (Object.keys(tempCategories.main).length > 0) {
-                                    await db.ref(getProjectPath('categories')).set(tempCategories); // 使用 set 覆盖
-                                    categories = tempCategories; // 完全替换本地缓存
-                                    updateCategorySelectors(); // 更新下拉列表
-                                    showAlert(`分类结构已从Excel文件导入并覆盖`, 'success');
-                                    console.log("分类结构已从 Excel 文件导入并覆盖:", tempCategories);
-                                } else {
-                                    // 如果Excel中没有分类数据，可以选择清空或保留原有数据
-                                    if (confirm("Excel文件中未找到有效的分类结构。是否要清空现有的分类？")) {
-                                        await db.ref(getProjectPath('categories')).set({ main: {} }); // 清空
-                                        categories = { main: {} };
-                                        updateCategorySelectors();
-                                        showAlert('现有分类结构已清空', 'info');
-                                    } else {
-                                       console.log("保留现有分类结构。");
-                                    }
-                                }
-                                // --- 修改结束 ---
-
-                                // 原来的合并逻辑 (将被替换)
-                                /*
-                                let updates = {};
-                                let newCategoryCount = 0;
-                                Object.entries(tempCategories.main).forEach(([code, data]) => {
-                                    if (!categories.main[code]) {
-                                        // 完全是新主类
-                                        updates[`main/${code}`] = data;
-                                        categories.main[code] = data; // 更新本地缓存
-                                        newCategoryCount++;
-                                    } else {
-                                        // 主类已存在，合并子类
-                                        let existingSubs = new Set(categories.main[code].sub || []);
-                                        let subsToAdd = [];
-                                        data.sub.forEach(sub => {
-                                            if (!existingSubs.has(sub)) {
-                                                subsToAdd.push(sub);
-                                            }
-                                        });
-                                        if (subsToAdd.length > 0) {
-                                            const newSubList = [...(categories.main[code].sub || []), ...subsToAdd];
-                                            updates[`main/${code}/sub`] = newSubList;
-                                            categories.main[code].sub = newSubList; // 更新本地缓存
-                                            newCategoryCount++;
-                                        }
-                                        // 可选：如果主类名称不同，是否更新？(当前不更新)
-                                        // if (categories.main[code].name !== data.name) { ... }
-                                    }
-                                });
-                                
-                                // 保存到数据库
-                                if (Object.keys(updates).length > 0) {
-                                   await db.ref(getProjectPath('categories')).update(updates);
-                                   updateCategorySelectors(); // 更新下拉列表
-                                   showAlert(`${newCategoryCount}个分类已导入或更新`, 'success');
-                                   console.log("分类结构已更新:", updates);
-                                } else {
-                                   console.log("没有新的分类信息需要导入。");
-                                }
-                                */
-                            }
-                            
                             // 获取史料数据
                             const firstSheetName = workbook.SheetNames.find(name => name !== "分类结构") || workbook.SheetNames[0];
                             if (!firstSheetName) {
@@ -10999,8 +10641,6 @@
                     // 定义字段映射规则 - 更宽松的匹配
                     const fieldMappings = {
                         "日期": ["日期", "date", "日期：", "时间", "时间："],
-                        "主分类": ["主分类", "main", "主分类：", "主分", "主分：", "主类", "主类："],
-                        "子分类": ["子分类", "sub", "子分类：", "子分", "子分：", "子类", "子类："],
                         "标题": ["标题", "title", "标题：", "名称", "名称："],
                         "原文内容": ["原文内容", "content", "原文内容：", "内容", "内容：", "正文", "正文：", "原文", "原文："],
                         "分析": ["分析", "analysis", "分析：", "解读", "解读：", "评论", "评论："],
@@ -11097,11 +10737,9 @@
                     try {
                         console.log("正在处理行:", row);
                         
-                        // 验证和转换行数据
+                        // 验证和转换行数据（不再依赖主类/子类）
                         const entry = {
                             date: row['日期'] || '',
-                            mainCat: row['主分类'] || '',
-                            subCat: row['子分类'] || '',
                             title: row['标题'] || '',
                             content: row['原文内容'] || '',
                             analysis: row['分析'] || '',
@@ -11172,24 +10810,13 @@
                         
                         // 4. 如果未识别到匹配项，则创建新条目
                         if (!identified) {
-                            // 检查必填字段
-                            if (!entry.date || !entry.mainCat || !entry.subCat) {
+                            // 检查必填字段（仅日期）
+                            if (!entry.date) {
                                 console.warn('跳过缺少必要字段的行:', row);
                                 errorCount++;
                                 importResults.error.push({
                                     title: entry.title || '无标题',
-                                    reason: '缺少必要字段 (日期/主分类/子分类)'
-                                });
-                                continue;
-                            }
-                            
-                            // 检查必须的分类是否存在
-                            if (!categories.main[entry.mainCat]) {
-                                console.warn(`主分类 ${entry.mainCat} 不存在，跳过:`, row);
-                                errorCount++;
-                                importResults.error.push({
-                                    title: entry.title || '无标题',
-                                    reason: `主分类 ${entry.mainCat} 不存在`
+                                    reason: '缺少必要字段 (日期)'
                                 });
                                 continue;
                             }
@@ -11234,8 +10861,6 @@
                         
                         // 确保所有预期字段都有默认值
                         entryData.date = entryData.date || '';
-                        entryData.mainCat = entryData.mainCat || '';
-                        entryData.subCat = entryData.subCat || '';
                         entryData.title = entryData.title || '';
                         entryData.content = entryData.content || '';
                         entryData.analysis = entryData.analysis || '';
@@ -11531,7 +11156,7 @@
                                     <th>ID</th>
                                     <th>日期</th>
                                     <th>标题</th>
-                                    <th>分类</th>
+                                    <th>关键词</th>
                                 </tr>
                                 ${group.items.map((entry, entryIndex) => `
                                     <tr>
@@ -11542,7 +11167,7 @@
                                         <td>${entry.id}</td>
                                         <td>${entry.date || ''}</td>
                                         <td>${entry.title || ''}</td>
-                                        <td>${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</td>
+                                        <td>${(entry.keywords || []).join(', ')}</td>
                                     </tr>
                                 `).join('')}
                             </table>
@@ -11725,12 +11350,35 @@
             }
         }
 
+        // 将用户手动输入的 8 位数字日期（如 19380307）规范化为 YYYY-MM-DD
+        function normalizeDateInput(raw) {
+            const value = (raw || '').trim();
+            // 只处理纯 8 位数字
+            if (!/^\d{8}$/.test(value)) return null;
+            const year = value.slice(0, 4);
+            const month = value.slice(4, 6);
+            const day = value.slice(6, 8);
+            // 简单校验月份和日期范围
+            const m = Number(month);
+            const d = Number(day);
+            if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+            return `${year}-${month}-${day}`;
+        }
+
         // 新增 getFormData 和 populateForm 函数
         function getFormData() {
+            const dateInput = document.querySelector('#entry-form [name="date"]');
+            let dateValue = dateInput?.value || '';
+
+            // 支持手动输入 8 位数字后自动识别为日期
+            const normalized = normalizeDateInput(dateValue);
+            if (normalized) {
+                dateValue = normalized;
+                if (dateInput) dateInput.value = normalized;
+            }
+
             return {
-                date: document.querySelector('#entry-form [name="date"]')?.value || '',
-                mainCat: document.querySelector('#entry-form [name="main-cat"]')?.value || '',
-                subCat: document.querySelector('#entry-form [name="sub-cat"]')?.value || '',
+                date: dateValue,
                 title: document.querySelector('#entry-form [name="title"]')?.value || '',
                 content: quill ? quill.root.innerHTML : '',
                 analysis: window.analysisQuill ? window.analysisQuill.root.innerHTML : '',
@@ -11753,9 +11401,6 @@
                 
                 // 填充基本字段
                 document.querySelector('[name="date"]').value = data.date || '';
-                document.querySelector('[name="main-cat"]').value = data.mainCat || '';
-                await updateSubCats(); // 等待子分类更新
-                document.querySelector('[name="sub-cat"]').value = data.subCat || '';
                 document.querySelector('[name="title"]').value = data.title || '';
                 document.querySelector('[name="links"]').value = (data.links || []).join(',');
                 document.querySelector('[name="keywords"]').value = (data.keywords || []).join(',');
