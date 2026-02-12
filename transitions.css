@@ -25,6 +25,25 @@
     }
 }
 
+/* 简化版淡入淡出动画（不修改 visibility，避免组件在动画异常时永久隐藏） */
+@keyframes fadeInSimple {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOutSimple {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
 @keyframes slideInRight {
     from {
         opacity: 0;
@@ -653,12 +672,18 @@
         animation-delay: calc(var(--form-index, 0) * 0.04s);
     }
     
-    /* 移动设备上使用更简单的转场 */
-    .main-page-enter,
-    .main-page-exit,
-    .database-page-enter,
+    /* 移动设备上使用更简单且安全的页面转场（不依赖 visibility） */
+    .main-page-enter {
+        animation: fadeInSimple 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+    .main-page-exit {
+        animation: fadeOutSimple 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
+    .database-page-enter {
+        animation: fadeInSimple 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+    }
     .database-page-exit {
-        animation-name: fadeIn, fadeOut;
+        animation: fadeOutSimple 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
     }
 }
 

@@ -356,17 +356,32 @@
             appId: "1:890890573955:web:328c0ed09af23d634b23b6"
         };
 
-        // 初始化Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
+        // 初始化Firebase（增加错误保护，避免在移动端脚本加载失败时整页报错）
+        let app, auth;
+        try {
+            app = firebase.initializeApp(firebaseConfig);
+            auth = firebase.auth();
+        } catch (e) {
+            console.error('Firebase 初始化失败:', e);
+            alert('无法连接认证服务，请检查网络或稍后重试。');
+        }
 
         // 页面加载时检查登录状态
         document.addEventListener('DOMContentLoaded', function() {
             // 隐藏加载动画
             document.getElementById('loading').style.display = 'none';
             
-            // 检查用户是否已经登录
+            if (!auth) return;
+
+            // 检查用户是否已经登录（增加超时兜底，避免移动端一直停在加载界面）
+            let authStateTimeout = setTimeout(() => {
+                console.warn('登录状态检查超时。');
+                hideLoading();
+            }, 8000);
+
             auth.onAuthStateChanged(user => {
+                clearTimeout(authStateTimeout);
+
                 if (user) {
                     // 用户已登录，触发退出转场后跳转到主页面
                     const authContainer = document.querySelector('.auth-container');
@@ -408,6 +423,10 @@
         }
 
         async function handleLogin() {
+            if (!auth) {
+                showError('认证服务不可用，请检查网络或稍后重试。');
+                return;
+            }
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             
@@ -427,6 +446,10 @@
         }
 
         async function handleSignUp() {
+            if (!auth) {
+                showError('认证服务不可用，请检查网络或稍后重试。');
+                return;
+            }
             const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
             
@@ -451,6 +474,10 @@
         }
 
         async function sendPasswordReset() {
+            if (!auth) {
+                showError('认证服务不可用，请检查网络或稍后重试。');
+                return;
+            }
             const email = document.getElementById('emailInput').value;
             if (!email) {
                 showError('请先输入您的电子邮箱');

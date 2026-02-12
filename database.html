@@ -3098,70 +3098,7 @@
             gap: 28px;
         }
 
-        /* 关键词索引区块 */
-        .sidebar > h3:first-of-type {
-            margin: 0 0 4px 0;
-            font-size: 1.15em;
-            font-weight: 600;
-            color: var(--text-primary);
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        /* 关键词云样式优化 - 修复边框溢出问题 */
-        #keyword-cloud {
-            position: relative;
-            max-height: calc(100vh - 420px); /* 动态计算高度，充分利用屏幕空间 */
-            min-height: 300px; /* 最小高度保证 */
-            overflow: hidden; /* 确保内容被圆角裁剪 */
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding-right: 10px;
-            margin: 0;
-            scrollbar-width: thin;
-            scrollbar-color: var(--glass-border) rgba(0, 0, 0, 0.05);
-            background: var(--glass-bg);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid var(--glass-border) !important; /* 使用简单边框 */
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: var(--glass-shadow);
-            box-sizing: border-box; /* 确保边框包含在尺寸内 */
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 12px;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-        
-        /* 移除关键词云容器的渐变边框效果 */
-        #keyword-cloud::after {
-            content: none !important;
-        }
-        
-        #keyword-cloud.loaded {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* Webkit浏览器滚动条美化 */
-        #keyword-cloud::-webkit-scrollbar {
-            width: 10px;
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        #keyword-cloud::-webkit-scrollbar-thumb {
-            background-color: var(--glass-border);
-            border-radius: 6px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-
-        #keyword-cloud::-webkit-scrollbar-thumb:hover {
-            background-color: var(--glass-active);
-        }
+        /* 关键词编辑器列表滚动条 */
 
         /* 关键词编辑器列表滚动条 */
         #keyword-editor-list {
@@ -3183,59 +3120,13 @@
             background-color: var(--glass-active);
         }
 
-        /* 针对不同屏幕尺寸优化网格布局 */
-        @media (min-width: 1600px) {
-            #keyword-cloud {
-                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-                gap: 16px;
-            }
-        }
-
-        @media (min-width: 1200px) and (max-width: 1599px) {
-            #keyword-cloud {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                gap: 14px;
-            }
-        }
-
-        @media (min-width: 993px) and (max-width: 1199px) {
-            #keyword-cloud {
-                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-                gap: 12px;
-            }
-        }
-
-        /* 平板横屏优化 */
-        @media (min-width: 769px) and (max-width: 992px) {
-            #keyword-cloud {
-                max-height: calc(100vh - 380px) !important;
-                min-height: 250px;
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-                gap: 10px;
-            }
-        }
-
-        /* 移动端优化：flex 布局修复显示问题，取消高度限制与 overflow 裁剪 */
+        /* 移动端侧边栏溢出修正（关键词索引已移除，仅保留侧栏行为） */
         @media (max-width: 768px) {
-            #keyword-cloud {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                gap: 8px;
-                max-height: none !important;
-                min-height: auto !important;
-                overflow: visible !important;
-                padding: 16px;
-                background: transparent;
-                box-shadow: none;
-                scrollbar-width: none;
-            }
-            #keyword-cloud::-webkit-scrollbar {
-                display: none;
-            }
             .sidebar {
                 overflow: visible !important;
             }
         }
+
         /* 移动端/触摸设备：彻底禁用关键词标签动画与过渡 */
         @media (hover: none), (max-width: 768px) {
             .keyword-tag {
@@ -5515,18 +5406,6 @@
                 border-radius: 20px;
             }
 
-            .sidebar > h3:first-of-type {
-                margin-bottom: 8px;
-                padding-bottom: 14px;
-                font-size: 1.2em;
-            }
-
-            #keyword-cloud {
-                padding: 22px;
-                max-height: 450px; /* 平板横屏版本增加高度 */
-                gap: 12px;
-            }
-
             .sidebar .stats-panel {
                 padding: 28px 24px;
             }
@@ -5878,26 +5757,18 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-        /* 3D输入框 */
+        /* 输入框：仅使用阴影与颜色反馈，避免 3D 形变带来的重绘开销 */
         input, textarea, select {
-            transform-style: preserve-3d;
-            transition: all 0.3s ease;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
             box-shadow: 
                 0 4px 10px rgba(0, 0, 0, 0.1),
                 inset 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
         input:focus, textarea:focus, select:focus {
-            transform: translateY(-2px) translateZ(5px);
             box-shadow: 
                 0 8px 20px rgba(var(--accent-1-rgb), 0.2),
                 inset 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        /* 3D标签云 - 保持3D效果但使用简单边框 */
-        #keyword-cloud {
-            perspective: 1000px;
-            transform-style: preserve-3d;
         }
 
         .keyword-tag {
@@ -6037,20 +5908,7 @@
         /* 搜索框呼吸动效已移除（保持静态） */
         .loading-organic { animation: organicPulse 2s var(--ease-blob) infinite; }
 
-        /* 关键词云：利用现有 inline animation-delay，让标签“弹性入场” */
-        #keyword-cloud .keyword-tag {
-            animation: elasticIn 0.5s var(--ease-elastic) both;
-        }
-        @media (max-width: 768px), (pointer: coarse) {
-            #keyword-cloud .keyword-tag { animation: none; }
-        }
-        body.performance-mode #keyword-cloud .keyword-tag { animation: none; }
-        body.performance-mode #keyword-cloud {
-            backdrop-filter: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            border: 1px solid var(--glass-border) !important;
-        }
+        /* 关键词云动画已移除（仅保留列表内关键词标签的样式与交互） */
     </style>
 </head>
 <body>
@@ -6069,12 +5927,11 @@
         if (!CSS.supports('backdrop-filter', 'blur(1px)')) {
             document.body.classList.add('no-blur-effect');
         }
-        // 移动端/触摸设备自动启用性能模式，减轻卡顿与内存占用
+        // 启用性能模式：仅在小屏或触摸设备上自动开启，桌面横屏保留完整光影效果
         (function autoPerformanceMode() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const isNarrow = window.innerWidth <= 768;
-            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-            if (isMobile || (isNarrow && isTouch)) {
+            const isSmallScreen = window.innerWidth <= 768;
+            const isTouchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            if (isSmallScreen || isTouchDevice) {
                 document.body.classList.add('performance-mode');
             }
         })();
@@ -6095,22 +5952,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 设置主题
             setThemeByDay();
-
+            
             // 初始化主题
             const savedTheme = localStorage.getItem('selectedTheme');
             if (savedTheme) {
                 document.documentElement.setAttribute('data-theme', savedTheme);
             }
-
-            // 关键词云事件委托：单一监听替代数百个内联 onclick
-            document.getElementById('keyword-cloud')?.addEventListener('click', function(e) {
-                const target = e.target.closest('.keyword-tag');
-                if (!target) return;
-                const kw = target.dataset.keyword;
-                if (kw === 'all') resetFilter();
-                else if (kw === 'more-keywords') expandKeywords();
-                else if (kw) filterByKeyword(kw);
-            });
         });
 
         // 每天凌晨自动更新主题（延迟初始化，不阻塞页面加载）
@@ -6247,7 +6094,7 @@
         </div>
 
         <div class="main-content">
-            <div class="sticky-toolbar-wrapper">
+        <div class="sticky-toolbar-wrapper">
             <div class="action-buttons">
                 <div id="search-box" style="flex:1; position:relative;">
                     <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="width:100%">
@@ -6293,6 +6140,12 @@
                 <div style="display:inline-block;margin-left:10px">
                     <button class="icon-btn" id="toggle-advanced-search-btn" onclick="toggleAdvancedSearch()" title="高级检索" aria-label="高级检索">
                         <span class="material-icons">filter_list</span>
+                    </button>
+                </div>
+                <!-- 向上箭头：点击后平滑回到页面顶部 -->
+                <div style="display:inline-block;margin-left:10px">
+                    <button class="icon-btn" onclick="scrollToTop()" title="返回顶部" aria-label="返回顶部">
+                        <span class="material-icons">arrow_upward</span>
                     </button>
                 </div>
             </div>
@@ -6426,9 +6279,6 @@
         </div>
 
         <div class="sidebar">
-            <h3>关键词索引</h3>
-            <div id="keyword-cloud"></div>
-            
             <!-- 数据统计面板 -->
             <div id="stats-panel" class="stats-panel glass-container">
                 <h3 style="margin: 0 0 18px 0; text-align: center;">数据统计</h3>
@@ -6795,7 +6645,6 @@
                     entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
                         links: [], keywords: [], analysis: '', ...entry
                     })) : [];
-                    keywordsExpanded = false;
                     debouncedRenderEntries();
 
                     // 将最新 entries 压缩为“轻量索引”，写入本地缓存，供下次秒开使用
@@ -6953,8 +6802,6 @@
         let editingLogId = null;
         let searchQuery = '';
         let currentFilterKeyword = null;
-        let keywordsExpanded = false;
-        let lastEntriesVersionForKeywords = '';
         let ENTRIES_PER_PAGE = 10;
         let LOGS_PER_PAGE = 10;
         let logs = [];
@@ -8048,13 +7895,19 @@
             return `${baseID}-${seq.toString().padStart(2, '0')}`;
         }
 
+        // 记录上一次渲染使用的页码（用于判断是否需要自动滚动到顶部）
+        let previousPage = 1;
+
         // 渲染条目列表
         function renderEntries() {
+            // 仅在页码发生变化时，平滑滚动到页面顶部
+            if (currentPage !== previousPage) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                previousPage = currentPage;
+            }
+
             // 筛选条目
             const filteredEntries = getFilteredEntries();
-
-            // 关键词云按需防抖更新（避免每次全量重建）
-            scheduleKeywordsUpdate();
             
             // 更新统计面板
             updateStatisticsPanel();
@@ -8538,57 +8391,14 @@
             }
         }
 
-        function updateKeywords() {
-            const cloud = document.getElementById('keyword-cloud');
-            if (!cloud) return;
-            cloud.classList.remove('loaded');
-
-            const keywordCount = {};
-            entries.forEach(e => (e.keywords || []).forEach(kw => { keywordCount[kw] = (keywordCount[kw] || 0) + 1; }));
-            const sortedKeywords = Object.entries(keywordCount).sort((a, b) => b[1] - a[1]);
-
-            const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
-            const MAX_KEYWORDS = (isMobile && !keywordsExpanded) ? 30 : 9999;
-
-            const escapeHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-            let html = `<span class="keyword-tag ${!currentFilterKeyword ? 'active' : ''}" data-keyword="all">全部 (${entries.length})</span>`;
-
-            sortedKeywords.slice(0, MAX_KEYWORDS).forEach(([kw, count]) => {
-                html += `<span class="keyword-tag ${currentFilterKeyword === kw ? 'active' : ''}" data-keyword="${escapeHtml(kw)}">${escapeHtml(kw)} (${count})</span>`;
+        /**
+         * 平滑滚动到页面顶部（供顶部工具栏“向上箭头”按钮使用）
+         */
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
             });
-
-            if (isMobile && !keywordsExpanded && sortedKeywords.length > MAX_KEYWORDS) {
-                html += `<span class="keyword-tag more-keywords" data-keyword="more-keywords">⋯ 更多</span>`;
-            }
-
-            cloud.innerHTML = html;
-            setTimeout(() => cloud.classList.add('loaded'), 50);
-        }
-
-        function expandKeywords() {
-            keywordsExpanded = true;
-            updateKeywords();
-        }
-
-        function shouldUpdateKeywords() {
-            const v = entries.length + '_' + (entries[0]?.updatedAt || 0) + '_' + (currentFilterKeyword || '');
-            if (v === lastEntriesVersionForKeywords) return false;
-            lastEntriesVersionForKeywords = v;
-            return true;
-        }
-
-        let pendingKeywordsUpdate = null;
-        function scheduleKeywordsUpdate() {
-            if (pendingKeywordsUpdate) clearTimeout(pendingKeywordsUpdate);
-            const doUpdate = () => {
-                if (shouldUpdateKeywords()) updateKeywords();
-                pendingKeywordsUpdate = null;
-            };
-            if (lastEntriesVersionForKeywords === '') {
-                doUpdate();
-            } else {
-                pendingKeywordsUpdate = setTimeout(doUpdate, 300);
-            }
         }
 
         function countKeyword(keyword) {
@@ -10857,12 +10667,14 @@
             });
         }
 
-        // 实现虚拟滚动
-        const virtualScroll = new VirtualScroll({
-            container: '#recycle-list',
-            itemHeight: 48,
-            render: (index) => createRecycleItem(data[index])
-        });
+        // 实现虚拟滚动（仅在 VirtualScroll 已定义时启用，避免报错影响其他功能）
+        if (typeof VirtualScroll === 'function') {
+            const virtualScroll = new VirtualScroll({
+                container: '#recycle-list',
+                itemHeight: 48,
+                render: (index) => createRecycleItem(data[index])
+            });
+        }
 
         let activeTimer = null;
         let startTimestamp = null;
