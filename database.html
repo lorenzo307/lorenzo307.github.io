@@ -835,7 +835,8 @@
         body.performance-mode .form-popup,
         body.performance-mode .category-manager,
         body.performance-mode .entry-item,
-        body.performance-mode .action-buttons {
+        body.performance-mode .action-buttons,
+        body.performance-mode .sticky-toolbar-wrapper {
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
             background: var(--base-1) !important;
@@ -879,7 +880,8 @@
             .entry-item,
             .action-buttons,
             .advanced-panel,
-            .stat-card {
+            .stat-card,
+            .sticky-toolbar-wrapper {
                 backdrop-filter: none !important;
                 -webkit-backdrop-filter: none !important;
                 background: var(--base-1) !important;
@@ -1000,13 +1002,27 @@
 
         /* ========== 调整搜索框与操作按钮间距 ========== */
 
+        /* 粘性工具栏包装器 - 搜索栏、操作按钮、快速筛选、批量操作栏滚动时固定在顶部 */
+        .sticky-toolbar-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 300;
+            background: var(--base-1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            margin-bottom: 0;
+            padding: 12px 0 8px 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            transition: box-shadow 0.3s ease;
+        }
+
         /* 主内容区域操作按钮容器 */
         .main-content .action-buttons {
             display: flex;
             align-items: center;
             gap: 12px;
             margin: 25px 0 15px 0; /* 增加顶部间距，减少底部间距 */
-            padding: 20px;
+            padding: 12px 16px;
             background: linear-gradient(
                 135deg,
                 rgba(255, 255, 255, 0.15),
@@ -1024,6 +1040,93 @@
             transition: all 0.3s ease;
             position: relative; /* 确保定位上下文 */
             overflow: visible !important; /* 确保下拉菜单不会被裁剪 */
+        }
+
+        /* 顶部操作栏：紧凑图标按钮 */
+        .main-content .action-buttons .icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 12px;
+            background: transparent;
+            border: 1px solid rgba(var(--accent-1-rgb), 0.18);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .main-content .action-buttons .icon-btn .material-icons {
+            font-size: 22px;
+            line-height: 1;
+        }
+
+        .main-content .action-buttons .icon-btn:hover {
+            background: rgba(var(--accent-1-rgb), 0.08);
+            border-color: rgba(var(--accent-1-rgb), 0.32);
+            transform: translateY(-1px);
+        }
+
+        .main-content .action-buttons .icon-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 搜索框：允许更紧凑的最小宽度（为同一行腾出空间） */
+        .main-content .action-buttons > div:first-child {
+            min-width: 180px;
+        }
+
+        /* 每页条数：更紧凑 */
+        .main-content .action-buttons #pageSize {
+            width: 40px;
+            height: 40px;
+            opacity: 0;
+            position: absolute;
+            inset: 0;
+            cursor: pointer;
+        }
+
+        .page-size-wrapper {
+            position: relative;
+        }
+
+        .page-size-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--glass-border);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: var(--glass-text);
+            background: linear-gradient(
+                135deg,
+                rgba(255, 255, 255, 0.25),
+                rgba(255, 255, 255, 0.1)
+            );
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* 通用：将文字按钮变为“仅图标按钮”（保留原配色与交互） */
+        .btn-icon-only {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            min-width: 44px;
+            height: 40px;
+            padding: 0 10px !important;
+            line-height: 1;
+        }
+        .btn-icon-only .material-icons {
+            font-size: 22px;
+            line-height: 1;
         }
 
         .main-content .action-buttons:hover {
@@ -1057,15 +1160,14 @@
             color: var(--input-text) !important;
             font-size: 1em;
             font-family: 'Noto Serif SC', serif;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* 保持完全静态：仅允许颜色/阴影类过渡，禁止任何形变动画 */
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             box-shadow: 
                 0 6px 20px rgba(0, 0, 0, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.6),
                 inset 0 -1px 0 rgba(255, 255, 255, 0.2);
-            transform-style: preserve-3d;
-            perspective: 500px;
         }
 
         #search-input:focus {
@@ -1080,7 +1182,6 @@
                 inset 0 1px 0 rgba(255, 255, 255, 0.7),
                 inset 0 -1px 0 rgba(255, 255, 255, 0.3),
                 0 0 0 2px rgba(var(--accent-1-rgb), 0.15) !important;
-            transform: translateY(-3px) translateZ(5px);
             outline: none;
         }
 
@@ -3062,6 +3163,26 @@
             background-color: var(--glass-active);
         }
 
+        /* 关键词编辑器列表滚动条 */
+        #keyword-editor-list {
+            max-height: 280px;
+            overflow-y: auto;
+            padding-right: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--glass-border) rgba(0, 0, 0, 0.05);
+        }
+        #keyword-editor-list::-webkit-scrollbar {
+            width: 8px;
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        #keyword-editor-list::-webkit-scrollbar-thumb {
+            background-color: var(--glass-border);
+            border-radius: 4px;
+        }
+        #keyword-editor-list::-webkit-scrollbar-thumb:hover {
+            background-color: var(--glass-active);
+        }
+
         /* 针对不同屏幕尺寸优化网格布局 */
         @media (min-width: 1600px) {
             #keyword-cloud {
@@ -3094,16 +3215,35 @@
             }
         }
 
-        /* 移动端优化 */
+        /* 移动端优化：flex 布局修复显示问题，取消高度限制与 overflow 裁剪 */
         @media (max-width: 768px) {
             #keyword-cloud {
-                max-height: 250px;
-                min-height: 200px;
-                scrollbar-width: none; /* Firefox隐藏滚动条 */
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 8px;
+                max-height: none !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                padding: 16px;
+                background: transparent;
+                box-shadow: none;
+                scrollbar-width: none;
             }
-            
             #keyword-cloud::-webkit-scrollbar {
-                display: none; /* Chrome/Safari隐藏滚动条 */
+                display: none;
+            }
+            .sidebar {
+                overflow: visible !important;
+            }
+        }
+        /* 移动端/触摸设备：彻底禁用关键词标签动画与过渡 */
+        @media (hover: none), (max-width: 768px) {
+            .keyword-tag {
+                animation: none !important;
+                transition: none !important;
+                transform: none !important;
+                opacity: 1 !important;
+                box-shadow: none !important;
             }
         }
 
@@ -3112,21 +3252,21 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 40px; /* 增加最小高度，提升可读性 */
+            min-height: 32px; /* 略微减小高度，让排布更紧凑 */
             background: var(--glass-bg) !important;
             border: 1px solid var(--glass-border) !important; /* 使用简单边框 */
             color: var(--glass-text);
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
-            border-radius: 20px;
-            padding: 8px 16px !important;
-            margin: 6px;
+            border-radius: 18px;
+            padding: 6px 12px !important;
+            margin: 4px;
             transition: all 0.3s ease;
             box-shadow: var(--glass-shadow);
             box-sizing: border-box; /* 确保边框包含在尺寸内 */
             font-weight: 500;
-            font-size: 0.95em;
-            line-height: 1.4;
+            font-size: 0.7em;
+            line-height: 1.3;
             text-align: center;
             word-break: break-word; /* 长关键词自动换行 */
             overflow-wrap: break-word;
@@ -5279,72 +5419,7 @@
             width: 40%;
         }
 
-        /* 快速筛选标签 */
-        .quick-filters {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin: 0 0 1px 0;
-            padding: 16px;
-            background: linear-gradient(
-                135deg,
-                rgba(255, 255, 255, 0.15),
-                rgba(255, 255, 255, 0.05)
-            );
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border-radius: 16px;
-            border: 1px solid var(--glass-border);
-            box-shadow: 
-                0 6px 25px rgba(0, 0, 0, 0.08),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6);
-            flex-wrap: wrap;
-        }
-        
-        .quick-filter-btn {
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            color: var(--text-primary);
-            font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .quick-filter-btn:hover {
-            background: var(--accent-1-15);
-            border-color: var(--accent-1);
-        }
-        
-        .quick-filter-btn.active {
-            background: var(--accent-1);
-            color: white;
-            border-color: var(--accent-1);
-        }
-
-        /* 快速筛选行中的高级检索按钮样式 */
-        .quick-filters .primary-btn {
-            margin-left: auto;
-            padding: 8px 16px !important;
-            font-size: 0.9em !important;
-            border-radius: 20px !important;
-            background: linear-gradient(145deg,
-                rgba(var(--accent-1-rgb), 0.18),
-                rgba(var(--accent-2-rgb), 0.10)) !important;
-            border: 1px solid transparent !important;
-            color: var(--text-primary) !important;
-            font-weight: 600 !important;
-            transition: all 0.3s var(--ease-bounce) !important;
-        }
-
-        .quick-filters .primary-btn:hover {
-            background: linear-gradient(145deg,
-                rgba(var(--accent-1-rgb), 0.26),
-                rgba(var(--accent-2-rgb), 0.16)) !important;
-            border-color: rgba(var(--accent-1-rgb), 0.45) !important;
-            transform: translateY(-1px);
-        }
+        /* 快速筛选行已移除（UI 精简为单行图标操作栏） */
 
         /* 批量编辑弹窗 */
         .bulk-edit-form {
@@ -5499,7 +5574,7 @@
                 font-size: 1.5em;
             }
 
-            .form-popup, .category-manager, #log-viewer, #recycle-bin {
+            .form-popup, .category-manager, #log-viewer, #recycle-bin, #keyword-editor {
                 width: 90%;
                 max-width: 600px;
             }
@@ -5520,7 +5595,7 @@
                 flex-wrap: wrap; /* 允许操作按钮换行 */
                 gap: 8px;
                 margin: 20px 0 15px 0;
-                padding: 16px;
+                padding: 12px 16px; /* 移动端略微缩减内边距，粘性时更紧凑 */
             }
             
             .main-content .action-buttons {
@@ -5550,19 +5625,18 @@
                 font-size: 0.9em;
             }
             
+            /* 移动端：搜索框优先占满一行，其它控件自然换行 */
             .main-content .action-buttons {
-                flex-direction: column;
-                align-items: stretch;
+                flex-direction: row;
+                align-items: center;
             }
             
-            .main-content .action-buttons .primary-btn,
             .main-content .action-buttons select {
-                width: 100%;
-                justify-content: center;
+                width: auto;
             }
             
-            #quick-filters {
-                padding: 12px;
+            .sticky-toolbar-wrapper {
+                padding: 8px 0 6px 0;
             }
             
             .header {
@@ -5647,10 +5721,17 @@
                   margin-left: 0; /* 移除左边距 */
              }
             
-             .form-popup, .category-manager, #log-viewer, #recycle-bin {
+             .form-popup, .category-manager, #log-viewer, #recycle-bin, #keyword-editor {
                 padding: 15px;
             }
-            .form-popup h2, .category-manager h3 {
+             #keyword-editor .keyword-editor-body {
+                flex-direction: column !important;
+            }
+             #keyword-editor #keyword-editor-list {
+                max-height: 120px;
+                overflow-y: auto;
+            }
+             .form-popup h2, .category-manager h3 {
                  font-size: 1.3em;
                  margin-bottom: 15px;
             }
@@ -5935,11 +6016,6 @@
             66% { transform: translateY(4px) scale(0.98); border-radius: 20px 25px 25px 20px; }
         }
 
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 1; filter: blur(0); }
-            50% { transform: scale(1.03); opacity: 0.9; filter: blur(2px); }
-        }
-
         @keyframes organicPulse {
             0%, 100% { transform: scale(1); opacity: 0.7; filter: blur(1px); }
             25% { transform: scale(1.1) rotate(5deg); opacity: 0.9; filter: blur(0.5px); }
@@ -5958,7 +6034,7 @@
         .animate-cell-merge { animation: cellMerge 0.7s var(--ease-morph) both; }
         .animate-cell-split { animation: cellSplit 0.3s var(--ease-morph) both; }
         .animate-fluid-wave { animation: fluidWave 3s var(--ease-blob) infinite; }
-        .animate-breathe { animation: breathe 4s var(--ease-smooth) infinite; }
+        /* 搜索框呼吸动效已移除（保持静态） */
         .loading-organic { animation: organicPulse 2s var(--ease-blob) infinite; }
 
         /* 关键词云：利用现有 inline animation-delay，让标签“弹性入场” */
@@ -5969,6 +6045,12 @@
             #keyword-cloud .keyword-tag { animation: none; }
         }
         body.performance-mode #keyword-cloud .keyword-tag { animation: none; }
+        body.performance-mode #keyword-cloud {
+            backdrop-filter: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: 1px solid var(--glass-border) !important;
+        }
     </style>
 </head>
 <body>
@@ -6013,12 +6095,22 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 设置主题
             setThemeByDay();
-            
+
             // 初始化主题
             const savedTheme = localStorage.getItem('selectedTheme');
             if (savedTheme) {
                 document.documentElement.setAttribute('data-theme', savedTheme);
             }
+
+            // 关键词云事件委托：单一监听替代数百个内联 onclick
+            document.getElementById('keyword-cloud')?.addEventListener('click', function(e) {
+                const target = e.target.closest('.keyword-tag');
+                if (!target) return;
+                const kw = target.dataset.keyword;
+                if (kw === 'all') resetFilter();
+                else if (kw === 'more-keywords') expandKeywords();
+                else if (kw) filterByKeyword(kw);
+            });
         });
 
         // 每天凌晨自动更新主题（延迟初始化，不阻塞页面加载）
@@ -6078,15 +6170,13 @@
     </script>
     <div class="container">
         <div class="header">
-            <button class="back-btn" onclick="location.href='index.html'">
+            <button class="back-btn btn-icon-only" onclick="location.href='index.html'" title="返回课题列表" aria-label="返回课题列表">
                 <span class="material-icons">arrow_back</span>
-                返回课题列表
             </button>
             <h1 id="projectTitle">加载中...</h1>
             <div class="theme-selector">
-                <button onclick="toggleThemeOptions()">
+                <button class="btn-icon-only" onclick="toggleThemeOptions()" title="主题" aria-label="主题">
                     <span class="material-icons">palette</span>
-                    主题
                 </button>
                 <div class="theme-options" id="themeOptions">
                     <div class="theme-option" onclick="changeTheme('theme1')">
@@ -6157,11 +6247,14 @@
         </div>
 
         <div class="main-content">
+            <div class="sticky-toolbar-wrapper">
             <div class="action-buttons">
                 <div id="search-box" style="flex:1; position:relative;">
                     <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="width:100%">
                 </div>
-                <button class="primary-btn" onclick="showForm()">＋ 新增史料</button>
+                <button class="icon-btn" onclick="showForm()" title="新增史料" aria-label="新增史料">
+                    <span class="material-icons">note_add</span>
+                </button>
                 <div style="display:inline-block;margin-left:10px">
                     <!-- 移除了 导出Excel 按钮 -->
                 </div>
@@ -6175,29 +6268,33 @@
                     <!-- 移除了 修复数据 按钮 -->
                 </div>
                 <div style="display:inline-block;margin-left:10px">
-                    <button class="primary-btn" onclick="toggleBulkMode()">批量操作</button>
+                    <button class="icon-btn" onclick="toggleBulkMode()" title="批量操作" aria-label="批量操作">
+                        <span class="material-icons">fact_check</span>
+                    </button>
                 </div>
                 <div style="display:inline-block;margin-left:10px">
-                    <button type="button" class="primary-btn" id="toggle-view-btn" onclick="toggleViewMode()">切换视图</button>
+                    <button type="button" class="icon-btn" id="toggle-view-btn" onclick="toggleViewMode()" title="切换视图" aria-label="切换视图">
+                        <span class="material-icons">view_module</span>
+                    </button>
                 </div>
-                <div style="display:inline-block;margin-left:10px">
-                    <select id="pageSize" onchange="changePageSize(this.value)" style="padding:6px 12px">
-                        <option value="5">每页5条</option>
-                        <option value="10" selected>每页10条</option>
-                        <option value="15">每页15条</option>
-                        <option value="20">每页20条</option>
-                        <option value="30">每页30条</option>
-                        <option value="50">每页50条</option>
+                <div class="page-size-wrapper" style="display:inline-flex;align-items:center;margin-left:8px;">
+                    <div class="page-size-circle" title="每页条数" aria-label="每页条数">
+                        <span id="pageSizeDisplay">10</span>
+                    </div>
+                    <select id="pageSize" onchange="changePageSize(this.value)" title="每页条数">
+                        <option value="5">5条</option>
+                        <option value="10" selected>10条</option>
+                        <option value="15">15条</option>
+                        <option value="20">20条</option>
+                        <option value="30">30条</option>
+                        <option value="50">50条</option>
                     </select>
                 </div>
-            </div>
-            
-            <!-- 快速筛选标签 -->
-            <div class="quick-filters" id="quick-filters">
-                <button class="quick-filter-btn" onclick="applyQuickFilter('noAnalysis', event)">待分析</button>
-                <button class="quick-filter-btn" onclick="applyQuickFilter('noKeywords', event)">无关键词</button>
-                <button class="quick-filter-btn" onclick="applyQuickFilter('reset', event)">显示全部</button>
-                <button class="primary-btn" onclick="toggleAdvancedSearch()" style="margin-left: auto; padding: 8px 16px !important; font-size: 0.9em !important; border-radius: 20px !important;">高级检索 ▽</button>
+                <div style="display:inline-block;margin-left:10px">
+                    <button class="icon-btn" id="toggle-advanced-search-btn" onclick="toggleAdvancedSearch()" title="高级检索" aria-label="高级检索">
+                        <span class="material-icons">filter_list</span>
+                    </button>
+                </div>
             </div>
             
             <!-- 批量操作栏 -->
@@ -6226,6 +6323,7 @@
                 <div class="bulk-info">
                     已选择 <span id="selected-count">0</span> 个条目
                 </div>
+            </div>
             </div>
             
             <!-- 高级检索面板 -->
@@ -6295,14 +6393,22 @@
 
                     <div class="search-row">
                         <div class="action-buttons" style="justify-content: flex-start; gap: 12px; margin-top: 0;">
-                            <button class="primary-btn" onclick="applyFulltextSearch()">执行全文检索</button>
-                            <button class="danger-btn" onclick="clearFulltextSearch()">清空全文检索</button>
+                            <button class="primary-btn btn-icon-only" onclick="applyFulltextSearch()" title="执行全文检索" aria-label="执行全文检索">
+                                <span class="material-icons">manage_search</span>
+                            </button>
+                            <button class="danger-btn btn-icon-only" onclick="clearFulltextSearch()" title="清空全文检索" aria-label="清空全文检索">
+                                <span class="material-icons">backspace</span>
+                            </button>
                         </div>
                     </div>
 
                     <div class="action-buttons">
-                        <button class="primary-btn" onclick="applyAdvancedSearch()">应用筛选</button>
-                        <button class="danger-btn" onclick="resetAdvancedSearch()">重置</button>
+                        <button class="primary-btn btn-icon-only" onclick="applyAdvancedSearch()" title="应用筛选" aria-label="应用筛选">
+                            <span class="material-icons">done</span>
+                        </button>
+                        <button class="danger-btn btn-icon-only" onclick="resetAdvancedSearch()" title="重置" aria-label="重置">
+                            <span class="material-icons">restart_alt</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -6353,10 +6459,10 @@
                 <button class="primary-btn" onclick="showTimelineView()">时间线视图</button>
                 <button class="primary-btn" onclick="showDraftBox()">草稿箱</button>
                 <button class="primary-btn" onclick="showCategoryManager()">管理分类</button>
+                <button class="primary-btn" onclick="showKeywordEditor()">关键词编辑器</button>
                 <button class="primary-btn" onclick="showLogViewer()">工作日志</button>
                 <button class="primary-btn" onclick="showRecycleBin()">回收站</button>
                 <button class="primary-btn" onclick="exportEntries('excel')">导出Excel</button>
-                <button class="primary-btn" onclick="exportData('json')">导出JSON</button>
                 <button class="primary-btn" onclick="importExcel()">导入Excel</button>
                 <button class="primary-btn" onclick="scanDuplicates()">扫描重复</button>
                 <button class="primary-btn" onclick="showBulkEditForm()">批量编辑</button>
@@ -6422,8 +6528,12 @@
                 </div>
 
                 <div class="action-buttons">
-                    <button type="submit" class="primary-btn">保存</button>
-                    <button type="button" class="danger-btn" onclick="hideForm()">取消</button>
+                    <button type="submit" class="primary-btn btn-icon-only" title="保存" aria-label="保存">
+                        <span class="material-icons">save</span>
+                    </button>
+                    <button type="button" class="danger-btn btn-icon-only" onclick="hideForm()" title="取消" aria-label="取消">
+                        <span class="material-icons">close</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -6444,8 +6554,45 @@
             </div>
 
             <div class="action-buttons">
-                <button class="primary-btn" onclick="saveCategories()">保存</button>
-                <button class="danger-btn" onclick="hideCategoryManager()">关闭</button>
+                <button class="primary-btn btn-icon-only" onclick="saveCategories()" title="保存" aria-label="保存">
+                    <span class="material-icons">save</span>
+                </button>
+                <button class="danger-btn btn-icon-only" onclick="hideCategoryManager()" title="关闭" aria-label="关闭">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 关键词编辑器弹窗 -->
+        <div id="keyword-editor" class="category-manager" style="display: none; width: 900px; max-width: 95vw;">
+            <h3>关键词编辑器</h3>
+            <div class="keyword-editor-body" style="display: flex; gap: 24px; min-height: 400px; margin: 16px 0;">
+                <div style="flex: 0 0 220px; min-width: 0;">
+                    <h4 style="margin: 0 0 12px 0;">关键词列表</h4>
+                    <div id="keyword-editor-list" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div id="keyword-editor-header" style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--glass-border);">
+                        <span id="keyword-editor-current">点击左侧关键词</span>
+                    </div>
+                    <div id="keyword-editor-entries" style="max-height: 300px; overflow-y: auto;">
+                        <p style="color: var(--text-secondary);">请选择一个关键词</p>
+                    </div>
+                    <div id="keyword-editor-actions" style="margin-top: 16px; display: none;">
+                        <p>已选 <span id="keyword-editor-selected-count">0</span> 条</p>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                            <button type="button" class="primary-btn" onclick="keywordEditorMoveTo()">移动到关键词</button>
+                            <button type="button" class="danger-btn btn-icon-only" onclick="keywordEditorRemoveFromSelected()" title="从选中条目中删除此关键词" aria-label="从选中条目中删除此关键词">
+                                <span class="material-icons">remove_circle</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button type="button" class="cancel-btn btn-icon-only" onclick="hideKeywordEditor()" title="关闭" aria-label="关闭">
+                    <span class="material-icons">close</span>
+                </button>
             </div>
         </div>
         
@@ -6469,8 +6616,12 @@
                 </div>
 
                 <div class="action-buttons">
-                    <button type="submit" class="primary-btn">保存</button>
-                    <button type="button" class="danger-btn" onclick="hideLogForm()">取消</button>
+                    <button type="submit" class="primary-btn btn-icon-only" title="保存" aria-label="保存">
+                        <span class="material-icons">save</span>
+                    </button>
+                    <button type="button" class="danger-btn btn-icon-only" onclick="hideLogForm()" title="取消" aria-label="取消">
+                        <span class="material-icons">close</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -6479,21 +6630,27 @@
         <div id="log-viewer" class="form-popup" style="width: 800px; max-height: 80vh; overflow-y: auto;">
             <h2>工作日志记录</h2>
             <div class="action-buttons" style="margin-bottom: 15px;">
-                <button class="primary-btn" onclick="showLogForm()">＋ 新增日志</button>
-                <button class="danger-btn" onclick="hideLogViewer()">关闭</button>
+                <button class="primary-btn btn-icon-only" onclick="showLogForm()" title="新增日志" aria-label="新增日志">
+                    <span class="material-icons">post_add</span>
+                </button>
+                <button class="danger-btn btn-icon-only" onclick="hideLogViewer()" title="关闭" aria-label="关闭">
+                    <span class="material-icons">close</span>
+                </button>
                 <select id="logPageSize" onchange="changeLogPageSize(this.value)" style="padding:6px 12px;margin-left:10px">
-                    <option value="5">每页5条</option>
-                    <option value="10" selected>每页10条</option>
-                    <option value="15">每页15条</option>
-                    <option value="20">每页20条</option>
-                    <option value="30">每页30条</option>
-                    <option value="50">每页50条</option>
+                    <option value="5">5条</option>
+                    <option value="10" selected>10条</option>
+                    <option value="15">15条</option>
+                    <option value="20">20条</option>
+                    <option value="30">30条</option>
+                    <option value="50">50条</option>
                 </select>
             </div>
             <div class="log-date-filter">
                 <label>按日期筛选：</label>
                 <input type="date" id="log-filter-date" onchange="filterLogsByDate(this.value)">
-                <button class="primary-btn" onclick="resetLogFilter()">重置</button>
+                <button class="primary-btn btn-icon-only" onclick="resetLogFilter()" title="重置" aria-label="重置">
+                    <span class="material-icons">restart_alt</span>
+                </button>
             </div>
             <div id="logs-container"></div>
             <div class="pagination" id="log-pagination">
@@ -6638,6 +6795,7 @@
                     entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
                         links: [], keywords: [], analysis: '', ...entry
                     })) : [];
+                    keywordsExpanded = false;
                     debouncedRenderEntries();
 
                     // 将最新 entries 压缩为“轻量索引”，写入本地缓存，供下次秒开使用
@@ -6795,6 +6953,8 @@
         let editingLogId = null;
         let searchQuery = '';
         let currentFilterKeyword = null;
+        let keywordsExpanded = false;
+        let lastEntriesVersionForKeywords = '';
         let ENTRIES_PER_PAGE = 10;
         let LOGS_PER_PAGE = 10;
         let logs = [];
@@ -6812,7 +6972,7 @@
             tags: [],
             tagLogic: 'AND' // 标签交叉检索逻辑：AND/OR
         };
-        let currentQuickFilter = null; // 快速筛选状态
+        // 快速筛选行已移除：不再使用 currentQuickFilter
         
         // 全文检索状态
         let fulltextSearch = {
@@ -6979,6 +7139,8 @@
             currentPage = 1;
             renderEntries();
             document.getElementById('entriesPerPage').textContent = size;
+            const circleLabel = document.getElementById('pageSizeDisplay');
+            if (circleLabel) circleLabel.textContent = size;
         }
 
         // --- Quill 懒加载：首次打开表单时才加载脚本 ---
@@ -7512,21 +7674,175 @@
             }, 200);
         }
 
+        // ========== 关键词编辑器 ==========
+        let keywordEditorSelectedKeyword = null;
+        let keywordEditorSelectedIds = new Set();
+
+        function showKeywordEditor() {
+            const editor = document.getElementById('keyword-editor');
+            editor.style.display = 'block';
+            editor.classList.remove('closing');
+            keywordEditorSelectedKeyword = null;
+            keywordEditorSelectedIds.clear();
+            renderKeywordEditorList();
+            document.getElementById('keyword-editor-entries').innerHTML = '<p style="color: var(--text-secondary);">请选择一个关键词</p>';
+            document.getElementById('keyword-editor-actions').style.display = 'none';
+            if (!document.getElementById('keyword-editor-list')._delegationBound) {
+                document.getElementById('keyword-editor-list')._delegationBound = true;
+                document.getElementById('keyword-editor-list').addEventListener('click', function(e) {
+                    const tag = e.target.closest('.keyword-editor-tag');
+                    if (tag && tag.dataset.keyword) keywordEditorSelectKeyword(tag.dataset.keyword);
+                });
+            }
+        }
+
+        function hideKeywordEditor() {
+            const editor = document.getElementById('keyword-editor');
+            editor.classList.add('closing');
+            setTimeout(() => {
+                editor.style.display = 'none';
+                editor.classList.remove('closing');
+            }, 200);
+        }
+
+        function keywordEditorEscapeHtml(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function renderKeywordEditorList() {
+            const keywordCount = {};
+            entries.forEach(e => (e.keywords || []).forEach(kw => { keywordCount[kw] = (keywordCount[kw] || 0) + 1; }));
+            const sorted = Object.entries(keywordCount).sort((a, b) => b[1] - a[1]);
+            const container = document.getElementById('keyword-editor-list');
+            container.innerHTML = sorted.map(([kw, count]) => {
+                const esc = keywordEditorEscapeHtml(kw);
+                const active = keywordEditorSelectedKeyword === kw ? 'active' : '';
+                return `<span class="keyword-tag keyword-editor-tag ${active}" data-keyword="${esc}">${esc} (${count})</span>`;
+            }).join('');
+        }
+
+        function keywordEditorSelectKeyword(kw) {
+            keywordEditorSelectedKeyword = kw;
+            keywordEditorSelectedIds.clear();
+            renderKeywordEditorList();
+            renderKeywordEditorEntries();
+        }
+
+        function renderKeywordEditorEntries() {
+            const header = document.getElementById('keyword-editor-header');
+            const entriesContainer = document.getElementById('keyword-editor-entries');
+            const actionsDiv = document.getElementById('keyword-editor-actions');
+            if (!keywordEditorSelectedKeyword) return;
+            const matched = entries.filter(e => (e.keywords || []).includes(keywordEditorSelectedKeyword));
+            header.innerHTML = `<strong>关键词：${keywordEditorEscapeHtml(keywordEditorSelectedKeyword)}</strong>（共 ${matched.length} 条）`;
+            if (matched.length === 0) {
+                entriesContainer.innerHTML = '<p style="color: var(--text-secondary);">无条目</p>';
+            } else {
+                entriesContainer.innerHTML = matched.map(entry => {
+                    const escId = keywordEditorEscapeHtml(entry.id);
+                    const escTitle = keywordEditorEscapeHtml(entry.title || '(无标题)');
+                    return `<label class="keyword-editor-entry-row" style="display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; border-bottom: 1px solid var(--glass-border);">
+                        <input type="checkbox" class="keyword-editor-entry-cb" data-id="${escId}">
+                        <span class="entry-id" style="min-width: 140px;">${escId}</span>
+                        <span style="flex:1; overflow: hidden; text-overflow: ellipsis;">${escTitle}</span>
+                    </label>`;
+                }).join('');
+            }
+            if (!entriesContainer._cbBound) {
+                entriesContainer._cbBound = true;
+                entriesContainer.addEventListener('change', function(e) {
+                    if (e.target.classList.contains('keyword-editor-entry-cb')) {
+                        keywordEditorToggleEntry(e.target.dataset.id, e.target.checked);
+                    }
+                });
+            }
+            actionsDiv.style.display = 'block';
+            updateKeywordEditorSelectedCount();
+        }
+
+        function keywordEditorToggleEntry(id, checked) {
+            if (checked) keywordEditorSelectedIds.add(id);
+            else keywordEditorSelectedIds.delete(id);
+            updateKeywordEditorSelectedCount();
+        }
+
+        function updateKeywordEditorSelectedCount() {
+            const el = document.getElementById('keyword-editor-selected-count');
+            if (el) el.textContent = keywordEditorSelectedIds.size;
+        }
+
+        async function keywordEditorMoveTo() {
+            const targetKw = prompt('请输入目标关键词（将把当前关键词替换为目标关键词）：', '');
+            if (!targetKw || !targetKw.trim()) return;
+            const target = targetKw.trim();
+            if (keywordEditorSelectedIds.size === 0) {
+                showAlert('请先勾选要操作的条目', 'warning');
+                return;
+            }
+            try {
+                showLoading('正在更新...');
+                const updates = {};
+                const toEdit = entries.filter(e => keywordEditorSelectedIds.has(e.id));
+                toEdit.forEach(entry => {
+                    let kwList = [...(entry.keywords || [])];
+                    kwList = kwList.filter(k => k !== keywordEditorSelectedKeyword);
+                    if (!kwList.includes(target)) kwList.push(target);
+                    updates[getProjectPath(`entries/${entry.id}/keywords`)] = kwList;
+                    updates[getProjectPath(`entries/${entry.id}/updatedAt`)] = Date.now();
+                });
+                await db.ref().update(updates);
+                showAlert(`已将 ${toEdit.length} 条从「${keywordEditorSelectedKeyword}」移动到「${target}」`, 'success');
+                keywordEditorSelectKeyword(keywordEditorSelectedKeyword);
+            } catch (e) {
+                showAlert('更新失败: ' + e.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function keywordEditorRemoveFromSelected() {
+            if (keywordEditorSelectedIds.size === 0) {
+                showAlert('请先勾选要操作的条目', 'warning');
+                return;
+            }
+            try {
+                showLoading('正在更新...');
+                const updates = {};
+                const toEdit = entries.filter(e => keywordEditorSelectedIds.has(e.id));
+                toEdit.forEach(entry => {
+                    const kwList = (entry.keywords || []).filter(k => k !== keywordEditorSelectedKeyword);
+                    updates[getProjectPath(`entries/${entry.id}/keywords`)] = kwList;
+                    updates[getProjectPath(`entries/${entry.id}/updatedAt`)] = Date.now();
+                });
+                await db.ref().update(updates);
+                showAlert(`已从 ${toEdit.length} 条中删除「${keywordEditorSelectedKeyword}」`, 'success');
+                keywordEditorSelectKeyword(keywordEditorSelectedKeyword);
+            } catch (e) {
+                showAlert('更新失败: ' + e.message, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
         function renderCategoryManager() {
             const container = document.getElementById('main-categories');
             container.innerHTML = Object.entries(categories.main)
                 .map(([code, data]) => `
                     <div class="category-item">
                         <input value="${data.name}" onchange="updateMainCategory('${code}', this.value)">
-                        <button class="danger-btn" onclick="removeMainCategory('${code}')">删除</button>
+                        <button class="danger-btn btn-icon-only" onclick="removeMainCategory('${code}')" title="删除" aria-label="删除">
+                            <span class="material-icons">delete</span>
+                        </button>
                         <button class="primary-btn" onclick="addSubCategory('${code}')">＋子类</button>
                     </div>
                     ${data.sub.map(sub => `
                         <div class="category-item" style="margin-left:20px">
                             <input value="${sub.split('-')[1]}" 
                                    onchange="updateSubCategory('${code}', '${sub}', this.value)">
-                            <button class="danger-btn" 
-                                    onclick="removeSubCategory('${code}', '${sub}')">删除</button>
+                            <button class="danger-btn btn-icon-only" 
+                                    onclick="removeSubCategory('${code}', '${sub}')" title="删除" aria-label="删除">
+                                <span class="material-icons">delete</span>
+                            </button>
                         </div>
                     `).join('')}
                 `).join('');
@@ -7736,9 +8052,9 @@
         function renderEntries() {
             // 筛选条目
             const filteredEntries = getFilteredEntries();
-            
-            // 更新关键词云
-            updateKeywords();
+
+            // 关键词云按需防抖更新（避免每次全量重建）
+            scheduleKeywordsUpdate();
             
             // 更新统计面板
             updateStatisticsPanel();
@@ -7861,8 +8177,12 @@
                              <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
                                  </div>
                          <div class="entry-actions">
-                                 <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
-                                 <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
+                                 <button class="primary-btn btn-icon-only" onclick="editEntry('${entry.id}')" title="编辑" aria-label="编辑">
+                                     <span class="material-icons">edit</span>
+                                 </button>
+                                 <button class="danger-btn btn-icon-only" onclick="deleteEntry('${entry.id}')" title="删除" aria-label="删除">
+                                     <span class="material-icons">delete</span>
+                                 </button>
                          </div>
                      </div>
                      <div class="entry-footer">
@@ -7946,8 +8266,12 @@
                                    <span class="entry-category">${getCategoryName(entry.mainCat)} - ${entry.subCat ? entry.subCat.split('-')[1] : ''}</span>
                                </div>
                                <div class="entry-actions">
-                                   <button class="primary-btn" onclick="editEntry('${entry.id}')">编辑</button>
-                                   <button class="danger-btn" onclick="deleteEntry('${entry.id}')">删除</button>
+                                  <button class="primary-btn btn-icon-only" onclick="editEntry('${entry.id}')" title="编辑" aria-label="编辑">
+                                      <span class="material-icons">edit</span>
+                                  </button>
+                                  <button class="danger-btn btn-icon-only" onclick="deleteEntry('${entry.id}')" title="删除" aria-label="删除">
+                                      <span class="material-icons">delete</span>
+                                  </button>
                                </div>
                            </div>
                            <div class="entry-body">
@@ -8216,31 +8540,55 @@
 
         function updateKeywords() {
             const cloud = document.getElementById('keyword-cloud');
-            if (!cloud) return; // 添加检查
-            cloud.classList.remove('loaded'); // 先移除类，重置动画状态
-            
-            const keywords = [...new Set(entries.flatMap(e => e.keywords || []))]; // 确保keywords存在
-            
-            // 更新关键词云内容
-            cloud.innerHTML = `
-                <span class="keyword-tag ${!currentFilterKeyword ? 'active' : ''}" 
-                      style="animation-delay: 0ms;" /* 第一个标签立即显示 */
-                      onclick="resetFilter()">
-                    全部 (${entries.length})
-                </span>
-                ${keywords.map((k, index) => `
-                    <span class="keyword-tag ${currentFilterKeyword === k ? 'active' : ''}" 
-                          style="animation-delay: ${(index + 1) * 50}ms;" /* 设置延迟 */
-                          onclick="filterByKeyword('${k}')">
-                        ${k} (${countKeyword(k)})
-                    </span>
-                `).join('')}
-            `;
-            
-            // 触发加载动画
-            setTimeout(() => {
-                cloud.classList.add('loaded');
-            }, 50); // 短暂延迟后添加类以触发transition
+            if (!cloud) return;
+            cloud.classList.remove('loaded');
+
+            const keywordCount = {};
+            entries.forEach(e => (e.keywords || []).forEach(kw => { keywordCount[kw] = (keywordCount[kw] || 0) + 1; }));
+            const sortedKeywords = Object.entries(keywordCount).sort((a, b) => b[1] - a[1]);
+
+            const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
+            const MAX_KEYWORDS = (isMobile && !keywordsExpanded) ? 30 : 9999;
+
+            const escapeHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            let html = `<span class="keyword-tag ${!currentFilterKeyword ? 'active' : ''}" data-keyword="all">全部 (${entries.length})</span>`;
+
+            sortedKeywords.slice(0, MAX_KEYWORDS).forEach(([kw, count]) => {
+                html += `<span class="keyword-tag ${currentFilterKeyword === kw ? 'active' : ''}" data-keyword="${escapeHtml(kw)}">${escapeHtml(kw)} (${count})</span>`;
+            });
+
+            if (isMobile && !keywordsExpanded && sortedKeywords.length > MAX_KEYWORDS) {
+                html += `<span class="keyword-tag more-keywords" data-keyword="more-keywords">⋯ 更多</span>`;
+            }
+
+            cloud.innerHTML = html;
+            setTimeout(() => cloud.classList.add('loaded'), 50);
+        }
+
+        function expandKeywords() {
+            keywordsExpanded = true;
+            updateKeywords();
+        }
+
+        function shouldUpdateKeywords() {
+            const v = entries.length + '_' + (entries[0]?.updatedAt || 0) + '_' + (currentFilterKeyword || '');
+            if (v === lastEntriesVersionForKeywords) return false;
+            lastEntriesVersionForKeywords = v;
+            return true;
+        }
+
+        let pendingKeywordsUpdate = null;
+        function scheduleKeywordsUpdate() {
+            if (pendingKeywordsUpdate) clearTimeout(pendingKeywordsUpdate);
+            const doUpdate = () => {
+                if (shouldUpdateKeywords()) updateKeywords();
+                pendingKeywordsUpdate = null;
+            };
+            if (lastEntriesVersionForKeywords === '') {
+                doUpdate();
+            } else {
+                pendingKeywordsUpdate = setTimeout(doUpdate, 300);
+            }
         }
 
         function countKeyword(keyword) {
@@ -8530,9 +8878,6 @@
                 return keywordTagMatch && searchMatch && dateMatch && tagMatch && fulltextMatch;
             });
             
-            // 应用快速筛选
-            filtered = applyQuickFilterToEntries(filtered);
-
             // 添加排序逻辑：按日期升序 (从早到晚)
             filtered.sort((a, b) => {
                 // 确保 date 字段存在且为有效字符串进行比较
@@ -8566,7 +8911,8 @@
         // 切换高级搜索面板
         function toggleAdvancedSearch() {
             const panel = document.querySelector('.advanced-panel');
-            const button = event?.target || document.querySelector('#quick-filters .primary-btn'); // 获取触发按钮（现在在快速筛选行中）
+            const button = document.getElementById('toggle-advanced-search-btn');
+            const iconEl = button?.querySelector('.material-icons');
             
             // 检查面板当前是否可见或正在展开
             if (panel.style.maxHeight && panel.style.maxHeight !== '0px') {
@@ -8578,7 +8924,11 @@
                 panel.style.marginBottom = '0';
                 panel.style.paddingTop = '0';
                 panel.style.paddingBottom = '0';
-                if (button) button.textContent = '高级检索 ▽'; // 更新按钮文本
+                if (button) {
+                    button.title = '高级检索';
+                    button.setAttribute('aria-label', '高级检索');
+                    if (iconEl) iconEl.textContent = 'filter_list';
+                }
             } else {
                 // 显示面板
                 // 先让元素可见以便计算高度，但保持其在屏幕外或透明
@@ -8604,7 +8954,11 @@
                 panel.style.marginBottom = '12px';
                 panel.style.paddingTop = '15px';
                 panel.style.paddingBottom = '15px';
-                if (button) button.textContent = '高级检索 △'; // 更新按钮文本
+                if (button) {
+                    button.title = '收起高级检索';
+                    button.setAttribute('aria-label', '收起高级检索');
+                    if (iconEl) iconEl.textContent = 'filter_list';
+                }
                 
                 // 动态加载标签 (如果需要)
                 if (!document.getElementById('tag-selector').children.length) {
@@ -9231,7 +9585,9 @@
                     </div>
                 </div>
                 <div class="action-buttons">
-                    <button class="primary-btn" onclick="this.closest('.form-popup').remove()">关闭</button>
+                    <button class="primary-btn btn-icon-only" onclick="this.closest('.form-popup').remove()" title="关闭" aria-label="关闭">
+                        <span class="material-icons">close</span>
+                    </button>
                 </div>
             `;
             
@@ -9316,7 +9672,9 @@
                     ${sortedEntries.length > 50 ? '<p style="text-align: center; color: var(--text-secondary);">显示前50条记录</p>' : ''}
                 </div>
                 <div class="action-buttons">
-                    <button class="primary-btn" onclick="this.closest('.form-popup').remove()">关闭</button>
+                    <button class="primary-btn btn-icon-only" onclick="this.closest('.form-popup').remove()" title="关闭" aria-label="关闭">
+                        <span class="material-icons">close</span>
+                    </button>
                 </div>
             `;
             
@@ -9330,48 +9688,7 @@
             return tmp.textContent || tmp.innerText || '';
         }
         
-        // 快速筛选
-        function applyQuickFilter(filterType, evt) {
-            // 更新按钮状态
-            document.querySelectorAll('.quick-filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            if (filterType === 'reset' || filterType === currentQuickFilter) {
-                currentQuickFilter = null;
-            } else {
-                currentQuickFilter = filterType;
-                if (evt && evt.target) {
-                    evt.target.classList.add('active');
-                }
-            }
-            
-            currentPage = 1;
-            renderEntries();
-        }
-        
-        // 获取快速筛选后的条目
-        function applyQuickFilterToEntries(entriesList) {
-            if (!currentQuickFilter) return entriesList;
-            
-            const today = new Date().toISOString().split('T')[0];
-            const weekAgo = new Date();
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            const weekAgoStr = weekAgo.toISOString().split('T')[0];
-            
-            switch (currentQuickFilter) {
-                case 'today':
-                    return entriesList.filter(e => e.date === today);
-                case 'week':
-                    return entriesList.filter(e => e.date && e.date >= weekAgoStr);
-                case 'noAnalysis':
-                    return entriesList.filter(e => !e.analysis || e.analysis.trim() === '' || e.analysis === '<p><br></p>');
-                case 'noKeywords':
-                    return entriesList.filter(e => !e.keywords || e.keywords.length === 0);
-                default:
-                    return entriesList;
-            }
-        }
+        // 快速筛选行已移除：applyQuickFilter / applyQuickFilterToEntries 已删除
         
         // 批量编辑弹窗
         function showBulkEditForm() {
@@ -9409,7 +9726,9 @@
                     </div>
                     <div class="action-buttons">
                         <button class="primary-btn" onclick="applyBulkEdit()">应用更改</button>
-                        <button class="cancel-btn" onclick="closeBulkEditForm()">取消</button>
+                        <button class="cancel-btn btn-icon-only" onclick="closeBulkEditForm()" title="取消" aria-label="取消">
+                            <span class="material-icons">close</span>
+                        </button>
                     </div>
                 </div>
             `;
@@ -9697,31 +10016,13 @@
                 window.refreshEnhancedAnimations = observeAll;
             };
 
-            // 搜索框：输入时轻微“呼吸”反馈
-            const enhanceSearchBreathe = () => {
-                const el = document.getElementById('search-input');
-                if (!el) return;
-                const box = document.getElementById('search-box') || el.parentElement;
-                let t;
-                el.addEventListener('input', () => {
-                    clearTimeout(t);
-                    el.classList.add('animate-breathe');
-                    t = setTimeout(() => el.classList.remove('animate-breathe'), 800);
-                });
-
-                // 搜索框外层容器：聚焦时启用“流体波动”
-                if (box) {
-                    el.addEventListener('focus', () => box.classList.add('animate-fluid-wave'));
-                    el.addEventListener('blur', () => box.classList.remove('animate-fluid-wave'));
-                }
-            };
+            // 搜索框动效已移除：保持完全静态
             
             // 初始化效果（已移除统计卡片浮动动画，避免数据统计框跳来跳去）
             setTimeout(() => {
                 add3DHoverEffect();
                 addRippleEffect();
                 initEnhancedAnimations();
-                enhanceSearchBreathe();
             }, 500);
             
             // 添加视差滚动效果
@@ -9926,7 +10227,9 @@
                 container.innerHTML = `
                     <div class="log-empty">
                         <p>暂无日志记录</p>
-                        <button class="primary-btn" onclick="showLogForm()">创建新日志</button>
+                        <button class="primary-btn btn-icon-only" onclick="showLogForm()" title="新增日志" aria-label="新增日志">
+                            <span class="material-icons">post_add</span>
+                        </button>
                     </div>
                 `;
                 document.getElementById('log-pagination').style.display = 'none';
@@ -9974,8 +10277,12 @@
                         <h3 class="log-title">${log.title}</h3>
                         <div class="log-actions">
                             <span class="log-date">${log.date}</span>
-                            <button class="primary-btn" onclick="editLog('${log.id}')">编辑</button>
-                            <button class="danger-btn" onclick="deleteLog('${log.id}')">删除</button>
+                            <button class="primary-btn btn-icon-only" onclick="editLog('${log.id}')" title="编辑" aria-label="编辑">
+                                <span class="material-icons">edit</span>
+                            </button>
+                            <button class="danger-btn btn-icon-only" onclick="deleteLog('${log.id}')" title="删除" aria-label="删除">
+                                <span class="material-icons">delete</span>
+                            </button>
                         </div>
                     </div>
                     <div class="log-content">${log.content}</div>
@@ -11263,7 +11570,9 @@
                     ` : ''}
                 </div>
                 <div class="action-buttons">
-                    <button class="primary-btn" onclick="this.parentElement.parentElement.remove()">关闭</button>
+                    <button class="primary-btn btn-icon-only" onclick="this.parentElement.parentElement.remove()" title="关闭" aria-label="关闭">
+                        <span class="material-icons">close</span>
+                    </button>
                 </div>
             `;
             
@@ -11433,7 +11742,9 @@
                 </div>
                 <div class="action-buttons">
                     <button class="primary-btn" onclick="processDuplicates(this)">删除选中项以外的重复条目</button>
-                    <button class="danger-btn" onclick="this.parentElement.parentElement.remove()">关闭</button>
+                    <button class="danger-btn btn-icon-only" onclick="this.parentElement.parentElement.remove()" title="关闭" aria-label="关闭">
+                        <span class="material-icons">close</span>
+                    </button>
                 </div>
             `;
             
@@ -11540,7 +11851,11 @@
         function updateViewToggleButton() {
             const btn = document.getElementById('toggle-view-btn');
             if (btn) {
-                btn.textContent = currentViewMode === 'list' ? '切换到详细视图' : '切换到目录视图';
+                const icon = btn.querySelector('.material-icons');
+                const toDetail = currentViewMode === 'list';
+                if (icon) icon.textContent = toDetail ? 'view_module' : 'view_list';
+                btn.title = toDetail ? '切换到详细视图' : '切换到目录视图';
+                btn.setAttribute('aria-label', btn.title);
             }
         }
         
@@ -11795,7 +12110,9 @@
                     </div>
                     <div class="draft-actions">
                         <button class="primary-btn" onclick="continueDraft('${draft.id}')">继续编辑</button>
-                        <button class="danger-btn" onclick="deleteDraft('${draft.id}')">删除</button>
+                        <button class="danger-btn btn-icon-only" onclick="deleteDraft('${draft.id}')" title="删除" aria-label="删除">
+                            <span class="material-icons">delete</span>
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -11978,7 +12295,9 @@
         </div>
         <div class="action-buttons">
             <button class="danger-btn" onclick="clearExpiredDrafts()">清理30天前草稿</button>
-            <button class="cancel-btn" onclick="hideDraftBox()">关闭</button>
+            <button class="cancel-btn btn-icon-only" onclick="hideDraftBox()" title="关闭" aria-label="关闭">
+                <span class="material-icons">close</span>
+            </button>
         </div>
     </div>
 
@@ -12014,7 +12333,9 @@
             </table>
         </div>
         <div class="action-buttons">
-            <button class="cancel-btn" onclick="hideTimeTracker()">关闭</button>
+            <button class="cancel-btn btn-icon-only" onclick="hideTimeTracker()" title="关闭" aria-label="关闭">
+                <span class="material-icons">close</span>
+            </button>
         </div>
     </div>
     
