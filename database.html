@@ -828,31 +828,101 @@
             }
         }
 
-        /* 性能模式（body.performance-mode）：减弱模糊与阴影，降低内存与重绘 */
+        /* 性能模式（body.performance-mode）：彻底禁用模糊与3D，降低内存与重绘 */
         body.performance-mode .glass-container,
-        body.performance-mode .main-content .action-buttons {
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+        body.performance-mode .main-content .action-buttons,
+        body.performance-mode .sidebar,
+        body.performance-mode .form-popup,
+        body.performance-mode .category-manager,
+        body.performance-mode .entry-item,
+        body.performance-mode .action-buttons {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background: var(--base-1) !important;
         }
         body.performance-mode .bg-3d { display: none !important; }
         body.performance-mode .entry-item,
         body.performance-mode .detail-entry {
             box-shadow: var(--shadow-light);
         }
-        body.performance-mode .sidebar {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        /* 性能模式：禁用渐变伪元素，使用简单边框 */
+        body.performance-mode button::after, body.performance-mode button::before,
+        body.performance-mode input::after, body.performance-mode input::before,
+        body.performance-mode textarea::after, body.performance-mode textarea::before,
+        body.performance-mode select::after, body.performance-mode select::before,
+        body.performance-mode .header::after, body.performance-mode .sidebar::after,
+        body.performance-mode .form-popup::before, body.performance-mode .category-manager::before,
+        body.performance-mode .entry-item::before, body.performance-mode .detail-entry::before,
+        body.performance-mode .draft-item::before, body.performance-mode .tag-item::after,
+        body.performance-mode .stat-card::after, body.performance-mode .pagination-info::after,
+        body.performance-mode .page-jump::after, body.performance-mode .page-jump input::after,
+        body.performance-mode .advanced-panel::after, body.performance-mode .main-content .action-buttons::after,
+        body.performance-mode #search-input::after, body.performance-mode #fulltext-search::after,
+        body.performance-mode .primary-btn::after, body.performance-mode .danger-btn::after {
+            display: none !important;
+        }
+        body.performance-mode button, body.performance-mode input, body.performance-mode textarea,
+        body.performance-mode select, body.performance-mode .header, body.performance-mode .sidebar,
+        body.performance-mode .entry-item, body.performance-mode .detail-entry, body.performance-mode .stat-card,
+        body.performance-mode .main-content .action-buttons {
+            border: 1px solid var(--accent-1-25) !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
 
-        /* 移动端减弱模糊，降低重绘开销 */
-        @media (max-width: 768px) {
+        /* 移动端/触摸设备：彻底禁用 backdrop-filter，避免低端设备卡死 */
+        @media (max-width: 768px), (pointer: coarse) {
             .glass-container,
-            .main-content .action-buttons {
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
+            .main-content .action-buttons,
+            .sidebar,
+            .form-popup,
+            .category-manager,
+            .entry-item,
+            .action-buttons,
+            .advanced-panel,
+            .stat-card {
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: var(--base-1) !important;
             }
             .entry-item, .detail-entry {
                 box-shadow: var(--shadow-light);
+            }
+        }
+
+        /* 性能优化：移动端/触摸设备禁用悬停动画，减轻重绘 */
+        @media (hover: none) {
+            .entry-item:hover, .btn:hover, .keyword-tag:hover {
+                transform: none !important;
+            }
+        }
+
+        /* 性能优化：移动端/性能模式 - 用简单边框替代渐变伪元素，移除绘制开销 */
+        @media (max-width: 768px), (pointer: coarse) {
+            button::after, button::before, input::after, input::before,
+            textarea::after, textarea::before, select::after, select::before,
+            .header::after, .sidebar::after, .form-popup::before, .category-manager::before,
+            .ql-toolbar::before, .ql-container::before, #editor-container::before, #log-editor-container::before,
+            .category-section::before, .category-item::before, .log-item::before,
+            .entry-item::before, .detail-entry::before, .draft-item::before,
+            .tag-item::after, .stat-card::after, .pagination-info::after,
+            .page-jump::after, .page-jump input::after, .advanced-panel::after,
+            .advanced-panel .search-row::after, .main-content .action-buttons::after,
+            #search-input::after, #fulltext-search::after,
+            .header .back-btn::after, .header .theme-selector button::after,
+            .header .theme-selector .theme-option::after, .header .theme-selector .theme-preview::after,
+            .form-popup button::after, .category-manager button::after, .ql-toolbar button::after,
+            .main-content .action-buttons select::after, .primary-btn::after, .danger-btn::after,
+            .advanced-search .primary-btn::after, .advanced-search .danger-btn::after {
+                display: none !important;
+            }
+            button, input, textarea, select, .header, .sidebar, .form-popup, .category-manager,
+            .entry-item, .detail-entry, .draft-item, .tag-item, .stat-card, .pagination-info,
+            .page-jump, .page-jump input, .advanced-panel, .advanced-panel .search-row,
+            #search-input, #fulltext-search, .main-content .action-buttons,
+            .header .back-btn, .header .theme-selector button, .form-popup button,
+            .category-manager button, .ql-toolbar button {
+                border: 1px solid var(--accent-1-25) !important;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
             }
         }
 
@@ -5895,22 +5965,13 @@
         #keyword-cloud .keyword-tag {
             animation: elasticIn 0.5s var(--ease-elastic) both;
         }
+        @media (max-width: 768px), (pointer: coarse) {
+            #keyword-cloud .keyword-tag { animation: none; }
+        }
+        body.performance-mode #keyword-cloud .keyword-tag { animation: none; }
     </style>
 </head>
 <body>
-    <!-- Liquid Glass SVG Filters (hidden defs) -->
-    <svg class="liquid-glass-svg-defs" aria-hidden="true" focusable="false">
-        <filter id="liquidGlassDistortion" x="-30%" y="-30%" width="160%" height="160%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="2" result="noise">
-                <animate attributeName="baseFrequency" dur="10s"
-                         values="0.012 0.018; 0.018 0.012; 0.012 0.018" repeatCount="indefinite" />
-                <animate attributeName="seed" dur="12s"
-                         values="2; 8; 2" repeatCount="indefinite" />
-            </feTurbulence>
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="18"
-                               xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-    </svg>
     <!-- 3D背景装饰 -->
     <div class="bg-3d" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; overflow: hidden;">
         <div style="position: absolute; top: 10%; left: 5%; width: 300px; height: 300px; background: radial-gradient(circle, rgba(var(--accent-1-rgb), 0.1) 0%, transparent 70%); border-radius: 50%; filter: blur(40px); animation: float 8s ease-in-out infinite;"></div>
@@ -5926,6 +5987,15 @@
         if (!CSS.supports('backdrop-filter', 'blur(1px)')) {
             document.body.classList.add('no-blur-effect');
         }
+        // 移动端/触摸设备自动启用性能模式，减轻卡顿与内存占用
+        (function autoPerformanceMode() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isNarrow = window.innerWidth <= 768;
+            const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            if (isMobile || (isNarrow && isTouch)) {
+                document.body.classList.add('performance-mode');
+            }
+        })();
 
         // 添加主题切换功能
         function setThemeByDay() {
@@ -6435,9 +6505,7 @@
         </div>
     </div>
 
-    <!-- Quill JS - 延迟加载，不阻塞初始渲染 -->
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js" defer></script>
-    
+    <!-- Quill JS 改为懒加载：仅在首次打开表单时加载，减少首屏解析成本 -->
     <script>
         // 等待 Firebase SDK 加载完成后再初始化
         (function() {
@@ -6556,45 +6624,55 @@
                 return;
             }
             
-            let initialEntriesLoaded = false; // 添加标志位
+            let initialEntriesLoaded = false;
+            let renderEntriesDebounceTimer = null;
+            const debouncedRenderEntries = () => {
+                if (renderEntriesDebounceTimer) clearTimeout(renderEntriesDebounceTimer);
+                renderEntriesDebounceTimer = setTimeout(() => {
+                    renderEntriesDebounceTimer = null;
+                    renderEntries();
+                }, 80);
+            };
             unsubscribeEntries = window.db.ref(getProjectPath('entries')).on('value', (snapshot) => {
                 try {
                     entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
-                        // 为可能缺失的字段提供默认值
-                        links: [],
-                        keywords: [],
-                        analysis: '',
-                        ...entry // 原始数据会覆盖默认值
+                        links: [], keywords: [], analysis: '', ...entry
                     })) : [];
-                    renderEntries();
+                    debouncedRenderEntries();
 
                     // 将最新 entries 压缩为“轻量索引”，写入本地缓存，供下次秒开使用
-                    try {
-                        const indexEntries = entries.map(e => ({
-                            id: e.id,
-                            date: e.date,
-                            mainCat: e.mainCat,
-                            subCat: e.subCat,
-                            title: e.title || '',
-                            keywords: e.keywords || []
-                        }));
-
-                        // 通过 getProjectPath 推断当前 projectId（users/<uid>/projects/<projectId>/...）
-                        const fullPath = getProjectPath(); // 不传子路径，得到完整路径
-                        const match = fullPath && fullPath.match(/projects\/([^\/]+)\//);
-                        const projectId = match ? match[1] : (localStorage.getItem('currentProject') || 'default');
-
-                        const payload = {
-                            version: 1,
-                            projectId,
-                            timestamp: Date.now(),
-                            entries: indexEntries
-                        };
-
-                        localStorage.setItem(`entries_index_${projectId}`, JSON.stringify(payload));
-                    } catch (cacheError) {
-                        console.warn('写入 entries 索引缓存失败:', cacheError);
-                    }
+                    (function debounceCacheWrite() {
+                        if (window._cacheWriteTimer) clearTimeout(window._cacheWriteTimer);
+                        window._cacheWriteTimer = setTimeout(() => {
+                            window._cacheWriteTimer = null;
+                            const write = () => {
+                                try {
+                                    const indexEntries = entries.map(e => ({
+                                        id: e.id, date: e.date, mainCat: e.mainCat,
+                                        subCat: e.subCat, title: e.title || '', keywords: e.keywords || []
+                                    }));
+                                    const fullPath = getProjectPath();
+                                    const match = fullPath && fullPath.match(/projects\/([^\/]+)\//);
+                                    const projectId = match ? match[1] : (localStorage.getItem('currentProject') || 'default');
+                                    localStorage.setItem(`entries_index_${projectId}`, JSON.stringify({
+                                        version: 1, projectId, timestamp: Date.now(), entries: indexEntries
+                                    }));
+                                } catch (e) { console.warn('写入 entries 索引缓存失败:', e); }
+                            };
+                            (typeof requestIdleCallback !== 'undefined')
+                                ? requestIdleCallback(write, { timeout: 1000 })
+                                : setTimeout(write, 0);
+                        }, 2000);
+                    })();
+                    window._flushEntriesCache = function() {
+                        if (window._cacheWriteTimer) { clearTimeout(window._cacheWriteTimer); window._cacheWriteTimer = null; }
+                        try {
+                            const idx = entries.map(e => ({ id: e.id, date: e.date, mainCat: e.mainCat, subCat: e.subCat, title: e.title || '', keywords: e.keywords || [] }));
+                            const m = getProjectPath() && getProjectPath().match(/projects\/([^\/]+)\//);
+                            const pid = m ? m[1] : (localStorage.getItem('currentProject') || 'default');
+                            localStorage.setItem('entries_index_' + pid, JSON.stringify({ version: 1, projectId: pid, timestamp: Date.now(), entries: idx }));
+                        } catch (e) {}
+                    };
                 } catch (error) {
                     console.error('渲染条目失败:', error);
                 }
@@ -6608,11 +6686,19 @@
                 showAlert('加载数据失败: ' + error.message, 'error');
             });
 
+            let categoriesRenderDebounceTimer = null;
+            const debouncedCategoriesUpdate = () => {
+                if (categoriesRenderDebounceTimer) clearTimeout(categoriesRenderDebounceTimer);
+                categoriesRenderDebounceTimer = setTimeout(() => {
+                    categoriesRenderDebounceTimer = null;
+                    updateCategorySelectors();
+                    renderEntries();
+                }, 80);
+            };
             unsubscribeCategories = window.db.ref(getProjectPath('categories')).on('value', (snapshot) => {
                 try {
                     categories = snapshot.val() || { main: {} };
-                    updateCategorySelectors();
-                    renderEntries();
+                    debouncedCategoriesUpdate();
                 } catch (error) {
                     console.error('渲染分类失败:', error);
                 }
@@ -6895,7 +6981,22 @@
             document.getElementById('entriesPerPage').textContent = size;
         }
 
-        // --- 恢复 Quill 初始化和相关样式代码 ---
+        // --- Quill 懒加载：首次打开表单时才加载脚本 ---
+        let quillScriptPromise = null;
+        function loadQuillScript() {
+            if (typeof Quill !== 'undefined') return Promise.resolve();
+            if (quillScriptPromise) return quillScriptPromise;
+            quillScriptPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.quilljs.com/1.3.6/quill.min.js';
+                script.async = true;
+                script.onload = () => resolve();
+                script.onerror = () => { quillScriptPromise = null; reject(new Error('Quill 加载失败')); };
+                document.head.appendChild(script);
+            });
+            return quillScriptPromise;
+        }
+
         function initQuill() {
              // --- 将 Font 和 Size 定义移到函数开头 ---
              const Font = Quill.import('formats/font');
@@ -10459,10 +10560,11 @@
         let activeTimer = null;
         let startTimestamp = null;
 
-        // 页面可见性监听（防止后台标签页计时不准确）
+        // 页面可见性监听（防止后台标签页计时不准确；页面隐藏时立即写入 entries 缓存）
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 clearInterval(trackingInterval);
+                if (typeof window._flushEntriesCache === 'function') window._flushEntriesCache();
             } else {
                 startTracking();
             }
@@ -11544,38 +11646,30 @@
             }
         }
 
-        // 确保编辑器已初始化
+        // 确保编辑器已初始化（懒加载 Quill 脚本 + 初始化实例）
         function ensureEditorsInitialized() {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 10;
-                const checkInterval = 100; // 100ms
-
-                function checkEditors() {
-                    if (quill && window.analysisQuill) {
-                        resolve();
-                        return;
-                    }
-
-                    attempts++;
-                    if (attempts >= maxAttempts) {
-                        reject(new Error('编辑器初始化超时'));
-                        return;
-                    }
-
-                    // 如果编辑器未初始化，重新尝试初始化
-                    if (!quill || !window.analysisQuill) {
-                        try {
-                            initQuill();
-                        } catch (error) {
-                            console.warn('编辑器初始化尝试失败，将重试:', error);
+            return loadQuillScript().then(() => {
+                return new Promise((resolve, reject) => {
+                    let attempts = 0;
+                    const maxAttempts = 10;
+                    const checkInterval = 100;
+                    function checkEditors() {
+                        if (quill && window.analysisQuill) {
+                            resolve();
+                            return;
                         }
+                        attempts++;
+                        if (attempts >= maxAttempts) {
+                            reject(new Error('编辑器初始化超时'));
+                            return;
+                        }
+                        if (!quill || !window.analysisQuill) {
+                            try { initQuill(); } catch (e) { console.warn('编辑器初始化尝试失败:', e); }
+                        }
+                        setTimeout(checkEditors, checkInterval);
                     }
-
-                    setTimeout(checkEditors, checkInterval);
-                }
-
-                checkEditors();
+                    checkEditors();
+                });
             });
         }
 
