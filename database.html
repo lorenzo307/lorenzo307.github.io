@@ -2192,7 +2192,7 @@
 
         /* 删除按钮样式 */
         .danger-btn {
-            /* 深红渐变 + 立体层次 */
+            /* 深红渐变 + 立体层次（默认状态与 primary 按钮大小和存在感保持一致） */
             position: relative;
             isolation: isolate;
             color: #FFFFFF !important;
@@ -2208,10 +2208,9 @@
             background-position: 20% 30% !important;
             border: 1px solid rgba(255, 255, 255, 0.14) !important;
             box-shadow:
-                0 14px 32px rgba(0, 0, 0, 0.25),
-                0 7px 0 rgba(140, 0, 0, 0.85),
+                0 8px 20px rgba(0, 0, 0, 0.25),
                 inset 0 1px 0 rgba(255, 255, 255, 0.35),
-                inset 0 -10px 20px rgba(0, 0, 0, 0.18) !important;
+                0 4px 0 rgba(140, 0, 0, 0.75) !important;
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
             transform-style: preserve-3d;
             transition: transform 0.35s var(--ease-bounce), box-shadow 0.35s var(--ease-bounce), filter 0.35s var(--ease-smooth), background-position 0.6s var(--ease-smooth);
@@ -3205,9 +3204,11 @@
         /* 基础分页容器 */
         .pagination {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 16px;
+            justify-content: center;
+            gap: 12px 8px;
             margin-top: 40px;
             padding: 24px;
             background: linear-gradient(
@@ -3235,8 +3236,9 @@
             transform: translateY(-2px);
         }
 
-        /* 分页信息文字 */
+        /* 分页信息文字：与跳转输入框同一行，通过 flex 占据剩余空间 */
         .pagination-info {
+            flex: 1 1 auto;
             font-size: 0.95em;
             color: var(--text-primary);
             font-weight: 500;
@@ -3250,6 +3252,7 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            white-space: nowrap;
         }
 
         .pagination-info:hover {
@@ -6347,26 +6350,39 @@
                 position: absolute;
             }
 
-            /* ---------- 条目卡片紧凑化（移动版 list-view） ---------- */
+            /* ---------- 条目卡片紧凑化（移动版 list-view，Grid + display: contents） ---------- */
             .list-view .entry-item,
             .list-view .detail-entry {
                 padding: 12px !important;
                 margin-bottom: 8px !important;
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                grid-template-rows: auto auto auto;
+                column-gap: 8px;
+                row-gap: 4px;
+                align-items: flex-start;
             }
+            /* 让 header / footer 内部元素直接参与卡片 Grid 布局 */
+            .list-view .entry-header,
+            .list-view .entry-footer {
+                display: contents;
+            }
+            /* 第一行：标题独占整行 */
             .list-view .entry-title {
-                font-size: 0.95rem !important;  /* 标题缩小 */
+                grid-column: 1 / 3;
+                grid-row: 1 / 2;
+                font-size: 0.95rem !important;
                 line-height: 1.3 !important;
                 font-weight: 600 !important;
-                margin-bottom: 4px !important;
+                margin: 0 !important;
             }
-            .list-view .entry-header {
-                gap: 6px;
-            }
-            /* 元信息：ID + 日期合并单行，右对齐，极小字号 */
+            /* 第二行：元信息独占整行（默认左对齐，也可改右对齐） */
             .list-view .entry-meta {
+                grid-column: 1 / 3;
+                grid-row: 2 / 3;
                 font-size: 0.7rem !important;
                 line-height: 1.2 !important;
-                text-align: right !important;
+                text-align: left !important;
                 white-space: nowrap;
             }
             .list-view .entry-meta .entry-id,
@@ -6377,6 +6393,19 @@
             .list-view .entry-meta .entry-id::after {
                 content: ' · ';
                 margin: 0 2px;
+            }
+            /* 第三行：左侧关键词，右侧操作按钮 */
+            .list-view .entry-keywords {
+                grid-column: 1 / 2;
+                grid-row: 3 / 4;
+            }
+            .list-view .entry-actions {
+                grid-column: 2 / 3;
+                grid-row: 3 / 4;
+                align-self: center;
+                justify-self: end;
+                display: flex;
+                gap: 4px;
             }
             /* 操作按钮：32×32，图标 18px，依然可点 */
             .list-view .entry-actions button {
@@ -6398,24 +6427,30 @@
 
             /* ---------- 移动端分页 · 超紧凑模式 ---------- */
             .pagination {
-                padding: 8px 12px !important;
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                align-items: center !important;
+                justify-content: center !important;
+                gap: 6px 4px !important;
+                padding: 8px 8px !important;
                 margin-top: 16px !important;
                 background: transparent !important;
                 backdrop-filter: none !important;
                 border: none !important;
                 box-shadow: none !important;
-                flex-direction: row !important;
-                flex-wrap: wrap !important;
-                gap: 6px !important;
             }
 
             .pagination-info {
-                padding: 4px 10px !important;
-                font-size: 0.75rem !important;
+                flex: 1 1 auto !important;
+                margin: 0 !important;
+                padding: 4px 8px !important;
+                font-size: 0.7rem !important;
                 background: var(--glass-bg) !important;
                 border: 1px solid var(--glass-border) !important;
                 border-radius: 16px !important;
                 box-shadow: none !important;
+                white-space: nowrap !important;
             }
             .pagination-info span::after,
             .pagination-info::before {
@@ -6466,37 +6501,47 @@
             }
 
             .page-jump {
-                padding: 4px 8px !important;
+                flex: 0 0 auto !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 2px !important;
+                padding: 4px 6px !important;
                 margin-left: 0 !important;
                 background: transparent !important;
                 border: none !important;
-                gap: 4px !important;
             }
             .page-jump span {
-                font-size: 0.75rem !important;
+                font-size: 0.7rem !important;
                 color: var(--text-secondary) !important;
             }
             .page-jump input {
-                width: 50px !important;
-                height: 32px !important;
-                padding: 0 6px !important;
-                font-size: 0.8rem !important;
+                width: 40px !important;
+                height: 28px !important;
+                padding: 0 4px !important;
+                font-size: 0.7rem !important;
                 border-radius: 6px !important;
                 border: 1px solid var(--glass-border) !important;
                 background: var(--input-bg) !important;
+                text-align: center !important;
             }
             .page-jump input:focus {
                 box-shadow: 0 0 0 2px var(--accent-1-15) !important;
             }
 
             .page-jump span:last-child {
-                font-size: 0.75rem !important;
+                font-size: 0.7rem !important;
             }
 
             #pagination-buttons,
             #log-pagination-buttons,
             #recycle-pagination-buttons {
+                display: flex !important;
+                flex-wrap: wrap !important;
+                justify-content: center !important;
                 gap: 4px !important;
+                width: 100% !important;
+                order: 3 !important;
+                margin-top: 4px !important;
             }
 
             /* ---------- 修复 Quill 图标字体 ---------- */
@@ -9054,71 +9099,79 @@
             document.getElementById('currentPage').textContent = currentPage;
             document.getElementById('totalPages').textContent = totalPages || 1;
             document.getElementById('entriesPerPage').textContent = ENTRIES_PER_PAGE;
-            
+
             // 保存总页数到全局变量
             window.totalPages = totalPages || 1;
-            
+
             const container = document.getElementById('pagination-buttons');
             const current = currentPage;
             const pages = [];
-            const MAX_VISIBLE = 5; // 每边显示的页数
-            
-            // 生成页码数组（更智能的逻辑）
+            const MAX_VISIBLE = 5;
+
+            // 生成页码数组（与原有逻辑一致）
             pages.push(1);
-            
             if (totalPages <= 7) {
-                // 总页数较少时显示所有页码
-                for (let i = 2; i < totalPages; i++) {
-                    pages.push(i);
-                }
+                for (let i = 2; i < totalPages; i++) pages.push(i);
             } else {
-                // 总页数较多时显示省略号
                 if (current - MAX_VISIBLE > 2) pages.push('...');
-                
                 const start = Math.max(2, current - 2);
                 const end = Math.min(totalPages - 1, current + 2);
-                
-                for (let i = start; i <= end; i++) {
-                    pages.push(i);
-                }
-                
+                for (let i = start; i <= end; i++) pages.push(i);
                 if (current + 2 < totalPages - 1) pages.push('...');
             }
-            
             if (totalPages > 1) pages.push(totalPages);
 
-            // 生成分页HTML（使用新的样式）
-            container.innerHTML = `
-                ${current > 1 ? `
-                    <button class="page-btn nav" onclick="currentPage=${current-1};renderEntries()">
-                        <span class="material-icons">chevron_left</span>
-                        上一页
-                    </button>
-                ` : ''}
-                
-                ${pages.map(page => {
-                    if (page === '...') {
-                        return `<button class="page-btn more">⋯</button>`;
-                    }
-                    return `<button class="page-btn ${page === current ? 'active' : ''}" 
-                                  onclick="currentPage=${page};renderEntries()">${page}</button>`;
-                }).join('')}
-                
-                ${current < totalPages ? `
-                    <button class="page-btn nav" onclick="currentPage=${current+1};renderEntries()">
-                        下一页
-                        <span class="material-icons">chevron_right</span>
-                    </button>
-                ` : ''}
-                
+            // 检测是否为移动端
+            const isMobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+
+            // 生成上一页 / 下一页按钮（移动端为图标，桌面端为文字+图标）
+            const prevBtn = current > 1
+                ? `<button class="page-btn nav" onclick="currentPage=${current - 1};renderEntries()">${
+                    isMobile
+                        ? '<span class="material-icons">chevron_left</span>'
+                        : '<span class="material-icons" style="font-size:16px;vertical-align:middle;margin-right:4px;">chevron_left</span>上一页'
+                  }</button>`
+                : '';
+
+            const nextBtn = current < totalPages
+                ? `<button class="page-btn nav" onclick="currentPage=${current + 1};renderEntries()">${
+                    isMobile
+                        ? '<span class="material-icons">chevron_right</span>'
+                        : '下一页<span class="material-icons" style="font-size:16px;vertical-align:middle;margin-left:4px;">chevron_right</span>'
+                  }</button>`
+                : '';
+
+            // 生成页码按钮
+            const pageButtons = pages.map(page => {
+                if (page === '...') {
+                    return `<button class="page-btn more">⋯</button>`;
+                }
+                return `<button class="page-btn ${page === current ? 'active' : ''}" onclick="currentPage=${page};renderEntries()">${page}</button>`;
+            }).join('');
+
+            // 跳转部分：保留“跳至 + 输入 + 页”功能
+            const jumpHtml = `
                 <div class="page-jump">
                     <span>跳至</span>
-                    <input type="number" min="1" max="${totalPages}" 
-                           value="${current}"
-                           onchange="jumpToPage(this.value)"
-                           onkeypress="if(event.key === 'Enter') jumpToPage(this.value)">
+                    <input
+                        type="number"
+                        min="1"
+                        max="${totalPages}"
+                        value="${current}"
+                        onchange="jumpToPage(this.value)"
+                        onkeypress="if(event.key === 'Enter') jumpToPage(this.value)"
+                        style="${isMobile ? 'width:54px;padding:2px 4px;font-size:0.75rem;' : ''}"
+                    >
                     <span>页</span>
                 </div>
+            `;
+
+            // 组合HTML（在移动端依然保持“当前页/总页数/每页条数 + 按钮 + 跳转”全部可用）
+            container.innerHTML = `
+                ${prevBtn}
+                ${pageButtons}
+                ${nextBtn}
+                ${jumpHtml}
             `;
         }
         
