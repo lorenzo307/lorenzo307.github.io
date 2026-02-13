@@ -1384,6 +1384,9 @@
         .theme-selector {
             position: relative;
             margin-left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* 主题选择器立体化设计 */
@@ -5554,8 +5557,8 @@
             
             .header .back-btn,
             .header .theme-selector {
-                flex: 1;
-                min-width: 150px;
+                flex: 0;
+                min-width: auto;
             }
             
             .header .theme-selector .theme-options {
@@ -5927,6 +5930,688 @@
         .loading-organic { animation: organicPulse 2s var(--ease-blob) infinite; }
 
         /* 关键词云动画已移除（仅保留列表内关键词标签的样式与交互） */
+
+        /* ---------- 移动版紧凑倒计时 ---------- */
+        .mobile-draft-timer {
+            display: none; /* 默认隐藏，移动端媒体查询中再显示 */
+            align-items: center;
+            gap: 4px;
+            margin-left: 8px;
+            padding: 6px 10px;
+            background: var(--accent-1-15);
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-1);
+            white-space: nowrap;
+            border: 1px solid var(--accent-1-25);
+            backdrop-filter: blur(4px);
+        }
+        .mobile-draft-timer .material-icons {
+            font-size: 18px;
+        }
+        /* 倒计时最后10秒变红 */
+        .mobile-draft-timer.danger .material-icons,
+        .mobile-draft-timer.danger #mobile-countdown {
+            color: var(--danger-bg) !important;
+        }
+
+        /* ========== 移动端弹窗布局全面优化 ========== */
+        @media (max-width: 768px), (pointer: coarse) {
+
+            /* ---------- 1. 通用弹窗容器 ---------- */
+            .form-popup,
+            .category-manager,
+            #log-viewer,
+            #recycle-bin,
+            #keyword-editor,
+            #draft-box,
+            #time-tracker {
+                width: 94% !important;
+                max-width: 94% !important;
+                left: 3% !important;
+                right: 3% !important;
+                top: 3% !important;
+                bottom: auto !important;
+                transform: translate(0, 0) !important;
+                padding: 20px 16px !important;
+                max-height: 94vh !important;
+                overflow-y: auto !important;
+                border-radius: 20px !important;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15) !important;
+            }
+
+            /* 修复居中定位（保留垂直居中效果） */
+            .form-popup {
+                top: 50% !important;
+                transform: translateY(-50%) !important;
+                left: 3% !important;
+                right: 3% !important;
+                width: 94% !important;
+            }
+
+            /* ---------- 2. 史料条目编辑弹窗 (entry-form) ---------- */
+            #entry-form .form-row {
+                margin-bottom: 16px;
+            }
+
+            #entry-form input[type="date"],
+            #entry-form input[type="text"],
+            #entry-form textarea {
+                padding: 14px 16px !important;
+                font-size: 16px !important; /* 防止 iOS 缩放 */
+            }
+
+            /* 草稿状态栏：垂直排列 */
+            #draft-status {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                padding: 12px;
+            }
+            .draft-timers {
+                width: 100%;
+            }
+            #countdown-tip {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            /* Quill 编辑器：高度缩减，工具栏换行 */
+            #editor-container,
+            #analysis-editor-container {
+                height: 200px !important;
+                margin-bottom: 12px;
+            }
+            .ql-toolbar.ql-snow {
+                display: flex;
+                flex-wrap: wrap;
+                padding: 6px !important;
+            }
+            .ql-toolbar.ql-snow .ql-formats {
+                margin-right: 4px;
+                margin-bottom: 4px;
+            }
+
+            /* 移动端仅保留字体、字号、字体颜色、高亮四种选项 */
+            #entry-form .ql-toolbar.ql-snow .ql-formats > * {
+                display: none !important;
+            }
+            #entry-form .ql-toolbar.ql-snow .ql-picker.ql-font,
+            #entry-form .ql-toolbar.ql-snow .ql-picker.ql-size,
+            #entry-form .ql-toolbar.ql-snow .ql-picker.ql-color,
+            #entry-form .ql-toolbar.ql-snow .ql-picker.ql-background {
+                display: inline-block !important;
+            }
+
+            /* 底部按钮：全宽，上下堆叠 */
+            #entry-form .action-buttons {
+                flex-direction: column;
+                gap: 12px;
+                margin-top: 20px;
+            }
+            #entry-form .action-buttons button {
+                width: 100%;
+                padding: 14px !important;
+                font-size: 16px;
+            }
+
+            /* ---------- 3. 关键词编辑器弹窗 (keyword-editor) ---------- */
+            #keyword-editor .keyword-editor-body {
+                flex-direction: column !important;
+                gap: 20px !important;
+            }
+            #keyword-editor [style*="flex: 0 0 220px"] {
+                flex: 0 0 auto !important;
+                width: 100% !important;
+            }
+            /* 关键词列表：改为可滚动的标签云 */
+            #keyword-editor-list {
+                max-height: 160px !important;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                padding: 8px 0;
+            }
+            .keyword-editor-tag {
+                margin: 0 !important;
+                padding: 10px 16px !important;
+                font-size: 14px;
+            }
+            /* 条目列表区域：高度自适应 */
+            #keyword-editor-entries {
+                max-height: 240px !important;
+            }
+            .keyword-editor-entry-row {
+                flex-wrap: wrap;
+                padding: 10px 0 !important;
+            }
+            .keyword-editor-entry-row .entry-id {
+                min-width: 100% !important;
+                margin-bottom: 4px;
+                font-size: 13px;
+            }
+
+            /* ---------- 4. 草稿箱弹窗 (draft-box) ---------- */
+            .draft-item {
+                padding: 16px !important;
+                margin-bottom: 12px !important;
+            }
+            .draft-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .draft-title {
+                max-width: 100% !important;
+                font-size: 1.1rem;
+                line-height: 1.4;
+            }
+            .draft-meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                width: 100%;
+                font-size: 0.9rem;
+            }
+            .draft-actions {
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+                margin-top: 12px;
+            }
+            .draft-actions button {
+                flex: 1;
+                padding: 12px !important;
+            }
+
+            /* ---------- 5. 工作日志查看器 (log-viewer) ---------- */
+            #log-viewer .log-stats {
+                flex-direction: column;
+                gap: 12px;
+                padding: 16px;
+            }
+            .log-stats .stat-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                width: 100%;
+            }
+            .log-stats .stat-value {
+                font-size: 1.3rem;
+            }
+            /* 日志条目卡片化 */
+            .log-item {
+                padding: 16px !important;
+            }
+            .log-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .log-title {
+                font-size: 1.2rem;
+                margin-bottom: 4px;
+            }
+            .log-date {
+                align-self: flex-start;
+            }
+            .log-actions {
+                width: 100%;
+                justify-content: flex-end;
+                margin-top: 8px;
+            }
+            .log-actions button {
+                padding: 12px !important;
+            }
+            /* 日志表单 */
+            #log-form #log-editor-container {
+                height: 200px !important;
+            }
+
+            /* ---------- 6. 回收站弹窗 (recycle-bin) ---------- */
+            #recycle-bin .entry-table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 0 -16px; /* 补偿弹窗内边距 */
+                padding: 0 16px;
+            }
+            #recycle-bin .entry-table {
+                min-width: 600px; /* 保持表格可读，允许横向滚动 */
+            }
+            #recycle-bin .entry-table th,
+            #recycle-bin .entry-table td {
+                padding: 12px 10px;
+                white-space: normal;
+                word-break: break-word;
+            }
+            #recycle-bin .entry-table td:last-child {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            #recycle-bin .entry-table td:last-child button {
+                margin: 0;
+                padding: 10px !important;
+                width: 100%;
+            }
+
+            /* ---------- 7. 时间跟踪弹窗 (time-tracker) ---------- */
+            #time-tracker .time-stats {
+                flex-direction: column;
+                gap: 12px;
+            }
+            .time-records {
+                display: block;
+                overflow-x: auto;
+            }
+
+            /* ---------- 8. 所有弹窗内的按钮统一切换为触控尺寸 ---------- */
+            .form-popup button,
+            .category-manager button,
+            #log-viewer button,
+            #recycle-bin button,
+            #keyword-editor button,
+            #draft-box button {
+                min-height: 48px;
+                padding: 12px 20px !important;
+                font-size: 16px !important;
+            }
+
+            /* 确保所有输入框在移动端有足够大的热区 */
+            .form-popup input,
+            .form-popup select,
+            .form-popup textarea {
+                font-size: 16px !important;
+                padding: 14px 16px !important;
+            }
+
+            /* 移除可能导致水平溢出的固定宽度 */
+            .form-popup [style*="width:"] {
+                max-width: 100% !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 强制所有内容不超出父容器 */
+            .form-popup * {
+                max-width: 100%;
+                word-wrap: break-word;
+            }
+
+            /* ---------- 修复 Quill 工具栏图标 ---------- */
+            .ql-toolbar.ql-snow button,
+            .ql-toolbar.ql-snow button::before {
+                font-family: 'Quill' !important;
+            }
+            .ql-toolbar.ql-snow .ql-picker-label::before,
+            .ql-toolbar.ql-snow .ql-picker-item::before {
+                font-family: 'Quill', 'Noto Serif SC', serif !important;
+            }
+            .ql-toolbar.ql-snow .ql-stroke {
+                stroke: var(--text-primary) !important;
+            }
+            .ql-toolbar.ql-snow .ql-fill {
+                fill: var(--text-primary) !important;
+            }
+            body.performance-mode .ql-toolbar.ql-snow button {
+                background: transparent !important; /* 性能模式下保持简单 */
+            }
+
+            /* 移动端显示紧凑计时器，隐藏完整状态栏 */
+            #draft-status {
+                display: none !important;
+            }
+            .mobile-draft-timer {
+                display: inline-flex !important;
+            }
+        }
+
+        /* ========== 移动端终极紧凑模式 ========== */
+        @media (max-width: 768px), (pointer: coarse) {
+
+            /* ---------- 顶部导航栏：无间隙、单行、紧凑 ---------- */
+            .sticky-toolbar-wrapper {
+                position: sticky !important;
+                top: 0 !important;
+                margin-top: 0 !important;
+                padding: 0 !important;
+                background: var(--base-1) !important;
+                backdrop-filter: none !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+                z-index: 300;
+            }
+            .main-content .action-buttons {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                gap: 6px !important;
+                margin: 0 !important;
+                padding: 8px 12px !important;
+                background: transparent !important;
+                border: none !important;
+                box-shadow: none !important;
+                overflow-x: auto !important;  /* 允许横向滚动，避免溢出 */
+                -webkit-overflow-scrolling: touch;
+            }
+            /* 隐藏原始搜索框，显示移动搜索图标 */
+            #search-box {
+                display: none !important;
+            }
+            #mobile-search-icon {
+                display: inline-flex !important;
+            }
+            /* 搜索激活状态：隐藏图标，显示搜索框+取消按钮 */
+            .mobile-search-active #search-box {
+                display: flex !important;
+                flex: 1 !important;
+                min-width: 0 !important;
+                margin-right: 6px !important;
+            }
+            .mobile-search-active #mobile-search-icon {
+                display: none !important;
+            }
+            .mobile-search-active #mobile-search-cancel {
+                display: inline-flex !important;
+            }
+            /* 搜索输入框样式微调 */
+            #search-box input {
+                width: 100%;
+                padding: 8px 12px 8px 40px !important;
+                font-size: 14px !important;
+                background: var(--input-bg) !important;
+                border-radius: 20px !important;
+            }
+
+            /* ---------- 其他按钮尺寸压缩 ---------- */
+            .main-content .action-buttons .icon-btn {
+                width: 40px !important;
+                height: 40px !important;
+                padding: 0 !important;
+            }
+            .main-content .action-buttons .icon-btn .material-icons {
+                font-size: 20px !important;
+            }
+            /* 每页条数：缩小圆圈 */
+            .page-size-circle {
+                width: 36px !important;
+                height: 36px !important;
+                font-size: 14px !important;
+            }
+            #pageSize {
+                width: 40px !important;
+                height: 40px !important;
+                opacity: 0;
+                position: absolute;
+            }
+
+            /* ---------- 条目卡片紧凑化（移动版 list-view） ---------- */
+            .list-view .entry-item,
+            .list-view .detail-entry {
+                padding: 12px !important;
+                margin-bottom: 8px !important;
+            }
+            .list-view .entry-title {
+                font-size: 0.95rem !important;  /* 标题缩小 */
+                line-height: 1.3 !important;
+                font-weight: 600 !important;
+                margin-bottom: 4px !important;
+            }
+            .list-view .entry-header {
+                gap: 6px;
+            }
+            /* 元信息：ID + 日期合并单行，右对齐，极小字号 */
+            .list-view .entry-meta {
+                font-size: 0.7rem !important;
+                line-height: 1.2 !important;
+                text-align: right !important;
+                white-space: nowrap;
+            }
+            .list-view .entry-meta .entry-id,
+            .list-view .entry-meta .entry-date {
+                display: inline !important;
+                margin: 0 !important;
+            }
+            .list-view .entry-meta .entry-id::after {
+                content: ' · ';
+                margin: 0 2px;
+            }
+            /* 操作按钮：32×32，图标 18px，依然可点 */
+            .list-view .entry-actions button {
+                padding: 4px !important;
+                min-width: 32px !important;
+                width: 32px !important;
+                height: 32px !important;
+            }
+            .list-view .entry-actions button .material-icons {
+                font-size: 18px !important;
+            }
+            /* 关键词标签：更小内边距与字号 */
+            .list-view .keyword-tag {
+                padding: 4px 8px !important;
+                font-size: 0.65rem !important;
+                min-height: 24px !important;
+                margin: 2px !important;
+            }
+
+            /* ---------- 移动端分页 · 超紧凑模式 ---------- */
+            .pagination {
+                padding: 8px 12px !important;
+                margin-top: 16px !important;
+                background: transparent !important;
+                backdrop-filter: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                flex-direction: row !important;
+                flex-wrap: wrap !important;
+                gap: 6px !important;
+            }
+
+            .pagination-info {
+                padding: 4px 10px !important;
+                font-size: 0.75rem !important;
+                background: var(--glass-bg) !important;
+                border: 1px solid var(--glass-border) !important;
+                border-radius: 16px !important;
+                box-shadow: none !important;
+            }
+            .pagination-info span::after,
+            .pagination-info::before {
+                display: none !important;
+            }
+
+            .page-btn {
+                min-width: 32px !important;
+                height: 32px !important;
+                padding: 0 6px !important;
+                font-size: 0.8rem !important;
+                background: var(--glass-bg) !important;
+                border: 1px solid var(--glass-border) !important;
+                border-radius: 8px !important;
+                box-shadow: none !important;
+            }
+            .page-btn::before,
+            .page-btn::after {
+                display: none !important;
+            }
+            .page-btn:hover {
+                transform: none !important;
+                background: var(--accent-1-15) !important;
+            }
+            .page-btn.active {
+                background: var(--accent-1) !important;
+                color: #fff !important;
+                border-color: transparent !important;
+                transform: none !important;
+                box-shadow: 0 2px 6px rgba(var(--accent-1-rgb), 0.2) !important;
+            }
+            .page-btn.active::after {
+                display: none !important;
+            }
+
+            .page-btn.more {
+                min-width: 24px !important;
+                background: transparent !important;
+                border: none !important;
+            }
+
+            .page-btn.nav {
+                padding: 0 10px !important;
+                gap: 4px !important;
+            }
+            .page-btn.nav .material-icons {
+                font-size: 1rem !important;
+            }
+
+            .page-jump {
+                padding: 4px 8px !important;
+                margin-left: 0 !important;
+                background: transparent !important;
+                border: none !important;
+                gap: 4px !important;
+            }
+            .page-jump span {
+                font-size: 0.75rem !important;
+                color: var(--text-secondary) !important;
+            }
+            .page-jump input {
+                width: 50px !important;
+                height: 32px !important;
+                padding: 0 6px !important;
+                font-size: 0.8rem !important;
+                border-radius: 6px !important;
+                border: 1px solid var(--glass-border) !important;
+                background: var(--input-bg) !important;
+            }
+            .page-jump input:focus {
+                box-shadow: 0 0 0 2px var(--accent-1-15) !important;
+            }
+
+            .page-jump span:last-child {
+                font-size: 0.75rem !important;
+            }
+
+            #pagination-buttons,
+            #log-pagination-buttons,
+            #recycle-pagination-buttons {
+                gap: 4px !important;
+            }
+
+            /* ---------- 修复 Quill 图标字体 ---------- */
+            .ql-toolbar.ql-snow button,
+            .ql-toolbar.ql-snow button::before {
+                font-family: 'Quill' !important;
+            }
+            .ql-toolbar.ql-snow .ql-picker-label::before,
+            .ql-toolbar.ql-snow .ql-picker-item::before {
+                font-family: 'Quill', 'Noto Serif SC', serif !important;
+            }
+            .ql-toolbar.ql-snow .ql-stroke {
+                stroke: var(--text-primary) !important;
+            }
+            .ql-toolbar.ql-snow .ql-fill {
+                fill: var(--text-primary) !important;
+            }
+
+            /* ---------- 紧凑倒计时（钟表） ---------- */
+            .mobile-draft-timer {
+                display: inline-flex !important;
+                align-items: center;
+                gap: 4px;
+                margin-left: 8px;
+                padding: 4px 10px;
+                background: var(--accent-1-15);
+                border-radius: 30px;
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--accent-1);
+                border: 1px solid var(--accent-1-25);
+            }
+            #draft-status {
+                display: none !important;
+            }
+            .mobile-draft-timer.danger .material-icons,
+            .mobile-draft-timer.danger #mobile-countdown {
+                color: var(--danger-bg) !important;
+            }
+
+            /* ---------- 移动端隐藏侧边栏统计面板和操作按钮，折叠至顶部 ---------- */
+            .sidebar #stats-panel,
+            .sidebar .sidebar-actions {
+                display: none !important;
+            }
+            .sidebar {
+                display: none !important;
+            }
+
+            /* 显示移动端专用顶部按钮 */
+            #mobile-stats-trigger,
+            #mobile-manage-trigger {
+                display: inline-flex !important;
+            }
+
+            /* 下拉面板基础样式 */
+            .mobile-dropdown-panel {
+                position: absolute;
+                top: calc(100% + 4px);
+                left: 12px;
+                right: 12px;
+                background: var(--glass-bg);
+                backdrop-filter: blur(20px);
+                border: 1px solid var(--glass-border);
+                border-radius: 20px;
+                padding: 20px 16px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+                z-index: 1000;
+                max-height: 70vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            /* 管理按钮网格：两列布局，适合触控点击 */
+            .mobile-manage-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+            .mobile-manage-grid .btn,
+            .mobile-manage-grid .primary-btn,
+            .mobile-manage-grid .danger-btn {
+                width: 100%;
+                padding: 14px 8px !important;
+                font-size: 14px !important;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                min-height: 48px;
+            }
+            .mobile-manage-grid .btn i,
+            .mobile-manage-grid .btn .material-icons,
+            .mobile-manage-grid .primary-btn .material-icons,
+            .mobile-manage-grid .danger-btn .material-icons {
+                font-size: 18px;
+            }
+
+            /* 统计面板内的 stat-card 稍微缩小 */
+            #mobile-stats-panel .stats-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+            #mobile-stats-panel .stat-card {
+                padding: 12px 8px;
+            }
+            #mobile-stats-panel .stat-value {
+                font-size: 1.6rem;
+            }
+            #mobile-stats-panel .stat-label {
+                font-size: 0.75rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -6055,6 +6740,13 @@
                 <button class="btn-icon-only" onclick="toggleThemeOptions()" title="主题" aria-label="主题">
                     <span class="material-icons">palette</span>
                 </button>
+                <!-- 移动端：数据统计/管理图标，紧邻主题按钮 -->
+                <button id="mobile-stats-trigger" class="btn-icon-only mobile-only" style="display: none;" title="数据统计" aria-label="数据统计">
+                    <span class="material-icons">insights</span>
+                </button>
+                <button id="mobile-manage-trigger" class="btn-icon-only mobile-only" style="display: none;" title="数据管理" aria-label="数据管理">
+                    <span class="material-icons">menu_book</span>
+                </button>
                 <div class="theme-options" id="themeOptions">
                     <div class="theme-option" onclick="changeTheme('theme1')">
                         <div class="theme-preview">
@@ -6129,6 +6821,14 @@
                 <div id="search-box" style="flex:1; position:relative;">
                     <input type="text" id="search-input" placeholder="搜索标题/内容/关键词..." style="width:100%">
                 </div>
+                <!-- 移动端搜索图标（默认显示） -->
+                <button id="mobile-search-icon" class="icon-btn mobile-only" style="display: none;" title="搜索" aria-label="搜索">
+                    <span class="material-icons">search</span>
+                </button>
+                <!-- 移动端搜索取消按钮（默认隐藏） -->
+                <button id="mobile-search-cancel" class="icon-btn mobile-only" style="display: none;" title="取消" aria-label="取消">
+                    <span class="material-icons">close</span>
+                </button>
                 <button class="icon-btn" onclick="showForm()" title="新增史料" aria-label="新增史料">
                     <span class="material-icons">note_add</span>
                 </button>
@@ -6177,6 +6877,45 @@
                     <button class="icon-btn" onclick="scrollToTop()" title="返回顶部" aria-label="返回顶部">
                         <span class="material-icons">arrow_upward</span>
                     </button>
+                </div>
+            </div>
+            
+            <!-- 移动端：统计下拉面板 -->
+            <div id="mobile-stats-panel" class="mobile-dropdown-panel" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="mobile-stat-total">0</span>
+                        <span class="stat-label">总条目</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="mobile-stat-wordcount">0</span>
+                        <span class="stat-label">总字数</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="mobile-stat-keywords">0</span>
+                        <span class="stat-label">关键词</span>
+                    </div>
+                </div>
+                <div style="margin-top: 12px; text-align: center;">
+                    <button class="primary-btn" onclick="showStatisticsPanel()">查看详细统计</button>
+                </div>
+            </div>
+
+            <!-- 移动端：管理下拉面板 -->
+            <div id="mobile-manage-panel" class="mobile-dropdown-panel" style="display: none;">
+                <div class="mobile-manage-grid">
+                    <button class="primary-btn btn-outline" onclick="showStatisticsPanel()">详细统计</button>
+                    <button class="primary-btn btn-outline" onclick="showTimelineView()">时间线视图</button>
+                    <button class="primary-btn btn-outline" onclick="showDraftBox()">草稿箱</button>
+                    <button class="primary-btn btn-outline" onclick="updateAllEntryCodes()">更新条目代码</button>
+                    <button class="primary-btn btn-outline" onclick="showKeywordEditor()">关键词编辑器</button>
+                    <button class="primary-btn btn-outline" onclick="showLogViewer()">工作日志</button>
+                    <button class="primary-btn btn-outline" onclick="showRecycleBin()">回收站</button>
+                    <button class="primary-btn btn-outline" onclick="exportEntries('excel')">导出Excel</button>
+                    <button class="primary-btn btn-outline" onclick="importExcel()">导入Excel</button>
+                    <button class="primary-btn btn-outline" onclick="scanDuplicates()">扫描重复</button>
+                    <button class="primary-btn btn-outline" onclick="showBulkEditForm()">批量编辑</button>
+                    <button class="primary-btn btn-outline" onclick="migrateLegacyData()">修复数据</button>
                 </div>
             </div>
             
@@ -6348,7 +7087,14 @@
            
         <!-- 史料表单弹窗 -->
         <div id="entry-form" class="form-popup">
-            <h2>史料条目编辑</h2>
+            <h2>
+                史料条目编辑
+                <!-- 移动端紧凑自动保存倒计时（桌面端隐藏，仅在移动端媒体查询中显示） -->
+                <span id="mobile-draft-timer" class="mobile-draft-timer" style="display: none;" title="自动保存倒计时">
+                    <span class="material-icons">schedule</span>
+                    <span id="mobile-countdown">5:00</span>
+                </span>
+            </h2>
             <!-- 新增草稿状态栏 -->
             <div id="draft-status" class="draft-status-bar glass-container" style="display: none;">
                 <span class="material-icons">schedule</span>
@@ -7276,7 +8022,8 @@
             const seconds = Math.ceil(remaining / 1000);
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = seconds % 60;
-            countdownEl.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            const text = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            countdownEl.textContent = text;
             
             // 最后10秒变红闪烁
             if(seconds <= 10) {
@@ -7287,6 +8034,172 @@
                 countdownTip.classList.remove('danger-pulse');
             }
         }
+
+        // ---------- 移动端搜索切换 ----------
+        function initMobileSearch() {
+            const isMobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+            if (!isMobile) return;
+
+            const searchIcon = document.getElementById('mobile-search-icon');
+            const searchCancel = document.getElementById('mobile-search-cancel');
+            const searchBox = document.getElementById('search-box');
+            const searchInput = document.getElementById('search-input');
+            const toolbar = document.querySelector('.action-buttons');
+
+            if (!searchIcon || !searchCancel || !searchBox || !searchInput) return;
+
+            // 点击搜索图标：激活搜索模式
+            searchIcon.addEventListener('click', function() {
+                toolbar.classList.add('mobile-search-active');
+                searchBox.style.display = 'flex';
+                searchBox.style.flex = '1';
+                setTimeout(() => searchInput.focus(), 100); // 自动聚焦
+            });
+
+            // 点击取消按钮：退出搜索模式
+            searchCancel.addEventListener('click', function() {
+                toolbar.classList.remove('mobile-search-active');
+                searchBox.style.display = 'none';
+                searchInput.value = '';          // 清空搜索词
+                searchQuery = '';               // 重置全局搜索变量
+                renderEntries();               // 刷新列表
+            });
+
+            // 按回车执行搜索并自动收起（可选）
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchQuery = this.value;
+                    renderEntries();
+                    // 自动退出搜索模式（延迟一点让用户看到结果）
+                    setTimeout(() => {
+                        if (toolbar.classList.contains('mobile-search-active')) {
+                            searchCancel.click();
+                        }
+                    }, 300);
+                }
+            });
+
+            // 点击外部自动收起？简单起见，由取消按钮控制
+        }
+
+        // ---------- 移动倒计时同步 ----------
+        // 增强原 updateCountdownDisplay 函数，添加移动钟表更新
+        const originalUpdateCountdown = updateCountdownDisplay;
+        window.updateCountdownDisplay = function(remaining) {
+            // 调用原函数（桌面倒计时）
+            if (typeof originalUpdateCountdown === 'function') {
+                originalUpdateCountdown(remaining);
+            }
+
+            // 移动钟表更新
+            const mobileCount = document.getElementById('mobile-countdown');
+            const mobileTimer = document.querySelector('.mobile-draft-timer');
+            if (mobileCount) {
+                const baseRemaining = (remaining !== undefined)
+                    ? remaining
+                    : 150000 - (Date.now() - lastSaveTimestamp);
+                const seconds = Math.ceil(baseRemaining / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                mobileCount.textContent = `${minutes}:${secs.toString().padStart(2, '0')}`;
+                
+                if (mobileTimer) {
+                    if (seconds <= 10) {
+                        mobileTimer.classList.add('danger');
+                    } else {
+                        mobileTimer.classList.remove('danger');
+                    }
+                }
+            }
+        };
+
+        // ---------- 移动端侧边栏折叠功能 ----------
+        function initMobileSidebarFold() {
+            const isMobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+            if (!isMobile) return;
+
+            const statsTrigger = document.getElementById('mobile-stats-trigger');
+            const manageTrigger = document.getElementById('mobile-manage-trigger');
+            const statsPanel = document.getElementById('mobile-stats-panel');
+            const managePanel = document.getElementById('mobile-manage-panel');
+
+            if (!statsTrigger || !manageTrigger || !statsPanel || !managePanel) return;
+
+            // 关闭所有面板
+            function closeAllPanels() {
+                statsPanel.style.display = 'none';
+                managePanel.style.display = 'none';
+            }
+
+            // 点击统计图标
+            statsTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (statsPanel.style.display === 'block') {
+                    statsPanel.style.display = 'none';
+                } else {
+                    closeAllPanels();
+                    statsPanel.style.display = 'block';
+                    // 更新移动统计面板数据
+                    updateMobileStats();
+                }
+            });
+
+            // 点击管理图标
+            manageTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (managePanel.style.display === 'block') {
+                    managePanel.style.display = 'none';
+                } else {
+                    closeAllPanels();
+                    managePanel.style.display = 'block';
+                }
+            });
+
+            // 点击页面其他区域关闭面板
+            document.addEventListener('click', function(e) {
+                if (!statsTrigger.contains(e.target) && !statsPanel.contains(e.target)) {
+                    statsPanel.style.display = 'none';
+                }
+                if (!manageTrigger.contains(e.target) && !managePanel.contains(e.target)) {
+                    managePanel.style.display = 'none';
+                }
+            });
+
+            // 阻止面板内点击事件冒泡到 document
+            statsPanel.addEventListener('click', function(e) { e.stopPropagation(); });
+            managePanel.addEventListener('click', function(e) { e.stopPropagation(); });
+        }
+
+        // 更新移动统计卡片：直接复用侧边栏统计结果，确保数值一致
+        function updateMobileStats() {
+            const desktopTotal = document.getElementById('stat-total');
+            const desktopWordcount = document.getElementById('stat-wordcount');
+            const desktopKeywords = document.getElementById('stat-keywords');
+            if (!desktopTotal || !desktopKeywords) return;
+
+            const totalEl = document.getElementById('mobile-stat-total');
+            const wordEl = document.getElementById('mobile-stat-wordcount');
+            const keywordEl = document.getElementById('mobile-stat-keywords');
+
+            if (totalEl) totalEl.textContent = desktopTotal.textContent || '0';
+            if (wordEl && desktopWordcount) wordEl.textContent = desktopWordcount.textContent || '0';
+            if (keywordEl) keywordEl.textContent = desktopKeywords.textContent || '0';
+        }
+
+        // 包装原有统计更新函数，增加移动端同步
+        const originalUpdateStats = updateStatisticsPanel;
+        window.updateStatisticsPanel = function() {
+            if (typeof originalUpdateStats === 'function') originalUpdateStats();
+            if (window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)) {
+                updateMobileStats();
+            }
+        };
+
+        // 初始化移动搜索与移动侧边栏折叠（页面加载后执行）
+        document.addEventListener('DOMContentLoaded', function () {
+            initMobileSearch();
+            initMobileSidebarFold();
+        });
 
         // 执行自动保存
         async function triggerAutoSave() {
