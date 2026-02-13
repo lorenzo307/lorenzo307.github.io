@@ -3183,6 +3183,25 @@
             }
         }
 
+        /* 页码下方居中跳转输入框样式（移动/桌面通用） */
+        .pagination-jump-inline {
+            width: 100%;
+            margin-top: 2px; /* 与上方页码距离更紧凑 */
+            display: flex;
+            justify-content: center;
+        }
+
+        .pagination-jump-inline #page-jump-inline {
+            width: 56px;
+            padding: 2px 4px;
+            font-size: 0.78rem;
+            text-align: center;
+            border-radius: 999px;
+            border: 1px solid var(--glass-border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
         .keyword-tag:hover {
             background: var(--glass-hover) !important;
             color: var(--glass-text-hover);
@@ -3852,6 +3871,8 @@
             border-radius: 8px;
             background: var(--input-bg);
             margin-bottom: 16px;
+            /* 允许内容区域在内部滚动，避免被父级滚动截断（尤其是移动端） */
+            overflow: hidden;
         }
 
         /* 编辑器工具栏样式 */
@@ -4176,44 +4197,84 @@
         }
 
         .bulk-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
             font-weight: bold;
         }
 
         .entry-item.bulk-mode {
             position: relative;
-            padding-left: 35px;
+            padding-left: 28px; /* 左侧不再放圈圈，恢复普通内边距 */
         }
 
-        .entry-item.bulk-mode .select-entry-container {
-            position: absolute;
-            left: 10px;
-            top: 15px;
+        /* 目录视图下，批量选择圈圈在操作按钮区域内联显示 */
+        .select-entry-inline {
+            position: static;
+            margin-right: 4px;
         }
 
         .entry-item.selected {
             border-left: 4px solid var(--accent-1);
-            /* 默认选中态：明显加深，和未选中条目区分 */
+            /* 选中态：通过卡片背景加深来区分，保持文字颜色不变 */
             background: linear-gradient(
                 135deg,
-                rgba(var(--accent-1-rgb), 0.18),
-                rgba(var(--accent-2-rgb), 0.10)
+                rgba(0, 0, 0, 0.96),
+                rgba(15, 23, 42, 0.95)
             );
             box-shadow:
-                0 10px 28px rgba(0, 0, 0, 0.10),
-                0 0 0 1px rgba(var(--accent-1-rgb), 0.18) inset;
-            /* animation: pulse 2s infinite alternate; */ /* 移除脉冲动画 */
+                0 10px 28px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(248, 250, 252, 0.25) inset;
         }
 
-        /* 批量模式下的选中态：再加深一点，强化“已选中” */
+        /* 批量模式下的选中态：再略微加强对比度 */
         .entry-item.bulk-mode.selected {
             background: linear-gradient(
                 135deg,
-                rgba(var(--accent-1-rgb), 0.24),
-                rgba(var(--accent-2-rgb), 0.14)
+                rgba(0, 0, 0, 0.98),
+                rgba(15, 23, 42, 0.98)
             );
             box-shadow:
-                0 14px 34px rgba(0, 0, 0, 0.14),
-                0 0 0 1px rgba(var(--accent-1-rgb), 0.22) inset;
+                0 16px 40px rgba(0, 0, 0, 0.55),
+                0 0 0 1px rgba(248, 250, 252, 0.35) inset;
+        }
+
+        /* 详细视图选中态与列表保持一致的深色高对比效果 */
+        .detail-entry.selected {
+            background: linear-gradient(
+                135deg,
+                rgba(0, 0, 0, 0.96),
+                rgba(15, 23, 42, 0.95)
+            );
+            box-shadow:
+                0 12px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(248, 250, 252, 0.25) inset;
+        }
+
+        .detail-entry.bulk-mode.selected {
+            background: linear-gradient(
+                135deg,
+                rgba(0, 0, 0, 0.98),
+                rgba(15, 23, 42, 0.98)
+            );
+            box-shadow:
+                0 18px 44px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(248, 250, 252, 0.35) inset;
+        }
+
+        /* 选中时：仅关键词标签跟随卡片变为深色方案，其余文字保持原来的深色/默认色 */
+        .entry-item.selected .keyword-tag {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border-color: rgba(249, 250, 251, 0.4) !important;
+            color: #f9fafb !important;
+            box-shadow: none;
+        }
+
+        .detail-entry.selected .keyword-tag {
+            background: rgba(15, 23, 42, 0.8) !important;
+            border-color: rgba(249, 250, 251, 0.4) !important;
+            color: #f9fafb !important;
+            box-shadow: none;
         }
 
         /* 详细视图样式 */
@@ -4790,9 +4851,9 @@
         #entries-container-wrapper {
             position: relative;
             z-index: 200; /* 确保搜索结果容器在 header (100) 和侧边栏之上，但低于搜索建议下拉框 (10001) */
-            margin-top: 1px;
-            margin-bottom: 24px;
-            padding: 24px 20px 28px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding: 18px 18px 24px;
             background: linear-gradient(
                 135deg,
                 rgba(255, 255, 255, 0.08),
@@ -5446,9 +5507,9 @@
 
             /* 竖版时条目区域更舒展 */
             #entries-container-wrapper {
-                margin-top: 12px;
-                margin-bottom: 28px;
-                padding: 28px 24px 32px;
+                margin-top: 4px;
+                margin-bottom: 22px;
+                padding: 22px 20px 26px;
             }
 
             .header {
@@ -5657,6 +5718,21 @@
                  padding: 10px 12px !important;
              }
 
+             /* 手机下批量操作栏：防止选择圈圈与标题/统计重叠 */
+             .bulk-actions-bar {
+                 flex-wrap: wrap;
+                 gap: 8px;
+             }
+             .bulk-select {
+                 flex-wrap: wrap;
+                 gap: 12px;
+             }
+             .bulk-info {
+                 width: 100%;
+                 justify-content: flex-end;
+                 font-size: 0.85em;
+             }
+
              .main-content .action-buttons {
                  overflow: visible !important;
              }
@@ -5681,8 +5757,9 @@
              }
 
              #entries-container-wrapper {
-                 padding: 18px 14px 22px;
-                 margin-bottom: 18px;
+                 padding: 14px 12px 18px;
+                 margin-top: 4px;
+                 margin-bottom: 14px;
              }
              
              /* 响应式时间线 */
@@ -6026,6 +6103,8 @@
             #analysis-editor-container {
                 height: 200px !important;
                 margin-bottom: 12px;
+                /* 允许内部 Quill 区域在移动端独立滚动 */
+                overflow: hidden;
             }
             .ql-toolbar.ql-snow {
                 display: flex;
@@ -6934,7 +7013,7 @@
                     </div>
                     <div class="stat-card">
                         <span class="stat-value" id="mobile-stat-wordcount">0</span>
-                        <span class="stat-label">总字数</span>
+                        <span class="stat-label">总字数（万）</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-value" id="mobile-stat-keywords">0</span>
@@ -6967,28 +7046,35 @@
             <!-- 批量操作栏 -->
             <div id="bulk-actions-bar" class="bulk-actions-bar" style="display:none;">
                 <div class="bulk-select">
-                    <label>
+                    <label title="选择当前页" aria-label="选择当前页">
                         <div class="select-entry-container">
                             <input type="checkbox" id="select-page" onclick="toggleSelectAll(true)">
                             <div class="custom-checkbox"></div>
                         </div>
-                        选择当前页
+                        <span class="material-icons" style="font-size: 18px;">select_all</span>
                     </label>
-                    <label>
+                    <label title="选择全部" aria-label="选择全部">
                         <div class="select-entry-container">
                             <input type="checkbox" id="select-all" onclick="toggleSelectAll(false)">
                             <div class="custom-checkbox"></div>
                         </div>
-                        选择全部
+                        <span class="material-icons" style="font-size: 18px;">done_all</span>
                     </label>
                 </div>
                 <div class="bulk-operations">
-                    <button class="danger-btn" onclick="bulkDelete()">批量删除</button>
-                    <button class="primary-btn" id="export-selected-btn" onclick="exportSelectedEntries('excel')">导出选中项</button>
-                    <button class="primary-btn" onclick="toggleBulkMode()">退出批量操作</button>
+                    <button class="danger-btn" onclick="bulkDelete()" title="批量删除" aria-label="批量删除">
+                        <span class="material-icons">delete_sweep</span>
+                    </button>
+                    <button class="primary-btn" id="export-selected-btn" onclick="exportSelectedEntries('excel')" title="导出选中项" aria-label="导出选中项">
+                        <span class="material-icons">file_download</span>
+                    </button>
+                    <button class="primary-btn" onclick="toggleBulkMode()" title="退出批量操作" aria-label="退出批量操作">
+                        <span class="material-icons">close</span>
+                    </button>
                 </div>
-                <div class="bulk-info">
-                    已选择 <span id="selected-count">0</span> 个条目
+                <div class="bulk-info" aria-label="已选择条目数量">
+                    <span id="selected-count">0</span>
+                    <span class="material-icons" style="font-size: 18px; margin-left: 4px;">check_circle</span>
                 </div>
             </div>
             </div>
@@ -7085,10 +7171,24 @@
                 <div id="entries-container"></div>
             </div>
             <div class="pagination">
-                <div class="pagination-info">
-                    第<span id="currentPage">1</span>页，共<span id="totalPages">1</span>页，每页<span id="entriesPerPage"></span>条
+                <!-- 保留统计元素但不显示文字，供 JS 更新当前页/总页数/每页条数使用 -->
+                <div class="pagination-info" style="display: none;">
+                    <span id="currentPage">1</span>
+                    <span id="totalPages">1</span>
+                    <span id="entriesPerPage"></span>
                 </div>
                 <div id="pagination-buttons"></div>
+                <div class="pagination-jump-inline">
+                    <input
+                        id="page-jump-inline"
+                        type="number"
+                        min="1"
+                        value="1"
+                        onchange="jumpToPage(this.value)"
+                        onkeypress="if(event.key === 'Enter') jumpToPage(this.value)"
+                        aria-label="跳转到指定页"
+                    >
+                </div>
             </div>
         </div>
 
@@ -7103,7 +7203,7 @@
                     </div>
                     <div class="stat-card">
                         <span class="stat-value" id="stat-wordcount">0</span>
-                        <span class="stat-label">总字数</span>
+                        <span class="stat-label">总字数（万）</span>
                     </div>
                     <div class="stat-card">
                         <span class="stat-value" id="stat-keywords">0</span>
@@ -7737,6 +7837,30 @@
             
             // 更新计数
             updateSelectedCount();
+        }
+
+        // 批量模式下：点击整条史料条目切换选中状态（去掉可见圈圈）
+        function handleEntryItemClick(event, id) {
+            if (!bulkModeActive) return;
+
+            // 点击编辑 / 删除等操作按钮时，不改变选中状态
+            if (event.target.closest('.entry-actions')) {
+                return;
+            }
+
+            const currentlySelected = selectedAll || selectedEntryIds.has(id);
+            const newChecked = !currentlySelected;
+
+            // 同步隐藏复选框状态（仍然保留逻辑所需的 checkbox，但对用户不可见）
+            const wrapper = document.querySelector(`.entry-item[data-id="${id}"], .detail-entry[data-id="${id}"]`);
+            if (wrapper) {
+                const checkbox = wrapper.querySelector('.select-entry');
+                if (checkbox) {
+                    checkbox.checked = newChecked;
+                }
+            }
+
+            handleEntrySelection(id, newChecked);
         }
 
         // 新增页面条数改变函数
@@ -8883,20 +9007,9 @@
                  const elementClass = `entry-item ${bulkModeActive ? 'bulk-mode' : ''} ${selectedAll || selectedEntryIds.has(entry.id) ? 'selected' : ''}`;
                  let entryContent = '';
 
-                 // 批量模式复选框
-                 if (bulkModeActive) {
-                     entryContent += `
-                         <div class="select-entry-container">
-                             <input type="checkbox" class="select-entry" 
-                                    ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''} 
-                                    onchange="handleEntrySelection('${entry.id}', this.checked)">
-                             <div class="custom-checkbox"></div>
-                         </div>`;
-                 }
-
-                 // 目录视图：不显示内容预览，只显示标题、元数据和关键词
-                 // 简化的条目内容
-                entryContent += `
+                // 目录视图：不显示内容预览，只显示标题、元数据和关键词
+                // 简化的条目内容（将批量选择圈圈与编辑按钮放在一起，避免与标题重叠，尤其是移动端）
+               entryContent += `
                     <div class="entry-header">
                         <h3 class="entry-title">${entry.title || ''}</h3>
                         <div class="entry-meta">
@@ -8904,6 +9017,15 @@
                             <span class="entry-date">${entry.date}</span>
                         </div>
                         <div class="entry-actions">
+                            ${bulkModeActive ? `
+                                <input
+                                    type="checkbox"
+                                    class="select-entry"
+                                    ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''}
+                                    onchange="handleEntrySelection('${entry.id}', this.checked)"
+                                    style="display:none;"
+                                >
+                            ` : ''}
                             <button class="primary-btn btn-icon-only" onclick="editEntry('${entry.id}')" title="编辑" aria-label="编辑">
                                 <span class="material-icons">edit</span>
                             </button>
@@ -8919,7 +9041,8 @@
                     </div>
                 `;
 
-                 return `<div class="${elementClass}" data-id="${entry.id}">${entryContent}</div>`;
+                const clickAttr = bulkModeActive ? ` onclick="handleEntryItemClick(event, '${entry.id}')"` : '';
+                return `<div class="${elementClass}" data-id="${entry.id}"${clickAttr}>${entryContent}</div>`;
              }).join('');
              // --- 恢复结束 ---
         }
@@ -8931,17 +9054,16 @@
                        const elementClass = `detail-entry glass-container ${bulkModeActive ? 'bulk-mode' : ''} ${selectedAll || selectedEntryIds.has(entry.id) ? 'selected' : ''}`;
                        let entryContent = '';
 
-                       // 批量模式复选框
+                       // 批量模式：保留隐藏复选框用于逻辑控制，不再展示可见圈圈
                        if (bulkModeActive) {
                            entryContent += `
-                               <div class="select-entry-container">
-                                   <input type="checkbox" class="select-entry" 
-                                          ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''} 
-                                          onchange="handleEntrySelection('${entry.id}', this.checked)">
-                                   <div class="custom-checkbox">
-                                       <div class="checkmark"></div>
-                                   </div>
-                               </div>`;
+                               <input
+                                   type="checkbox"
+                                   class="select-entry"
+                                   ${selectedAll || selectedEntryIds.has(entry.id) ? 'checked' : ''}
+                                   onchange="handleEntrySelection('${entry.id}', this.checked)"
+                                   style="display:none;"
+                               >`;
                        }
 
                        // 全文检索高亮处理
@@ -9023,7 +9145,8 @@
                            </div>
                        `;
 
-                       return `<div class="${elementClass}" data-id="${entry.id}">${entryContent}</div>`;
+                       const clickAttr = bulkModeActive ? ` onclick="handleEntryItemClick(event, '${entry.id}')"` : '';
+                       return `<div class="${elementClass}" data-id="${entry.id}"${clickAttr}>${entryContent}</div>`;
                    }).join('') + 
                    `</div>`;
         }
@@ -9149,29 +9272,18 @@
                 return `<button class="page-btn ${page === current ? 'active' : ''}" onclick="currentPage=${page};renderEntries()">${page}</button>`;
             }).join('');
 
-            // 跳转部分：保留“跳至 + 输入 + 页”功能
-            const jumpHtml = `
-                <div class="page-jump">
-                    <span>跳至</span>
-                    <input
-                        type="number"
-                        min="1"
-                        max="${totalPages}"
-                        value="${current}"
-                        onchange="jumpToPage(this.value)"
-                        onkeypress="if(event.key === 'Enter') jumpToPage(this.value)"
-                        style="${isMobile ? 'width:54px;padding:2px 4px;font-size:0.75rem;' : ''}"
-                    >
-                    <span>页</span>
-                </div>
-            `;
+            // 同步更新顶部行内跳转输入框的最大页和当前值
+            const inlineJump = document.getElementById('page-jump-inline');
+            if (inlineJump) {
+                inlineJump.max = totalPages || 1;
+                inlineJump.value = current;
+            }
 
-            // 组合HTML（在移动端依然保持“当前页/总页数/每页条数 + 按钮 + 跳转”全部可用）
+            // 组合HTML（分页按钮区域只保留页码和上一页/下一页）
             container.innerHTML = `
                 ${prevBtn}
                 ${pageButtons}
                 ${nextBtn}
-                ${jumpHtml}
             `;
         }
         
@@ -10115,10 +10227,12 @@
             // 总条目数
             statTotal.textContent = entries.length;
             
-            // 总字数（原文摘抄部分）
+            // 总字数（原文摘抄部分，按“万字”为单位显示）
             if (statWordcount) {
                 const totalWordCount = entries.reduce((sum, e) => sum + countWords(e.content), 0);
-                statWordcount.textContent = formatNumber(totalWordCount);
+                const inWan = totalWordCount / 10000;
+                // 保留两位小数，但去掉多余的 0
+                statWordcount.textContent = Number(inWan.toFixed(2)).toString();
             }
             
             // 关键词数量
