@@ -1060,3 +1060,73 @@
     z-index: -1;
     transform: translateZ(-1px) scale(2);
 }
+
+/* ---------- 性能模式 / 移动端 彻底禁用所有转场动画和液态玻璃特效 ---------- */
+@media (max-width: 768px), (pointer: coarse) {
+    /* 禁用所有页面级转场 */
+    .page-enter, .page-exit,
+    .auth-page-enter, .auth-page-exit,
+    .main-page-enter, .main-page-exit,
+    .database-page-enter, .database-page-exit,
+    .stat-card-enter, .card-enter,
+    .table-row-enter, .form-group-enter {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+    }
+    
+    /* 禁用液态玻璃 SVG 扭曲与高光扫动 */
+    .liquid-glass::before,
+    .glass-container::before,
+    .content-card::before,
+    .stat-card::before,
+    .data-table::before,
+    .auth-container::before {
+        animation: none !important;
+        filter: none !important;
+        opacity: 0.5 !important;
+    }
+    .liquid-glass::after,
+    .glass-container::after,
+    .content-card::after,
+    .stat-card::after,
+    .data-table::after,
+    .auth-container::after {
+        animation: none !important;
+        transform: none !important;
+        opacity: 0.2 !important;
+    }
+    
+    /* 禁用所有视差效果 */
+    .parallax-layer-1,
+    .parallax-layer-2,
+    .parallax-layer-3 {
+        translate: none !important;
+        transform: none !important;
+        transition: none !important;
+    }
+    
+    /* 禁用页面加载进度条动画 */
+    .page-loader.active {
+        animation: none !important;
+        transform: scaleX(0.7) !important;
+    }
+    
+    /* 禁用 3D 翻转卡片效果 */
+    .flip-card-inner {
+        transform: none !important;
+    }
+    
+    /* 禁用骨架屏闪烁 */
+    .skeleton-screen::after {
+        animation: none !important;
+    }
+}
+
+/* 同时尊重用户「减少动态效果」偏好（额外兜底） */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+    }
+}

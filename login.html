@@ -267,7 +267,86 @@
                 font-size: 2.2rem;
             }
         }
+
+        /* ========== 性能模式：移动/触摸设备自动启用 ========== */
+        body.performance-mode .stat-card,
+        body.performance-mode .content-card,
+        body.performance-mode .data-table,
+        body.performance-mode .btn,
+        body.performance-mode .glass-surface,
+        body.performance-mode .glass-container,
+        body.performance-mode .auth-container {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            transform: none !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+            border: 1px solid rgba(var(--accent-1-rgb, 231, 136, 149), 0.2) !important;
+            transition: none !important;
+        }
+        body.performance-mode .stat-card::before,
+        body.performance-mode .stat-card::after,
+        body.performance-mode .content-card::before,
+        body.performance-mode .liquid-glass::before,
+        body.performance-mode .liquid-glass::after,
+        body.performance-mode .glass-container::before,
+        body.performance-mode .glass-container::after,
+        body.performance-mode .auth-container::before,
+        body.performance-mode .auth-container::after {
+            display: none !important;
+        }
+        body.performance-mode .parallax-layer-1,
+        body.performance-mode .parallax-layer-2,
+        body.performance-mode .parallax-layer-3 {
+            translate: none !important;
+            transform: none !important;
+        }
+
+        /* 性能模式下进一步简化认证容器的阴影与动画 */
+        body.performance-mode .auth-container {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            animation: none !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1) !important;
+        }
+
+        /* 移动端触摸优化：增大点击区域与内边距 */
+        @media (max-width: 768px) {
+            .auth-left {
+                padding: 30px 20px;
+            }
+            .auth-left h1 {
+                font-size: 2rem;
+            }
+            .auth-right {
+                padding: 30px 20px;
+            }
+            .btn {
+                padding: 14px 20px;
+            }
+        }
     </style>
+    <script>
+        // 性能模式自动启用：小屏幕或触摸设备
+        (function () {
+            function applyPerformanceMode() {
+                var isSmallScreen = window.innerWidth <= 768;
+                var isTouchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+                if (isSmallScreen || isTouchDevice) {
+                    if (document.body) {
+                        document.body.classList.add('performance-mode');
+                    }
+                    try {
+                        localStorage.setItem('performanceMode', '1');
+                    } catch (e) {}
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', applyPerformanceMode);
+            } else {
+                applyPerformanceMode();
+            }
+        })();
+    </script>
 </head>
 <body>
     <!-- Liquid Glass SVG Filters (hidden defs) -->

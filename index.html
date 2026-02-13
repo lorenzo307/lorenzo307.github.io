@@ -2142,7 +2142,73 @@
                 font-size: 28px;
             }
         }
+
+        /* ========== 性能模式：移动/触摸设备自动启用（视觉降级但功能完整） ========== */
+        body.performance-mode .stat-card,
+        body.performance-mode .content-card,
+        body.performance-mode .data-table,
+        body.performance-mode .btn,
+        body.performance-mode .glass-surface,
+        body.performance-mode .glass-container,
+        body.performance-mode .auth-container {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            transform: none !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+            border: 1px solid rgba(var(--accent-1-rgb, 231, 136, 149), 0.2) !important;
+            transition: none !important;
+        }
+        body.performance-mode .stat-card::before,
+        body.performance-mode .stat-card::after,
+        body.performance-mode .content-card::before,
+        body.performance-mode .liquid-glass::before,
+        body.performance-mode .liquid-glass::after,
+        body.performance-mode .glass-container::before,
+        body.performance-mode .glass-container::after,
+        body.performance-mode .auth-container::before,
+        body.performance-mode .auth-container::after {
+            display: none !important;
+        }
+        body.performance-mode .parallax-layer-1,
+        body.performance-mode .parallax-layer-2,
+        body.performance-mode .parallax-layer-3 {
+            translate: none !important;
+            transform: none !important;
+        }
+        @media (pointer: coarse) {
+            .btn, .select-entry-container, .custom-checkbox,
+            .page-btn, .date-preset-btn, .tag-item {
+                min-height: 48px;
+                min-width: 48px;
+            }
+            .form-input, .search-input, select {
+                font-size: 16px; /* 防止 iOS 缩放 */
+                padding: 14px 18px;
+            }
+        }
     </style>
+    <script>
+        // 性能模式自动启用：小屏幕或触摸设备
+        (function () {
+            function applyPerformanceMode() {
+                var isSmallScreen = window.innerWidth <= 768;
+                var isTouchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+                if (isSmallScreen || isTouchDevice) {
+                    if (document.body) {
+                        document.body.classList.add('performance-mode');
+                    }
+                    try {
+                        localStorage.setItem('performanceMode', '1');
+                    } catch (e) {}
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', applyPerformanceMode);
+            } else {
+                applyPerformanceMode();
+            }
+        })();
+    </script>
 </head>
 <body>
     <!-- Liquid Glass SVG Filters (hidden defs) -->
@@ -3684,31 +3750,39 @@
                 }
             }
 
-            initMouseParallax();
+            const isTouchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            const isPerformanceMode = document.body.classList.contains('performance-mode');
+
+            // 鼠标与陀螺仪视差、3D 悬停仅在非性能模式的非触摸设备上启用
+            if (!isPerformanceMode && !isTouchDevice) {
+                initMouseParallax();
+                initGyroParallax();
+
+                // 为卡片添加深度感知（仅桌面）
+                const cards = document.querySelectorAll('.stat-card, .content-card');
+                cards.forEach(card => {
+                    card.addEventListener('mousemove', function(e) {
+                        const rect = this.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+
+                        const centerX = rect.width / 2;
+                        const centerY = rect.height / 2;
+
+                        const rotateY = ((x - centerX) / centerX) * 3;
+                        const rotateX = ((centerY - y) / centerY) * 3;
+
+                        this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
+                    });
+
+                    card.addEventListener('mouseleave', function() {
+                        this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
+                    });
+                });
+            }
+
+            // 滚动视差在所有设备上保留
             initScrollParallax();
-            initGyroParallax();
-
-            // 为卡片添加深度感知
-            const cards = document.querySelectorAll('.stat-card, .content-card');
-            cards.forEach(card => {
-                card.addEventListener('mousemove', function(e) {
-                    const rect = this.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-
-                    const centerX = rect.width / 2;
-                    const centerY = rect.height / 2;
-
-                    const rotateY = ((x - centerX) / centerX) * 3;
-                    const rotateX = ((centerY - y) / centerY) * 3;
-
-                    this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(10px)`;
-                });
-
-                card.addEventListener('mouseleave', function() {
-                    this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateZ(0)';
-                });
-            });
         });
         
         /*********************

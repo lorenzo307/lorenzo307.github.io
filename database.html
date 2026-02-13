@@ -5497,6 +5497,28 @@
                 padding: 12px 16px !important;
                 padding-left: 45px !important;
             }
+
+            /* 弹窗在移动端的尺寸与内边距优化 */
+            .form-popup,
+            .category-manager,
+            #log-viewer,
+            #recycle-bin,
+            #keyword-editor {
+                width: 95%;
+                max-width: 600px;
+                padding: 15px;
+            }
+
+            /* 编辑器工具栏在小屏上自动换行，避免横向滚动 */
+            .ql-toolbar {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .ql-toolbar button {
+                padding: 4px 8px;
+            }
             
             .header .back-btn,
             .header .theme-selector button {
@@ -5923,12 +5945,24 @@
         if (!CSS.supports('backdrop-filter', 'blur(1px)')) {
             document.body.classList.add('no-blur-effect');
         }
-        // 启用性能模式：仅在小屏或触摸设备上自动开启，桌面横屏保留完整光影效果
-        (function autoPerformanceMode() {
-            const isSmallScreen = window.innerWidth <= 768;
-            const isTouchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-            if (isSmallScreen || isTouchDevice) {
-                document.body.classList.add('performance-mode');
+        // 性能模式自动启用：小屏或触摸设备
+        (function () {
+            function applyPerformanceMode() {
+                var isSmallScreen = window.innerWidth <= 768;
+                var isTouchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+                if (isSmallScreen || isTouchDevice) {
+                    if (document.body) {
+                        document.body.classList.add('performance-mode');
+                    }
+                    try {
+                        localStorage.setItem('performanceMode', '1');
+                    } catch (e) {}
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', applyPerformanceMode);
+            } else {
+                applyPerformanceMode();
             }
         })();
 
@@ -9476,6 +9510,11 @@
                 if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
             } catch (_) {}
 
+            // 性能模式 / 触摸设备：禁用 3D 悬停、涟漪与视差等高耗电效果
+            const isTouchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            const isPerformanceMode = document.body.classList.contains('performance-mode');
+            const enableHighPerfEffects = !isPerformanceMode && !isTouchDevice;
+
             // 为所有卡片添加3D悬停效果（不含 .stat-card，避免数据统计框跳动）
             const add3DHoverEffect = () => {
                 const cards = document.querySelectorAll('.entry-item, .detail-entry, .log-item, .draft-item');
@@ -9597,22 +9636,30 @@
             // 搜索框动效已移除：保持完全静态
             
             // 初始化效果（已移除统计卡片浮动动画，避免数据统计框跳来跳去）
-            setTimeout(() => {
-                add3DHoverEffect();
-                addRippleEffect();
-                initEnhancedAnimations();
-            }, 500);
-            
-            // 添加视差滚动效果
-            window.addEventListener('scroll', () => {
-                const scrolled = window.pageYOffset;
-                const parallaxElements = document.querySelectorAll('.parallax');
-                
-                parallaxElements.forEach(el => {
-                    const speed = el.dataset.speed || 0.5;
-                    el.style.transform = `translateY(${scrolled * speed}px)`;
+            if (enableHighPerfEffects) {
+                // 仅在桌面非触摸设备且非性能模式下启用 3D 悬停与涟漪、视差效果
+                setTimeout(() => {
+                    add3DHoverEffect();
+                    addRippleEffect();
+                    initEnhancedAnimations();
+                }, 500);
+
+                // 添加视差滚动效果
+                window.addEventListener('scroll', () => {
+                    const scrolled = window.pageYOffset;
+                    const parallaxElements = document.querySelectorAll('.parallax');
+                    
+                    parallaxElements.forEach(el => {
+                        const speed = el.dataset.speed || 0.5;
+                        el.style.transform = `translateY(${scrolled * speed}px)`;
+                    });
                 });
-            });
+            } else {
+                // 性能模式下仅保留轻量级入场动画，不启用 3D/涟漪/视差
+                setTimeout(() => {
+                    initEnhancedAnimations();
+                }, 500);
+            }
         });
 
         // 数据迁移函数 - 修复现有数据中的字段
