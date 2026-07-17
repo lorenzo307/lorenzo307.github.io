@@ -1,0 +1,26 @@
+/**
+ * V2.0 Design Tokens — shared layout variables
+ * Theme colors remain in database.html (7 themes); these add layout-specific tokens.
+ */
+:root {
+    --v2-sidebar-width: 240px;
+    --v2-info-panel-width: 280px;
+    --v2-topbar-height: 56px;
+    --v2-nav-item-height: 40px;
+    --v2-radius: 10px;
+    --v2-radius-lg: 14px;
+    --v2-border: 1px solid var(--glass-border);
+    --v2-bg-panel: var(--glass-bg);
+    --v2-shadow-panel: var(--shadow-soft);
+    --v2-transition: 0.22s var(--ease-smooth, cubic-bezier(0.4, 0, 0.2, 1));
+
+    /* Tag palette for colored labels */
+    --tag-color-0: #4caf50;
+    --tag-color-1: #2196f3;
+    --tag-color-2: #ff9800;
+    --tag-color-3: #e91e63;
+    --tag-color-4: #9c27b0;
+    --tag-color-5: #009688;
+    --tag-color-6: #795548;
+    --tag-color-7: #607d8b;
+}
