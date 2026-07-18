@@ -12,22 +12,22 @@
 
             // 等待 Firebase 加载完成
             function initFirebase() {
-                if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length === 0) {
-                    window.app = firebase.initializeApp(firebaseConfig);
-                    window.auth = firebase.auth();
-                    window.db = firebase.database();
-                    
-                    // 触发 Firebase 就绪事件
-                    window.dispatchEvent(new CustomEvent('firebaseReady'));
-                } else if (typeof firebase !== 'undefined') {
-                    // Firebase 已加载，直接初始化
-                    window.app = firebase.initializeApp(firebaseConfig);
-                    window.auth = firebase.auth();
-                    window.db = firebase.database();
-                    window.dispatchEvent(new CustomEvent('firebaseReady'));
-                } else {
-                    // 延迟重试
+                if (typeof firebase === 'undefined') {
                     setTimeout(initFirebase, 50);
+                    return;
+                }
+                try {
+                    if (!firebase.apps.length) {
+                        window.app = firebase.initializeApp(firebaseConfig);
+                    } else {
+                        window.app = firebase.app();
+                    }
+                    window.auth = firebase.auth();
+                    window.db = firebase.database();
+                    window.dispatchEvent(new CustomEvent('firebaseReady'));
+                } catch (err) {
+                    console.error('Firebase 初始化失败', err);
+                    setTimeout(initFirebase, 100);
                 }
             }
 
@@ -41,8 +41,48 @@
 
         // 全局数据监听器
         let unsubscribeEntries = null;
+        let authResolved = false;
+        let cachedAuthUser = null;
 
-        /* 性能模式：减弱模糊/阴影、隐藏 3D 背景，降低内存与重绘 */
+        function resolveProjectId() {
+            let projectId = sessionStorage.getItem('pendingProjectId');
+            if (!projectId) {
+                const urlParams = new URLSearchParams(window.location.search);
+                projectId = urlParams.get('project');
+            }
+            if (!projectId) {
+                projectId = localStorage.getItem('currentProject');
+            }
+            if (!projectId) {
+                console.warn('无法确定项目 ID，使用 default');
+                projectId = 'default';
+            }
+            if (sessionStorage.getItem('pendingProjectId')) {
+                sessionStorage.removeItem('pendingProjectId');
+            }
+            localStorage.setItem('currentProject', projectId);
+            return projectId;
+        }
+
+        // 获取项目路径 - 优化：优先使用 sessionStorage 中的预加载项目ID
+        function getProjectPath(subPath = "") {
+            if (!window.auth) {
+                console.warn('认证未初始化');
+                return '';
+            }
+
+            const user = cachedAuthUser || window.auth.currentUser;
+            if (!user) {
+                // 认证尚未完成或用户未登录：不弹窗、不跳转（跳转由 onAuthStateChanged 统一处理）
+                if (authResolved) {
+                    console.warn('用户未登录，无法构建项目路径');
+                }
+                return '';
+            }
+
+            const projectId = resolveProjectId();
+            return `users/${user.uid}/projects/${projectId}/${subPath}`;
+        }
         function enablePerformanceMode() {
             document.body.classList.add('performance-mode');
             try { localStorage.setItem('performanceMode', '1'); } catch (e) {}
@@ -65,51 +105,17 @@
             } catch (e) {}
         })();
 
-        // 获取项目路径 - 优化：优先使用 sessionStorage 中的预加载项目ID
-        function getProjectPath(subPath = "") {
-            if (!window.auth) {
-                console.warn('认证未初始化');
-                return '';
-            }
-            const user = window.auth.currentUser;
-            if (!user) {
-                alert("用户未登录，即将跳转");
-                window.location.href = "login.html";
-                return;
-            }
-            
-            // 优先级：1. sessionStorage（预加载） 2. URL参数 3. localStorage 4. default
-            let projectId = sessionStorage.getItem('pendingProjectId');
-            
-            if (!projectId) {
-                const urlParams = new URLSearchParams(window.location.search);
-                projectId = urlParams.get('project');
-            }
-            
-            if (!projectId) {
-                projectId = localStorage.getItem('currentProject');
-            }
-            
-            if (!projectId) {
-                console.error("无法确定项目 ID！");
-                projectId = 'default';
-            }
-            
-            // 清理 sessionStorage（已使用）
-            if (sessionStorage.getItem('pendingProjectId')) {
-                sessionStorage.removeItem('pendingProjectId');
-            }
-            
-            // 保存当前项目 ID 到 localStorage
-            localStorage.setItem('currentProject', projectId);
-
-            return `users/${user.uid}/projects/${projectId}/${subPath}`;
-        }
-
         // 初始化数据监听
         function initDataListeners() {
             if (!window.db) {
                 console.warn('数据库未初始化，延迟初始化数据监听器');
+                setTimeout(initDataListeners, 100);
+                return;
+            }
+
+            const entriesPath = getProjectPath('entries');
+            if (!entriesPath) {
+                console.warn('项目路径未就绪，延迟初始化数据监听器');
                 setTimeout(initDataListeners, 100);
                 return;
             }
@@ -123,7 +129,7 @@
                     renderEntries();
                 }, 80);
             };
-            unsubscribeEntries = window.db.ref(getProjectPath('entries')).on('value', (snapshot) => {
+            unsubscribeEntries = window.db.ref(entriesPath).on('value', (snapshot) => {
                 try {
                     entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
                         links: [], keywords: [], analysis: '', ...entry
@@ -178,22 +184,16 @@
         }
 
         // 等待 Firebase 就绪后再初始化认证监听
+        let authListenerBound = false;
         function initAuthListener() {
             if (window.auth && window.db) {
+                if (authListenerBound) return;
+                authListenerBound = true;
                 window.auth.onAuthStateChanged(async user => {
+                    authResolved = true;
+                    cachedAuthUser = user;
                     if (user) {
-                        // 1. 统一确定项目 ID（优先 sessionStorage → URL → localStorage）
-                        let projectId = sessionStorage.getItem('pendingProjectId');
-                        if (!projectId) {
-                            const urlParams = new URLSearchParams(window.location.search);
-                            projectId = urlParams.get('project');
-                        }
-                        if (!projectId) {
-                            projectId = localStorage.getItem('currentProject');
-                        }
-                        if (!projectId) {
-                            projectId = 'default';
-                        }
+                        const projectId = resolveProjectId();
                         localStorage.setItem('currentProject', projectId);
 
                         // 2. 优先尝试读取本地缓存的“轻量 entries 列表”，实现秒开
@@ -218,6 +218,7 @@
                         initDataListeners();
                         // initTimeTracking(); // 暂时注释掉，函数未定义
                         restoreCachedSessions();
+                        document.dispatchEvent(new CustomEvent('v2AuthReady', { detail: { uid: user.uid } }));
 
                         // 4. 异步获取项目名称并更新标题，不阻塞列表渲染
                         try {
@@ -228,12 +229,15 @@
                             document.title = `${projectName} - 史料数据库`;
                             const titleEl = document.getElementById('projectTitle');
                             if (titleEl) titleEl.textContent = projectName;
+                            const v2Title = document.getElementById('v2-project-title');
+                            if (v2Title) v2Title.textContent = projectName;
                         } catch (nameError) {
                             console.warn('获取项目名称失败:', nameError);
                         }
                      
                     } else {
-                        // 用户未登录，跳转到登录页面
+                        cachedAuthUser = null;
+                        // 用户未登录，跳转到登录页面（仅在认证状态已确定后）
                         window.location.href = 'login.html';
                         if (typeof clearInterval === 'function' && typeof trackingInterval !== 'undefined') {
                             clearInterval(trackingInterval);
@@ -1654,6 +1658,14 @@
             }
         }
 
+        // 按当前全局引用样式显示（不直接使用 entry.citation 缓存）
+        function entryDisplayCitation(entry) {
+            if (window.V2Citations && typeof V2Citations.getDisplayCitation === 'function') {
+                return V2Citations.getDisplayCitation(entry) || '';
+            }
+            return entry.citation || '';
+        }
+
         // 渲染目录视图 (使用div结构以兼容批量操作)
         function renderListView(entries) {
              // --- 恢复到之前的逻辑：直接返回 div 元素 --- 
@@ -1663,7 +1675,7 @@
 
                 // 目录视图：不显示内容预览，只显示标题、元数据和关键词
                 const typeLabel = (window.V2SourceTypes && V2SourceTypes.typeName(entry.typeId)) || '';
-                const citeText = entry.citation || (window.V2Citations && V2Citations.generateCitation(entry)) || '';
+                const citeText = entryDisplayCitation(entry);
                entryContent += `
                     <div class="entry-header">
                         <h3 class="entry-title">${entry.title || ''}${(window.V2Events ? V2Events.eventBadgeHtml(entry) : '')}</h3>
@@ -1765,7 +1777,7 @@
 
                        // 详细条目内容
                        const typeLabel = (window.V2SourceTypes && V2SourceTypes.typeName(entry.typeId)) || '';
-                       const citeText = entry.citation || (window.V2Citations && V2Citations.generateCitation(entry)) || '';
+                       const citeText = entryDisplayCitation(entry);
                        entryContent += `
                            <div class="entry-header">
                                <div class="entry-meta">

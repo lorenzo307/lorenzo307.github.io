@@ -23,11 +23,58 @@
         { id: 'chicago', name: 'Chicago', description: 'Chicago notes（简化）' }
     ];
 
+    /** 文献类型大类（编辑条目时先选大类再选小类） */
+    const TYPE_GROUPS = [
+        {
+            id: 'published',
+            name: '图书文献',
+            icon: 'menu_book',
+            match: ['monograph', 'book', 'thesis', 'gazetteer']
+        },
+        {
+            id: 'periodical',
+            name: '报刊论文',
+            icon: 'article',
+            match: ['journal', 'newspaper', 'article']
+        },
+        {
+            id: 'archival',
+            name: '档案文献',
+            icon: 'folder_special',
+            match: ['archive']
+        },
+        {
+            id: 'general',
+            name: '通用其他',
+            icon: 'category',
+            match: ['general', 'other']
+        }
+    ];
+
+    /** 导入别名 → 内置类型（避免 book/monograph 重复展示） */
+    const TYPE_ALIASES = {
+        book: 'monograph',
+        article: 'journal'
+    };
+
+    function resolveTypeGroup(typeOrId) {
+        const id = typeof typeOrId === 'string' ? typeOrId : (typeOrId && typeOrId.id);
+        const explicit = typeof typeOrId === 'object' && typeOrId && typeOrId.group;
+        if (explicit && TYPE_GROUPS.some(g => g.id === explicit)) return explicit;
+        const category = typeof typeOrId === 'object' && typeOrId ? (typeOrId.category || '') : '';
+        for (let i = 0; i < TYPE_GROUPS.length; i++) {
+            const g = TYPE_GROUPS[i];
+            if (g.match.includes(id) || g.match.includes(category)) return g.id;
+        }
+        return 'general';
+    }
+
     const DEFAULT_TYPES = [
         {
             id: 'general',
             name: '通用史料',
             icon: 'description',
+            group: 'general',
             sortOrder: 0,
             isBuiltin: true,
             fields: [
@@ -45,6 +92,7 @@
             id: 'monograph',
             name: '专著',
             icon: 'menu_book',
+            group: 'published',
             sortOrder: 1,
             isBuiltin: true,
             fields: [
@@ -67,6 +115,7 @@
             id: 'journal',
             name: '期刊',
             icon: 'article',
+            group: 'periodical',
             sortOrder: 2,
             isBuiltin: true,
             fields: [
@@ -81,12 +130,22 @@
                 'modern-cn': '{author}：《{title}》，《{journal}》{year}年{volume}期。',
                 'gbt7714': '{author}. {title}[J]. {journal}, {year}{volume?, , {volume}}{pages?, :{pages}}.',
                 'chicago': '{author}, "{title}," {journal} {volume} ({year}){pages?, : {pages}}.'
-            }
+            },
+            parseRules: {
+                author: '([^：:《\\n]+)[：:]',
+                title: '《([^》]+)》',
+                journal: '，《([^》]+)》',
+                year: '(\\d{4})年',
+                volume: '第(\\d+)期',
+                pages: '第([\\d\\-－—]+)页'
+            },
+            example: '陈寅恪：《隋唐制度渊源略论稿》，《历史研究》1954年第2期，第15-30页。'
         },
         {
             id: 'thesis',
             name: '论文',
             icon: 'school',
+            group: 'published',
             sortOrder: 3,
             isBuiltin: true,
             fields: [
@@ -107,6 +166,7 @@
             id: 'newspaper',
             name: '报纸',
             icon: 'newspaper',
+            group: 'periodical',
             sortOrder: 4,
             isBuiltin: true,
             fields: [
@@ -128,6 +188,7 @@
             id: 'archive',
             name: '档案',
             icon: 'folder_special',
+            group: 'archival',
             sortOrder: 5,
             isBuiltin: true,
             fields: [
@@ -150,6 +211,7 @@
             id: 'gazetteer',
             name: '地方志',
             icon: 'map',
+            group: 'published',
             sortOrder: 6,
             isBuiltin: true,
             fields: [
@@ -170,6 +232,7 @@
             id: 'other',
             name: '其它',
             icon: 'more_horiz',
+            group: 'general',
             sortOrder: 99,
             isBuiltin: true,
             fields: [
@@ -204,16 +267,55 @@
         t.sortOrder = typeof t.sortOrder === 'number' ? t.sortOrder : 50;
         t.fields = Array.isArray(t.fields) ? t.fields.map((f, i) => field(f.key, f.label || f.key, Object.assign({}, f, { order: f.order != null ? f.order : i + 1 }))) : [];
         t.citationTemplates = t.citationTemplates || {};
+        t.parseRules = t.parseRules && typeof t.parseRules === 'object' ? t.parseRules : {};
+        t.styleProfiles = t.styleProfiles && typeof t.styleProfiles === 'object' && !Array.isArray(t.styleProfiles)
+            ? t.styleProfiles
+            : {};
+        t.category = t.category || t.type || 'other';
+        t.group = t.group || resolveTypeGroup(t);
+        t.example = t.example || '';
+        t.typeCode = t.typeCode || '';
+        t.description = t.description || '';
+        return t;
+    }
+
+    /**
+     * 按引用样式合并「样式专属配置」，避免多套样式字段/模板互相覆盖。
+     */
+    function getEffectiveType(typeDef, styleId) {
+        if (!typeDef) return null;
+        const t = clone(typeDef);
+        const sid = styleId || 'history-cn';
+        const profile = t.styleProfiles && t.styleProfiles[sid];
+        if (profile && typeof profile === 'object') {
+            if (Array.isArray(profile.fields) && profile.fields.length) {
+                t.fields = profile.fields.map((f, i) =>
+                    field(f.key, f.label || f.key, Object.assign({}, f, { order: f.order != null ? f.order : i + 1 }))
+                );
+            }
+            if (profile.parseRules && typeof profile.parseRules === 'object') {
+                t.parseRules = Object.assign({}, profile.parseRules);
+            }
+            if (profile.label) t.profileLabel = String(profile.label);
+            if (profile.example != null) t.example = String(profile.example);
+            if (profile.description) t.description = String(profile.description);
+            if (profile.typeCode) t.typeCode = String(profile.typeCode);
+        }
+        t._styleId = sid;
         return t;
     }
 
     global.V2SourceSchema = {
         DEFAULT_TYPES,
         DEFAULT_STYLES,
+        TYPE_GROUPS,
+        TYPE_ALIASES,
         field,
         getDefaultTypes,
         getDefaultStyles,
         normalizeType,
+        getEffectiveType,
+        resolveTypeGroup,
         clone
     };
 })(window);

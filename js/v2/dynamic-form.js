@@ -1,10 +1,12 @@
 /**
  * V2.2 — Dynamic entry form (type picker + metadata fields + citation preview)
+ * V2.1 — 大类 → 小类 两级文献类型选择
  */
 (function (global) {
     'use strict';
 
     let currentTypeId = 'general';
+    let currentGroupId = 'general';
     let patched = false;
     let patchAttempts = 0;
 
@@ -17,11 +19,9 @@
         if (!form) return false;
 
         if (form.dataset.v2Form === '1') {
-            // Shell exists — ensure nodes are still present (form.reset won't remove them)
             if ($('#v2-type-picker') && $('#v2-dynamic-fields') && $('#v2-citation-preview')) {
                 return true;
             }
-            // Incomplete shell — rebuild
             form.dataset.v2Form = '';
             form.querySelectorAll('.v2-type-row, .v2-dynamic-fields, .v2-citation-preview-row').forEach(el => el.remove());
         }
@@ -87,24 +87,100 @@
         return true;
     }
 
+    function getGroups() {
+        if (window.V2SourceTypes && typeof V2SourceTypes.getTypeGroups === 'function') {
+            return V2SourceTypes.getTypeGroups();
+        }
+        return (window.V2SourceSchema && V2SourceSchema.TYPE_GROUPS) || [];
+    }
+
+    function typesInGroup(groupId) {
+        const styleId = window.V2SourceTypes ? V2SourceTypes.getActiveStyleId() : null;
+        if (window.V2SourceTypes && typeof V2SourceTypes.getTypesByGroup === 'function') {
+            return V2SourceTypes.getTypesByGroup(groupId, styleId);
+        }
+        return (window.V2SourceTypes ? V2SourceTypes.getTypes() : []).filter(t =>
+            (t.group || 'general') === groupId
+        );
+    }
+
+    function syncGroupFromType(typeId) {
+        if (window.V2SourceTypes && typeof V2SourceTypes.resolveGroupId === 'function') {
+            currentGroupId = V2SourceTypes.resolveGroupId(typeId) || 'general';
+        } else {
+            currentGroupId = 'general';
+        }
+    }
+
+    function bindTypePickerEvents(box) {
+        if (!box || box.dataset.pickerBound === '1') return;
+        box.dataset.pickerBound = '1';
+
+        box.addEventListener('click', (e) => {
+            const groupBtn = e.target.closest('[data-group]');
+            if (!groupBtn || !box.contains(groupBtn)) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const gid = groupBtn.getAttribute('data-group');
+            if (!gid || gid === currentGroupId) return;
+            currentGroupId = gid;
+            const subs = typesInGroup(gid);
+            const nextId = (subs.find(t => t.id === currentTypeId) || subs[0] || {}).id || 'general';
+            setType(nextId, true);
+        });
+
+        box.addEventListener('change', (e) => {
+            const sel = e.target.closest('#v2-type-subselect');
+            if (!sel || !box.contains(sel)) return;
+            e.stopPropagation();
+            if (sel.value) setType(sel.value, true);
+        });
+    }
+
     function renderTypePicker() {
         const box = $('#v2-type-picker');
         if (!box || !window.V2SourceTypes) return;
-        const list = V2SourceTypes.getTypes();
-        box.innerHTML = list.map(t => `
-            <button type="button" class="v2-type-chip ${t.id === currentTypeId ? 'active' : ''}" data-type="${t.id}">
-                <span class="material-icons">${t.icon || 'description'}</span>
-                ${escapeHtml(t.name)}
-            </button>
-        `).join('');
 
-        box.querySelectorAll('.v2-type-chip').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setType(btn.dataset.type, true);
-            });
-        });
+        syncGroupFromType(currentTypeId);
+        const groups = getGroups();
+        const subs = typesInGroup(currentGroupId);
+
+        if (subs.length && !subs.some(t => t.id === currentTypeId)) {
+            currentTypeId = subs[0].id;
+        }
+
+        box.innerHTML = `
+            <div class="v2-type-level">
+                <span class="v2-type-level-label">大类</span>
+                <div class="v2-type-groups" role="group" aria-label="文献大类">
+                    ${groups.map(g => `
+                        <button type="button" class="v2-type-group-chip ${g.id === currentGroupId ? 'active' : ''}"
+                            data-group="${escapeAttr(g.id)}" title="${escapeAttr(g.name)}">
+                            <span class="material-icons">${g.icon || 'category'}</span>
+                            ${escapeHtml(g.name)}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="v2-type-level">
+                <span class="v2-type-level-label">小类</span>
+                <select id="v2-type-subselect" class="v2-type-subselect" aria-label="文献小类">
+                    ${subs.length
+                        ? subs.map(t => `
+                            <option value="${escapeAttr(t.id)}" ${t.id === currentTypeId ? 'selected' : ''}>
+                                ${escapeHtml(window.V2SourceTypes && V2SourceTypes.resolveTypeDisplayName
+                                    ? V2SourceTypes.resolveTypeDisplayName(t)
+                                    : (t.name || t.id))}
+                            </option>
+                        `).join('')
+                        : '<option value="">（该大类暂无类型）</option>'}
+                </select>
+            </div>
+        `;
+
+        bindTypePickerEvents(box);
+        const sel = $('#v2-type-subselect', box);
+        if (sel && currentTypeId) sel.value = currentTypeId;
     }
 
     function renderStyleSelect() {
@@ -122,7 +198,10 @@
         if (!container || !window.V2SourceTypes) return;
 
         const prev = preserveValues ? collectMetadata() : {};
-        const type = V2SourceTypes.getType(currentTypeId);
+        const styleId = V2SourceTypes.getActiveStyleId();
+        const type = (V2SourceTypes.getEffectiveType && V2SourceTypes.getEffectiveType(currentTypeId, styleId))
+            || (V2SourceTypes.getTypeExact && V2SourceTypes.getTypeExact(currentTypeId))
+            || V2SourceTypes.getType(currentTypeId);
         const fields = (type?.fields || []).filter(f => f.showInForm !== false)
             .sort((a, b) => (a.order || 0) - (b.order || 0));
 
@@ -133,11 +212,15 @@
             return;
         }
 
+        const typeLabel = (window.V2SourceTypes && V2SourceTypes.resolveTypeDisplayName)
+            ? V2SourceTypes.resolveTypeDisplayName(type, styleId)
+            : (type.profileLabel || type.name || currentTypeId);
+
         container.style.display = 'block';
         container.innerHTML = `
             <div class="v2-dynamic-fields-header">
                 <span class="material-icons">tune</span>
-                ${escapeHtml(type.name)} · 著录字段
+                ${escapeHtml(typeLabel)} · 著录字段
             </div>
             ${fields.map(f => `
                 <div class="form-row">
@@ -155,7 +238,15 @@
     }
 
     function setType(typeId, preserveValues) {
-        currentTypeId = typeId || 'general';
+        let id = typeId || 'general';
+        if (window.V2SourceSchema && V2SourceSchema.TYPE_ALIASES) {
+            const prefer = V2SourceSchema.TYPE_ALIASES[id];
+            if (prefer && V2SourceTypes.getTypeExact && V2SourceTypes.getTypeExact(prefer)) {
+                id = prefer;
+            }
+        }
+        currentTypeId = id;
+        syncGroupFromType(currentTypeId);
         renderTypePicker();
         renderDynamicFields(!!preserveValues);
     }
@@ -228,7 +319,6 @@
             updateCitationPreview();
         }).catch(err => {
             console.warn('文献类型表单初始化失败', err);
-            // Still show defaults if schema is in memory
             if (window.V2SourceTypes) {
                 ensureFormShell();
                 renderStyleSelect();
@@ -269,6 +359,7 @@
             const result = origShow();
             if (isNew) {
                 currentTypeId = 'general';
+                currentGroupId = 'general';
                 prepareFormUI(null);
             } else {
                 const entry = (typeof entries !== 'undefined' && editingId)
@@ -291,6 +382,7 @@
         if (typeof origHidePerform === 'function') {
             global.performCloseForm = function () {
                 currentTypeId = 'general';
+                currentGroupId = 'general';
                 return origHidePerform();
             };
         }
@@ -313,23 +405,25 @@
         ensureFormShell();
         tryPatch();
         document.addEventListener('v2TypesChanged', () => {
-            if ($('#entry-form')?.style.display === 'block' || $('#entry-form')?.style.display === '') {
+            const formEl = $('#entry-form');
+            const visible = formEl && (formEl.style.display === 'block' || formEl.style.display === '');
+            if (visible) {
                 renderTypePicker();
-                renderDynamicFields(true);
                 renderStyleSelect();
+                renderDynamicFields(true);
             }
         });
         document.addEventListener('v2StyleChanged', () => {
             renderStyleSelect();
+            renderTypePicker();
             updateCitationPreview();
+            if (typeof renderEntries === 'function') renderEntries();
         });
     }
 
-    // Wait until DOM is ready; patch after legacy if needed
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
-        // defer 脚本执行时 readyState 常为 interactive，legacy 可能尚未加载
         setTimeout(init, 0);
     }
 

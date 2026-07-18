@@ -30,7 +30,7 @@
             const bulk = typeof bulkModeActive !== 'undefined' && bulkModeActive;
             const excerpt = V2Utils.excerpt(entry.content || entry.analysis, 120);
             const typeLabel = (window.V2SourceTypes && V2SourceTypes.typeName(entry.typeId)) || '';
-            const citeText = entry.citation || (window.V2Citations && V2Citations.generateCitation(entry)) || '';
+            const citeText = (window.V2Citations && V2Citations.getDisplayCitation(entry)) || '';
             const tags = (entry.keywords || []).map(kw =>
                 `<span class="keyword-tag" style="background:${V2Utils.tagColor(kw)};color:#fff;border:none" onclick="event.stopPropagation();filterByKeyword('${esc(kw).replace(/'/g, "\\'")}')">${esc(kw)}</span>`
             ).join('');
@@ -143,10 +143,10 @@
         panel.innerHTML = `
             <h3 class="v2-info-title">${esc(entry.title || '无标题')}</h3>
             <div class="v2-info-meta">${esc(entry.id)} · ${esc(entry.date || '')}${(window.V2SourceTypes ? ' · ' + esc(V2SourceTypes.typeName(entry.typeId)) : '')}</div>
-            ${(entry.citation || (window.V2Citations && V2Citations.generateCitation(entry))) ? `
+            ${((window.V2Citations && V2Citations.getDisplayCitation(entry)) || entry.citation) ? `
             <div class="v2-info-section">
                 <div class="v2-info-section-label">引用</div>
-                <div class="v2-info-excerpt" style="-webkit-line-clamp:4;line-clamp:4">${esc(entry.citation || V2Citations.generateCitation(entry))}</div>
+                <div class="v2-info-excerpt" style="-webkit-line-clamp:4;line-clamp:4">${esc((window.V2Citations && V2Citations.getDisplayCitation(entry)) || entry.citation)}</div>
             </div>` : ''}
             <div class="v2-info-section">
                 <div class="v2-info-section-label">原文摘要</div>
@@ -217,7 +217,7 @@
     function copyCitation(id) {
         const entry = (typeof entries !== 'undefined' ? entries : []).find(e => e.id === id);
         if (!entry) return;
-        const text = entry.citation || (window.V2Citations && V2Citations.generateCitation(entry)) || entry.title || '';
+        const text = (window.V2Citations && V2Citations.getDisplayCitation(entry)) || entry.citation || entry.title || '';
         if (!text) return;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(text).then(() => {
@@ -228,6 +228,10 @@
         } else if (typeof showAlert === 'function') {
             showAlert(text, 'info');
         }
+    }
+
+    function refreshInfoPanelCitation() {
+        if (selectedInfoId) updateInfoPanel(selectedInfoId);
     }
 
     global.V2Views = {
@@ -241,6 +245,7 @@
         toggleStar,
         updateInfoPanel,
         syncViewMenu,
-        copyCitation
+        copyCitation,
+        refreshInfoPanelCitation
     };
 })(window);

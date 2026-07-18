@@ -174,6 +174,10 @@
             case 'import':
                 if (typeof importExcel === 'function') importExcel();
                 break;
+            case 'import-style':
+                if (window.V2CitationImport) V2CitationImport.show();
+                else if (typeof showAlert === 'function') showAlert('引用样式导入模块未加载', 'error');
+                break;
             case 'export':
                 if (window.V2Export) V2Export.show();
                 else if (typeof exportEntries === 'function') exportEntries('excel');

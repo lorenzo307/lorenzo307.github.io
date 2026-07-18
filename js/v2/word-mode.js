@@ -189,7 +189,7 @@
 
         if (typeof V2Nav !== 'undefined') V2Nav.trackRecent(entry.id);
 
-        const citation = entry.citation || (window.V2Citations && V2Citations.generateCitation(entry)) || entry.title || '';
+        const citation = (window.V2Citations && V2Citations.getDisplayCitation(entry)) || entry.citation || entry.title || '';
         const typeLabel = (window.V2SourceTypes && V2SourceTypes.typeName(entry.typeId)) || '';
         const tags = (entry.keywords || []).map(kw =>
             `<span class="keyword-tag" style="background:${V2Utils.tagColor(kw)};color:#fff;border:none">#${esc(kw)}</span>`

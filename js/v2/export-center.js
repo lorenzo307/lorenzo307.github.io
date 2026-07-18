@@ -49,6 +49,10 @@
         setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
 
+    function entryCitation(entry) {
+        return (window.V2Citations && V2Citations.getDisplayCitation(entry)) || entry.citation || '';
+    }
+
     function bibKey(entry) {
         const author = (entry.metadata && entry.metadata.author) || 'anon';
         const year = (entry.metadata && entry.metadata.year) || (entry.date || '').slice(0, 4) || 'nd';
@@ -84,7 +88,7 @@
                 journal: meta.journal || meta.newspaper || '',
                 volume: meta.volume || '',
                 pages: meta.pages || '',
-                note: entry.citation || meta.note || '',
+                note: entryCitation(entry) || meta.note || '',
                 keywords: (entry.keywords || []).join(', '),
                 url: (entry.links && entry.links[0]) || '',
                 annote: strip(entry.analysis).slice(0, 500)
@@ -120,7 +124,7 @@
                 meta.newspaper ? `T2  - ${meta.newspaper}` : '',
                 meta.volume ? `VL  - ${meta.volume}` : '',
                 meta.pages ? `SP  - ${meta.pages}` : '',
-                entry.citation ? `N1  - ${entry.citation}` : '',
+                entryCitation(entry) ? `N1  - ${entryCitation(entry)}` : '',
                 ...(entry.keywords || []).map(k => `KW  - ${k}`),
                 ...(entry.links || []).map(u => `UR  - ${u}`),
                 strip(entry.content) ? `AB  - ${strip(entry.content).slice(0, 2000)}` : '',
@@ -144,7 +148,7 @@
             const meta = e.metadata || {};
             const typeName = window.V2SourceTypes ? V2SourceTypes.typeName(e.typeId) : (e.typeId || '');
             return [
-                e.id, e.date, e.title, typeName, e.citation || '',
+                e.id, e.date, e.title, typeName, entryCitation(e),
                 meta.author || '', (e.keywords || []).join('; '),
                 formatEvents(e),
                 strip(e.content), strip(e.analysis),
@@ -167,7 +171,8 @@
             md += `- **ID**：${e.id || ''}  \n`;
             md += `- **日期**：${e.date || ''}  \n`;
             if (typeName) md += `- **类型**：${typeName}  \n`;
-            if (e.citation) md += `- **引用**：${e.citation}  \n`;
+            const cite = entryCitation(e);
+            if (cite) md += `- **引用**：${cite}  \n`;
             if (e.keywords?.length) md += `- **标签**：${e.keywords.join('、')}  \n`;
             if (e.relatedSources?.length) md += `- **关联**：${e.relatedSources.join('、')}  \n`;
             const evText = formatEvents(e);
@@ -182,10 +187,11 @@
     function toHTML(list, forPrint) {
         const body = list.map(e => {
             const typeName = window.V2SourceTypes ? V2SourceTypes.typeName(e.typeId) : '';
+            const cite = entryCitation(e);
             return `<article class="entry">
                 <h2>${esc(e.title || '无标题')}</h2>
                 <p class="meta">${esc(e.id)} · ${esc(e.date || '')}${typeName ? ' · ' + esc(typeName) : ''}</p>
-                ${e.citation ? `<p class="cite"><em>${esc(e.citation)}</em></p>` : ''}
+                ${cite ? `<p class="cite"><em>${esc(cite)}</em></p>` : ''}
                 <h3>原文</h3>
                 <div class="content">${e.content || '<p>（无）</p>'}</div>
                 ${e.analysis ? `<h3>分析</h3><div class="analysis">${e.analysis}</div>` : ''}
@@ -223,7 +229,7 @@ ${body}
                 title: e.title,
                 typeId: e.typeId || 'general',
                 metadata: e.metadata || {},
-                citation: e.citation || '',
+                citation: entryCitation(e),
                 content: e.content || '',
                 analysis: e.analysis || '',
                 keywords: e.keywords || [],
