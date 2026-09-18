@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html data-design="editorial" lang="zh">
 <head>
+    <script src="js/v3/pagination.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>史料数据库</title>
@@ -11,9 +12,7 @@
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     
     <!-- CSS 资源（阻塞渲染，但必需） -->
-    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"></noscript>
+
     <!-- 界面转场效果 -->
     <link rel="stylesheet" href="transitions.css">
     
@@ -46,12 +45,20 @@
     <link rel="stylesheet" href="css/v2/layout.css">
     <link rel="stylesheet" href="css/v2/nav.css">
     <link rel="stylesheet" href="css/v2/toolbar.css">
-    <link rel="stylesheet" href="css/v2/card-view.css">
     <link rel="stylesheet" href="css/v2/word-view.css">
     <link rel="stylesheet" href="css/v2/info-panel.css">
     <link rel="stylesheet" href="css/v2/source-types.css">
     <link rel="stylesheet" href="css/v2/v24.css">
     <link rel="stylesheet" href="css/v2/events.css">
+    <link rel="stylesheet" href="css/icons.css">
+    <link rel="stylesheet" href="css/editorial.css">
+    <link rel="stylesheet" href="css/refined.css">
+    <link rel="preload" href="css/fonts/source-han-serif-common.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="css/research-fonts.css">
+    <link rel="stylesheet" href="css/reading-focus.css">
+    <link rel="stylesheet" href="css/apple-inspired.css">
+    <link rel="stylesheet" href="css/pagination.css">
+    <script src="js/v3/dates.js" defer></script>
 </head>
 <body>
     <!-- 3D背景装饰 -->
@@ -128,9 +135,8 @@
                 <div class="v2-nav-section">
                     <div class="v2-nav-label">视图</div>
                     <button type="button" class="v2-nav-item v2-nav-view active" data-view="list"><span class="material-icons">table_rows</span> 数据库视图</button>
-                    <button type="button" class="v2-nav-item v2-nav-view" data-view="card"><span class="material-icons">grid_view</span> 卡片视图</button>
                     <button type="button" class="v2-nav-item v2-nav-view" data-view="detail"><span class="material-icons">view_list</span> 详细视图</button>
-                    <button type="button" class="v2-nav-item v2-nav-view" data-view="word"><span class="material-icons">menu_book</span> Word 阅读视图</button>
+                    <button type="button" class="v2-nav-item v2-nav-view" data-view="word"><span class="material-icons">menu_book</span> 阅读视图</button>
                     <button type="button" class="v2-nav-item v2-nav-view" data-view="timeline"><span class="material-icons">timeline</span> 时间线视图</button>
                 </div>
                 <div class="v2-nav-divider"></div>
@@ -482,6 +488,8 @@
         </div>
     </div>
 
+    <script src="js/vendor/purify.min.js" defer></script>
+    <script src="js/v3/search.js" defer></script>
     <script src="js/database-legacy.js" defer></script>
     <script src="js/v2/utils.js" defer></script>
     <script src="js/v2/layout.js" defer></script>
@@ -911,5 +919,7 @@
 </style>
 
    
+    <script src="js/v3/workspace.js" defer></script>
+    <script src="js/v3/presentation.js" defer></script>
 </body>
 </html>

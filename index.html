@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html data-design="editorial" lang="zh">
 <head>
+    <script src="js/v3/pagination.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>历史研究数据库 | Soft-Neo UI</title>
+    <title>史料 · 研究 | 我的课题</title>
     
     <!-- 预加载 database.html 和相关资源，加速跳转 -->
     <link rel="prefetch" href="database.html">
@@ -12,7 +13,7 @@
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     
     <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/fontawesome.css">
     <!-- 界面转场效果 -->
     <link rel="stylesheet" href="transitions.css">
     <!-- Firebase SDK -->
@@ -2213,6 +2214,17 @@
         document.documentElement.setAttribute('data-theme', 'theme4');
         try { localStorage.setItem('selectedTheme', 'theme4'); } catch (e) {}
     </script>
+    <link rel="stylesheet" href="css/icons.css">
+    <link rel="stylesheet" href="css/editorial.css">
+    <link rel="stylesheet" href="css/refined.css">
+    <link rel="preload" href="css/fonts/source-han-serif-common.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="css/research-fonts.css">
+    <link rel="stylesheet" href="css/reading-focus.css">
+    <link rel="stylesheet" href="css/apple-inspired.css">
+    <link rel="stylesheet" href="css/pagination.css">
+    <script src="js/v3/dates.js" defer></script>
+    <script src="js/v3/workspace.js" defer></script>
+    <script src="js/v3/presentation.js" defer></script>
 </head>
 <body>
     <!-- Liquid Glass SVG Filters (hidden defs) -->
@@ -2770,15 +2782,19 @@
             }
         }
 
+        function escapeProjectText(value) { const node = document.createElement('span'); node.textContent = String(value || ''); return node.innerHTML; }
         function renderProjects() {
             const projectList = document.getElementById('projectList');
             projectList.innerHTML = '';
             
             // 筛选
             let filteredProjects = projects.filter(p => 
-                p.name && p.name.toLowerCase().includes(currentFilter.toLowerCase())
+                p.name && [p.name,p.description,...(Array.isArray(p.tags)?p.tags:[])].join(' ').toLowerCase().includes(currentFilter.toLowerCase())
             );
             
+            if (window.researchProjectFilter === 'archived') filteredProjects = filteredProjects.filter(p => p.archived);
+            if (window.researchProjectFilter === 'recent') filteredProjects = filteredProjects.filter(p => !p.archived).sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, 10);
+            currentPage = Math.min(currentPage, Math.max(1, Math.ceil(filteredProjects.length / itemsPerPage)));
             // 排序
             filteredProjects.sort((a, b) => {
                 let aVal = a[currentSort.field] || 0;
@@ -2839,9 +2855,11 @@
                                    style="color: var(--accent-1); text-decoration: none; font-weight: 500; transition: all 0.2s ease;"
                                    onmouseover="this.style.color='var(--accent-2)'; this.style.transform='translateX(2px)';"
                                    onmouseout="this.style.color='var(--accent-1)'; this.style.transform='translateX(0)';">
-                                    ${project.name}
+                                    ${escapeProjectText(project.name)}
                                     ${project.archived ? '<span class="tag">已归档</span>' : ''}
                                 </a>
+                                ${project.description ? `<p class="ed-project-summary">${escapeProjectText(project.description)}</p>` : ''}
+                                <div class="ed-project-meta">${Object.keys(project.entries || {}).length} 条史料${Array.isArray(project.tags) && project.tags.length ? ' · ' + project.tags.map(escapeProjectText).join(' / ') : ''}</div>
                             </td>
                             <td>${project.createdAt ? new Date(project.createdAt).toLocaleString() : '-'}</td>
                             <td>${project.updatedAt ? new Date(project.updatedAt).toLocaleString() : '-'}</td>
@@ -2866,18 +2884,11 @@
 
             const pagination = document.createElement('div');
             pagination.className = 'pagination';
-            pagination.innerHTML = `
-                <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(-1)">
-                    <i class="fas fa-chevron-left"></i> 上一页
-                </button>
-                <span style="padding: 0 20px;">
-                    第 <strong>${currentPage}</strong> 页 / 共 <strong>${totalPages}</strong> 页 
-                    (共 ${filteredProjects.length} 项)
-                </span>
-                <button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="changePage(1)">
-                    下一页 <i class="fas fa-chevron-right"></i>
-                </button>
-            `;
+            ResearchPagination.render(pagination, {
+                id: 'project-pagination', unit: '项', count: filteredProjects.length,
+                current: currentPage, pageSize: itemsPerPage,
+                onChange: page => { currentPage = page; renderProjects(); }
+            });
 
             projectList.append(table, pagination);
             
@@ -3133,7 +3144,7 @@
 
         function toggleSelectAll(checkbox) {
             const filteredProjects = projects.filter(p => 
-                p.name && p.name.toLowerCase().includes(currentFilter.toLowerCase())
+                p.name && [p.name,p.description,...(Array.isArray(p.tags)?p.tags:[])].join(' ').toLowerCase().includes(currentFilter.toLowerCase())
             );
             const paginatedProjects = filteredProjects.slice(
                 (currentPage - 1) * itemsPerPage,
@@ -3406,8 +3417,8 @@
             
             // 预加载关键资源
             const resources = [
-                'https://cdn.quilljs.com/1.3.6/quill.snow.css',
-                'https://cdn.quilljs.com/1.3.6/quill.min.js'
+                'css/editorial.css',
+                'js/vendor/research-editor.js'
             ];
             
             resources.forEach(resource => {
@@ -3454,6 +3465,8 @@
          * 交互效果
          *********************/
         document.addEventListener('DOMContentLoaded', function() {
+            if (document.documentElement.dataset.design === 'editorial') return;
+
             initSmartPreloading();
 
             // 为按钮添加点击涟漪效果

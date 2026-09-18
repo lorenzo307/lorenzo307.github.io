@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html data-design="editorial" lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -347,6 +347,16 @@
             }
         })();
     </script>
+    <link rel="stylesheet" href="css/icons.css">
+    <link rel="stylesheet" href="css/editorial.css">
+    <link rel="stylesheet" href="css/refined.css">
+    <link rel="preload" href="css/fonts/source-han-serif-common.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="css/research-fonts.css">
+    <link rel="stylesheet" href="css/reading-focus.css">
+    <link rel="stylesheet" href="css/apple-inspired.css">
+    <script src="js/v3/dates.js" defer></script>
+    <script src="js/v3/workspace.js" defer></script>
+    <script src="js/v3/presentation.js" defer></script>
 </head>
 <body>
     <!-- Liquid Glass SVG Filters (hidden defs) -->
@@ -369,29 +379,30 @@
 
     <div class="auth-container auth-page-enter">
         <div class="auth-left">
-            <h1>历史研究数据库</h1>
-            <p>探索过去的智慧，构建未来的知识。一个专为历史研究者设计的现代协作平台。</p>
+            <div class="ed-eyebrow">THE RESEARCH ARCHIVE</div>
+            <h1>史料 · 研究</h1>
+            <p>整理历史的片段，建立思想的联系。<br>在这里，继续你的阅读、摘录与研究。</p>
             
             <div style="margin-top: 40px;">
                 <div class="feature-item">
-                    <div class="feature-icon">📚</div>
+                    <div class="feature-icon">01</div>
                     <div class="feature-text">
-                        <h3>智能分类</h3>
-                        <p>自动整理历史资料与文献</p>
+                        <h3>整理与检索</h3>
+                        <p>用类型、标签与日期连接研究材料</p>
                     </div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🤝</div>
+                    <div class="feature-icon">02</div>
                     <div class="feature-text">
-                        <h3>团队协作</h3>
-                        <p>与同事无缝协作研究项目</p>
+                        <h3>阅读与写作</h3>
+                        <p>保留原文，记录分析、出处与批注</p>
                     </div>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🔒</div>
+                    <div class="feature-icon">03</div>
                     <div class="feature-text">
-                        <h3>安全存储</h3>
-                        <p>您的研究数据安全可靠</p>
+                        <h3>保存与回溯</h3>
+                        <p>自动草稿、云端同步与历史版本</p>
                     </div>
                 </div>
             </div>
@@ -401,12 +412,12 @@
                 <h2>欢迎回来</h2>
                 <div id="errorMessage" class="error-message"></div>
                 <div class="form-group">
-                    <label class="form-label">电子邮箱</label>
-                    <input type="email" id="emailInput" class="form-input" placeholder="your.email@example.com">
+                    <label class="form-label" for="emailInput">电子邮箱</label>
+                    <input type="email" id="emailInput" autocomplete="username" class="form-input" placeholder="your.email@example.com">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">密码</label>
-                    <input type="password" id="passwordInput" class="form-input" placeholder="输入您的密码">
+                    <label class="form-label" for="passwordInput">密码</label>
+                    <input type="password" id="passwordInput" autocomplete="current-password" class="form-input" placeholder="输入您的密码" onkeydown="if(event.key==='Enter'&&!event.isComposing)handleLogin()">
                 </div>
                 <button onclick="handleLogin()" class="btn btn-primary btn-transition">
                     <i class="fas fa-sign-in-alt"></i> 立即登录
@@ -596,6 +607,6 @@
     </script>
     
     <!-- Font Awesome -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="css/fontawesome.css">
 </body>
 </html>
