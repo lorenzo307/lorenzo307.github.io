@@ -127,12 +127,13 @@
                 renderEntriesDebounceTimer = setTimeout(() => {
                     renderEntriesDebounceTimer = null;
                     renderEntries();
+                    document.dispatchEvent(new Event('research-data-ready'));
                 }, 80);
             };
             unsubscribeEntries = window.db.ref(entriesPath).on('value', (snapshot) => {
                 try {
                     entries = snapshot.val() ? Object.values(snapshot.val()).map(entry => ({
-                        links: [], keywords: [], analysis: '', ...entry
+                        links: [], keywords: [], analysis: '', ...entry, content: ResearchSearch.sanitize(entry.content || ''), analysis: ResearchSearch.sanitize(entry.analysis || '')
                     })) : [];
                     debouncedRenderEntries();
 
@@ -325,7 +326,7 @@
         let selectedEntryIds = new Set();
         let selectedAll = false;
         let currentViewMode = 'list'; // 默认目录视图
-        const BULK_ALLOWED_VIEWS = ['list', 'card', 'detail'];
+        const BULK_ALLOWED_VIEWS = ['list', 'detail'];
 
         function isBulkViewAllowed() {
             return BULK_ALLOWED_VIEWS.includes(currentViewMode);
@@ -507,113 +508,23 @@
         // --- Quill 懒加载：首次打开表单时才加载脚本 ---
         let quillScriptPromise = null;
         function loadQuillScript() {
-            if (typeof Quill !== 'undefined') return Promise.resolve();
+            if (typeof ResearchEditor !== 'undefined') return Promise.resolve();
             if (quillScriptPromise) return quillScriptPromise;
             quillScriptPromise = new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                script.src = 'https://cdn.quilljs.com/1.3.6/quill.min.js';
+                script.src = 'js/vendor/research-editor.js';
                 script.async = true;
                 script.onload = () => resolve();
-                script.onerror = () => { quillScriptPromise = null; reject(new Error('Quill 加载失败')); };
+                script.onerror = () => { quillScriptPromise = null; reject(new Error('编辑器加载失败，请重试')); };
                 document.head.appendChild(script);
             });
             return quillScriptPromise;
         }
 
         function initQuill() {
-             // --- 将 Font 和 Size 定义移到函数开头 ---
-             const Font = Quill.import('formats/font');
-             // 更新字体白名单
-             Font.whitelist = ['SimSun', 'STFangsong', 'KaiTi', 'STZhongsong', 'Times New Roman', 'Arial']; // 添加 STZhongsong
-             Quill.register(Font, true);
-
-             const Size = Quill.import('attributors/style/size');
-             Size.whitelist = Size.whitelist || [
-                 '10px', '12px', '14px', '16px', '18px', '20px', 
-                 '24px', '28px', '32px', '36px', '48px', '72px'
-             ];
-             Quill.register(Size, true);
-             // --- 结束移动 ---
-
-             if (!quill) {
-                 /* // 原来的定义位置 (移除)
-                 const Font = Quill.import('formats/font');
-                 Font.whitelist = ['宋体', '楷体', '仿宋', '黑体', 'Arial', 'Courier New', 'Times New Roman']; 
-                 Quill.register(Font, true);
-
-                 const Size = Quill.import('attributors/style/size');
-                 Size.whitelist = [
-                     '10px', '12px', '14px', '16px', '18px', '20px', 
-                     '24px', '28px', '32px', '36px', '48px', '72px'
-                 ];
-                 Quill.register(Size, true);
-                 */
-
-                 quill = new Quill('#editor-container', {
-                     modules: {
-                         toolbar: [
-                             [{ 'font': Font.whitelist }], // 使用扩展后的字体列表
-                             [{ 'size': Size.whitelist }],
-                             [{ 'header': [1, 2, 3, 4, 5, 6, false] }], // 添加更多标题级别
-                             ['bold', 'italic', 'underline', 'strike'], // 添加删除线
-                             [{ 'script': 'sub'}, { 'script': 'super' }], // 添加上下标
-                             [{ 'color': [] }, { 'background': [] }], // 颜色和背景色
-                             ['blockquote', 'code-block'],
-                             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                             [{ 'indent': '-1'}, { 'indent': '+1' }], // 缩进
-                             [{ 'align': [] }], // 对齐方式
-                             ['link', 'image', 'video'], // 链接、图片、视频
-                             ['clean'] // 清除格式
-                         ]
-                     },
-                     theme: 'snow'
-                 });
-                 console.log("Quill 实例 (原文) 已创建:", quill); // 添加日志
-             }
-             
-             if (!window.analysisQuill) {
-                 window.analysisQuill = new Quill('#analysis-editor-container', {
-                      modules: {
-                          toolbar: [
-                             [{ 'font': Font.whitelist }],
-                             [{ 'size': Size.whitelist }],
-                              [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                              ['bold', 'italic', 'underline', 'strike'],
-                              [{ 'script': 'sub'}, { 'script': 'super' }],
-                              [{ 'color': [] }, { 'background': [] }],
-                              ['blockquote', 'code-block'],
-                              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                              [{ 'indent': '-1'}, { 'indent': '+1' }],
-                              [{ 'align': [] }],
-                              ['link', 'image', 'video'],
-                              ['clean']
-                          ]
-                      },
-                     theme: 'snow'
-                 });
-                 console.log("Quill 实例 (分析) 已创建:", window.analysisQuill); // 添加日志
-                 analysisQuill.container.style.height = '300px';
-                 analysisQuill.container.style.overflowY = 'auto';
-             }
-             
-             // 添加自动保存监听
-             if (quill) {
-                 // 输入内容变化时重置倒计时器，保持固定间隔
-                 quill.on('text-change', () => {
-                     // 不重置时间戳，保持严格的30秒周期
-                     // 但是要更新UI显示新内容待保存
-                     const statusEl = document.getElementById('draft-status');
-                     if(statusEl) statusEl.style.display = 'flex';
-                 });
-             }
-             if (window.analysisQuill) {
-                 window.analysisQuill.on('text-change', () => {
-                     // 保持相同的处理方式
-                     const statusEl = document.getElementById('draft-status');
-                     if(statusEl) statusEl.style.display = 'flex';
-                 });
-             }
-         }
+            if (!quill) quill = new ResearchEditor('#editor-container');
+            if (!window.analysisQuill) window.analysisQuill = new ResearchEditor('#analysis-editor-container');
+        }
 
          const fontStyle = document.createElement('style');
          fontStyle.textContent = `
@@ -691,8 +602,8 @@
                     currentDraftId = editingId;
                 } else {
                     // 新建模式：生成新的草稿ID
-                    currentDraftId = localStorage.getItem('currentDraftId') || `NEW_${Date.now()}`;
-                    localStorage.setItem('currentDraftId', currentDraftId);
+                    currentDraftId = localStorage.getItem('draft-id:' + getProjectPath()) || `NEW_${Date.now()}`;
+                    localStorage.setItem('draft-id:' + getProjectPath(), currentDraftId);
                 }
                 
                 // 显示草稿状态栏
@@ -709,91 +620,30 @@
                 }
                 
                 // 检查草稿
-                checkDraft();
+                const openingEntry = editingId ? entries.find(e => e.id === editingId) : null;
+                ResearchWorkspace.opened(openingEntry);
             }).catch(error => {
                 console.error('表单初始化失败:', error);
                 showAlert('表单初始化失败: ' + error.message, 'error');
             });
         }
 
-        async function hideForm() {
-            // 检查是否有未保存内容
-            const hasUnsavedChanges = checkUnsavedChanges();
-            
-            // 如果有未保存的更改，自动保存到草稿箱
-            if (hasUnsavedChanges) {
-                saveDraft().then(() => {
-                    showAlert('已自动保存到草稿箱', 'info');
-                    // 保留草稿ID以便下次恢复
-                    if (currentDraftId && !editingId) {
-                        localStorage.setItem('currentDraftId', currentDraftId);
-                    }
-                    performCloseForm();
-                }).catch(error => {
-                    console.error('自动保存草稿失败:', error);
-                    // 即使保存失败也关闭表单
-                    performCloseForm();
-                });
-            } else {
-                // 如果没有未保存的更改，清理草稿ID
-                if (currentDraftId && !editingId) {
-                    localStorage.removeItem('currentDraftId');
-                    currentDraftId = null;
-                }
-                performCloseForm();
-            }
-        }
+        async function hideForm() { return ResearchWorkspace.close(); }
 
         function performCloseForm() {
             const form = document.getElementById('entry-form');
-            form.classList.add('closing');
-            
-            // 清理自动保存系统
             clearInterval(autoSaveTimer);
-            document.getElementById('countdown-tip').classList.remove('danger-pulse');
-            
-            setTimeout(() => {
-                form.style.display = 'none';
-                document.querySelector('#entry-form form').reset();
-                if (quill) quill.root.innerHTML = '';
-                if (window.analysisQuill) window.analysisQuill.root.innerHTML = '';
-                editingId = null;
-                entryDraft = null;
-                form.classList.remove('closing');
-            }, 200);
+            form.style.display = 'none';
+            form.classList.remove('closing');
+            document.querySelector('#entry-form form').reset();
+            if (quill) quill.setHTML('');
+            if (window.analysisQuill) window.analysisQuill.setHTML('');
+            editingId = null;
+            entryDraft = null;
         }
-        
+
         // 启动固定间隔保存系统
-        function startAutoSaveSystem() {
-            clearInterval(autoSaveTimer);
-            
-            // 立即显示初始状态
-            updateCountdownDisplay();
-            
-            // 2分30秒 = 150000毫秒
-            const AUTOSAVE_INTERVAL = 150000;
-            const FINAL_COUNTDOWN = 10000; // 最后10秒
-            
-            autoSaveTimer = setInterval(() => {
-                const currentTime = Date.now();
-                const elapsed = currentTime - lastSaveTimestamp;
-                const remaining = AUTOSAVE_INTERVAL - elapsed;
-                
-                // 更新倒计时显示
-                updateCountdownDisplay(remaining);
-                
-                // 如果进入最后10秒，清除当前定时器，启动更频繁的更新
-                if (remaining <= FINAL_COUNTDOWN && remaining > 0) {
-                    clearInterval(autoSaveTimer);
-                    startFinalCountdown(remaining);
-                }
-                
-                // 到达2分30秒立即保存
-                if(elapsed >= AUTOSAVE_INTERVAL) {
-                    triggerAutoSave();
-                }
-            }, 10000); // 每10秒更新一次显示
-        }
+        function startAutoSaveSystem() { clearInterval(autoSaveTimer); }
 
         // 最后10秒的倒计时处理
         function startFinalCountdown(initialRemaining) {
@@ -1002,93 +852,7 @@
         });
 
         // 执行自动保存
-        async function triggerAutoSave() {
-            if(isSaving) return;
-            isSaving = true;
-            
-            try {
-                const formData = getFormData();
-                
-                // 如果没有内容，不保存草稿
-                if(!formData.title && !formData.content) {
-                    isSaving = false;
-                    return;
-                }
-
-                // 生成时间字符串
-                const now = new Date();
-                const timeString = now.toLocaleString('zh-CN', { 
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                }).replace(/\//g, '-');
-
-                // 更新保存状态
-                const statusEl = document.getElementById('draft-status');
-                if (statusEl) {
-                    statusEl.classList.add('save-pulse');
-                    const lastSaveEl = document.getElementById('last-save-time');
-                    if (lastSaveEl) {
-                        lastSaveEl.innerHTML = `
-                            <span class="material-icons" style="color:#4CAF50;">schedule</span>
-                            自动保存：${timeString}
-                        `;
-                    }
-                }
-
-                // 确定草稿ID
-                let draftId;
-                if (editingId) {
-                    // 编辑模式：使用现有条目ID
-                    draftId = editingId;
-                    currentDraftId = draftId; // 确保 currentDraftId 被设置
-                } else {
-                    // 新建模式：使用现有的草稿ID或生成新的
-                    draftId = currentDraftId || localStorage.getItem('currentDraftId') || `DRAFT_${Date.now()}`;
-                    currentDraftId = draftId;
-                    localStorage.setItem('currentDraftId', draftId);
-                }
-
-                // 保存到Firebase
-                const draftData = {
-                    ...formData,
-                    updatedAt: now.getTime(),
-                    version: (Date.now()).toString(36),
-                    originalId: editingId || null,
-                    draftType: editingId ? 'edit' : 'new'
-                };
-                
-                await db.ref(getProjectPath(`drafts/${draftId}`)).set(draftData);
-                
-                // 更新最后保存时间戳
-                lastSaveTimestamp = Date.now();
-                
-                // 重置倒计时显示
-                updateCountdownDisplay(150000);
-                
-                // 重新启动常规更新定时器
-                startAutoSaveSystem();
-                
-            } catch (error) {
-                console.error('保存草稿失败:', error);
-                const lastSaveEl = document.getElementById('last-save-time');
-                if (lastSaveEl) {
-                    lastSaveEl.innerHTML = `
-                        <span class="material-icons" style="color:var(--danger-bg)">error</span>
-                        自动保存失败
-                    `;
-                }
-            } finally {
-                setTimeout(() => {
-                    const statusEl = document.getElementById('draft-status');
-                    if (statusEl) statusEl.classList.remove('save-pulse');
-                }, 1500);
-                isSaving = false;
-            }
-        }
+        async function triggerAutoSave() { return ResearchWorkspace.syncDraft(); }
 
         // 查找已存在的条目
         async function findExistingEntry(baseId) {
@@ -1115,7 +879,7 @@
                 } 
                 // 新建模式：不再根据主类/子类生成 entryBaseId，仅尝试使用当前草稿ID
                 else {
-                    draftId = currentDraftId || localStorage.getItem('currentDraftId') || null;
+                    draftId = currentDraftId || localStorage.getItem('draft-id:' + getProjectPath()) || null;
                 }
                 
                 if (draftId) {
@@ -1141,7 +905,7 @@
                             `;
                         } else if (!editingId) {
                             // 如果用户选择不恢复，且是新建模式，清理草稿ID
-                            localStorage.removeItem('currentDraftId');
+                            localStorage.removeItem('draft-id:' + getProjectPath());
                             currentDraftId = null;
                         }
                     }
@@ -1152,13 +916,7 @@
             }
         }
 
-        function checkUnsavedChanges() {
-            const currentData = getFormData();
-            return currentData.title || 
-                   currentData.content || 
-                   currentData.analysis ||
-                   currentData.keywords.length > 0;
-        }
+        function checkUnsavedChanges() { return window.ResearchWorkspace?.isDirty() || false; }
 
         // 分类管理
         function showCategoryManager() {}
@@ -1504,18 +1262,16 @@
             if (!entry.date) throw new Error('日期为必填项');
 
             // 日期格式化为 YYYYMMDD（直接基于用户输入的日期）
-            const dateObj = new Date(entry.date);
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            const datePart = `${year}${month}${day}`;
+            const civil = ResearchDates.parse(entry.date);
+            if (!civil) throw new Error('日期无效');
+            const datePart = civil.start ? civil.start.replaceAll('-', '') : 'UNDATED';
 
             // 计数器以日期为基准：同一天内从 01 递增
             const counterRef = db.ref(getProjectPath(`counters/${datePart}`));
             let seq = 1;
 
             await counterRef.transaction(currentValue => {
-                if (currentValue === null) return 1; // 初始化计数器
+                if (currentValue === null) return Math.max(0, ...entries.filter(e => e.id?.startsWith(datePart + '-')).map(e => Number(e.id.split('-').at(-1)) || 0)) + 1; //兼容导入的既有编号
                 return currentValue + 1;             // 递增序号
             }).then(({ committed, snapshot }) => {
                 if (committed) seq = snapshot.val();
@@ -1549,9 +1305,9 @@
             const end = start + ENTRIES_PER_PAGE;
             const currentPageEntries = filteredEntries.slice(start, end);
 
-            // V2.3：Word 视图（分页）
+            // Reading uses its complete filtered TOC rather than the list's current page.
             if (currentViewMode === 'word' && window.V2Word && typeof V2Word.render === 'function') {
-                V2Word.render(currentPageEntries, totalPages);
+                V2Word.render(filteredEntries, 1);
                 updatePagination(totalPages);
                 if (typeof window._v2AfterRender === 'function') window._v2AfterRender();
                 return;
@@ -1560,13 +1316,6 @@
             // V2：时间线视图（全量事件，按日期比例排列）
             if (currentViewMode === 'timeline' && window.V2Events && typeof V2Events.render === 'function') {
                 V2Events.render();
-                if (typeof window._v2AfterRender === 'function') window._v2AfterRender();
-                return;
-            }
-
-            // V2.1：卡片视图由 V2Views 渲染
-            if (currentViewMode === 'card' && window.V2Views && typeof V2Views.renderPage === 'function') {
-                V2Views.renderPage(currentPageEntries, totalPages);
                 if (typeof window._v2AfterRender === 'function') window._v2AfterRender();
                 return;
             }
@@ -1900,113 +1649,27 @@
         function updateSubCats() {}
 
         function updatePagination(totalPages) {
+            totalPages = Math.max(1, totalPages || 1);
             document.getElementById('currentPage').textContent = currentPage;
-            document.getElementById('totalPages').textContent = totalPages || 1;
+            document.getElementById('totalPages').textContent = totalPages;
             document.getElementById('entriesPerPage').textContent = ENTRIES_PER_PAGE;
-
-            // 保存总页数到全局变量
-            window.totalPages = totalPages || 1;
-
-            const container = document.getElementById('pagination-buttons');
-            const current = currentPage;
-            const pages = [];
-            const MAX_VISIBLE = 5;
-
-            // 生成页码数组（与原有逻辑一致）
-            pages.push(1);
-            if (totalPages <= 7) {
-                for (let i = 2; i < totalPages; i++) pages.push(i);
-            } else {
-                if (current - MAX_VISIBLE > 2) pages.push('...');
-                const start = Math.max(2, current - 2);
-                const end = Math.min(totalPages - 1, current + 2);
-                for (let i = start; i <= end; i++) pages.push(i);
-                if (current + 2 < totalPages - 1) pages.push('...');
-            }
-            if (totalPages > 1) pages.push(totalPages);
-
-            // 检测是否为移动端
-            const isMobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
-
-            // 生成上一页 / 下一页按钮（移动端为图标，桌面端为文字+图标）
-            const prevBtn = current > 1
-                ? `<button class="page-btn nav" onclick="currentPage=${current - 1};renderEntries()">${
-                    isMobile
-                        ? '<span class="material-icons">chevron_left</span>'
-                        : '<span class="material-icons" style="font-size:16px;vertical-align:middle;margin-right:4px;">chevron_left</span>上一页'
-                  }</button>`
-                : '';
-
-            const nextBtn = current < totalPages
-                ? `<button class="page-btn nav" onclick="currentPage=${current + 1};renderEntries()">${
-                    isMobile
-                        ? '<span class="material-icons">chevron_right</span>'
-                        : '下一页<span class="material-icons" style="font-size:16px;vertical-align:middle;margin-left:4px;">chevron_right</span>'
-                  }</button>`
-                : '';
-
-            // 生成页码按钮
-            const pageButtons = pages.map(page => {
-                if (page === '...') {
-                    return `<button class="page-btn more">⋯</button>`;
-                }
-                return `<button class="page-btn ${page === current ? 'active' : ''}" onclick="currentPage=${page};renderEntries()">${page}</button>`;
-            }).join('');
-
-            // 同步更新顶部行内跳转输入框的最大页和当前值
-            const inlineJump = document.getElementById('page-jump-inline');
-            if (inlineJump) {
-                inlineJump.max = totalPages || 1;
-                inlineJump.value = current;
-            }
-
-            // 组合HTML（分页按钮区域只保留页码和上一页/下一页）
-            container.innerHTML = `
-                ${prevBtn}
-                ${pageButtons}
-                ${nextBtn}
-            `;
+            window.totalPages = totalPages;
+            ResearchPagination.render(document.querySelector('.v2-main-scroll > .pagination'), {
+                count: getFilteredEntries().length, current: currentPage, pageSize: ENTRIES_PER_PAGE,
+                onChange: page => { currentPage = page; renderEntries(); }
+            });
         }
-        
+
         // 显示更多页码
-        function showMorePages() {
-            const current = currentPage;
-            const totalPages = parseInt(document.getElementById('totalPages').textContent);
-            const visibleRange = 5; // 每次点击显示5页
-            const start = Math.max(1, current - visibleRange);
-            const end = Math.min(totalPages, current + visibleRange);
-            
-            const pages = [];
-            for (let i = start; i <= end; i++) {
-                pages.push(i);
-            }
-            
-            document.getElementById('pagination-buttons').innerHTML = pages.map(page => `
-                <button class="page-btn ${page === current ? 'active' : ''}" 
-                        onclick="currentPage=${page};renderEntries()">${page}</button>
-            `).join('') + `
-                <div class="page-jump">
-                    跳至 <input type="number" min="1" max="${totalPages}" 
-                          onchange="jumpToPage(this.value)" style="width:60px"> 页
-                </div>
-            `;
-        }
+        function showMorePages() { updatePagination(window.totalPages); }
 
         // 跳转页面
         function jumpToPage(page) {
-            const totalPages = parseInt(document.getElementById('totalPages').textContent);
-            page = Math.max(1, Math.min(Number(page), totalPages));
-            if (page && page !== currentPage) {
-                currentPage = page;
+            const total = Math.max(1, Number(window.totalPages) || 1);
+            const next = Number(page);
+            if (Number.isSafeInteger(next) && next >= 1 && next <= total && next !== currentPage) {
+                currentPage = next;
                 renderEntries();
-                // 添加轻微滚动效果
-                const paginationElement = document.querySelector('.pagination');
-                if (paginationElement) {
-                    paginationElement.style.transform = 'translateY(-5px)';
-                    setTimeout(() => {
-                        paginationElement.style.transform = 'translateY(0)';
-                    }, 300);
-                }
             }
         }
 
@@ -2033,82 +1696,10 @@
             return entries.filter(e => e.keywords.includes(keyword)).length;
         }
 
-        async function saveEntry(e) {
-            e.preventDefault();
-            try {
-                const formData = getFormData();
-                
-                // 验证必填字段
-                if (!formData.date) throw new Error('请选择日期');
-                if (!formData.title.trim()) throw new Error('请输入标题');
-                if (!formData.content.trim()) throw new Error('请输入原文内容');
+        async function saveEntry(e) { return ResearchWorkspace.saveEntry(e); }
 
-                // V2.2：文献类型与引用
-                if (!formData.typeId) formData.typeId = 'general';
-                if (!formData.metadata) formData.metadata = {};
-                if (window.V2Citations) {
-                    formData.citation = V2Citations.generateCitation(formData) || formData.citation || '';
-                }
-                
-                // 构建新条目
-                const newEntry = {
-                    ...formData,
-                    updatedAt: Date.now()
-                };
-                
-                const entryRef = db.ref(getProjectPath('entries'));
-                const originalEntry = editingId ? (await entryRef.child(editingId).once('value')).val() : null;
-
-                let finalEntryId;
-                
-                if (editingId) {
-                    // 保持原ID
-                    newEntry.id = editingId;
-                    // 保持原创建时间
-                    newEntry.createdAt = originalEntry.createdAt;
-                    
-                    // 使用update方法更新部分字段
-                    const updates = {};
-                    Object.keys(newEntry).forEach(key => {
-                        if (key !== 'id' && key !== 'createdAt') {
-                            updates[key] = newEntry[key];
-                        }
-                    });
-                    await entryRef.child(newEntry.id).update(updates);
-                    finalEntryId = newEntry.id;
-                } else {
-                    // 新条目，生成ID
-                    newEntry.id = await generateID(newEntry);
-                    newEntry.createdAt = firebase.database.ServerValue.TIMESTAMP;
-                    // 保存到数据库
-                    await entryRef.child(newEntry.id).set(newEntry);
-                    finalEntryId = newEntry.id;
-                }
-
-                // 修复：成功保存后清理草稿（使用已定义的 currentDraftId）
-                if (currentDraftId) {
-                    await db.ref(getProjectPath(`drafts/${currentDraftId}`)).remove();
-                    localStorage.removeItem('currentDraftId');
-                    currentDraftId = null;
-                }
-                
-                // 如果是从草稿箱恢复的，也清理草稿箱中的记录
-                if (entryDraft) {
-                    await db.ref(getProjectPath(`drafts/${entryDraft}`)).remove();
-                    entryDraft = null;
-                }
-                
-                // 重置编辑状态
-                editingId = null;
-                
-                hideForm();
-                showAlert('保存成功！', 'success');
-            } catch (error) {
-                showAlert('保存失败: ' + error.message, 'error');
-            }
-        }
-
-        function editEntry(id) {
+        async function editEntry(id) {
+            await ensureEditorsInitialized();
             const entry = entries.find(e => e.id === id);
             if (!entry) {
                 showAlert('找不到指定条目', 'error');
@@ -2119,16 +1710,17 @@
             
             // 填充表单数据（主类/子类已从编辑表单中移除）
             document.querySelector('[name="date"]').value = entry.date || '';
+            if (document.querySelector('[name="dateOriginal"]')) document.querySelector('[name="dateOriginal"]').value = entry.dateOriginal || '';
             document.querySelector('[name="title"]').value = entry.title || '';
             // 添加检查确保 quill 实例存在
              if (quill && quill.root) {
-                 quill.root.innerHTML = entry.content || ''; // 恢复
+                 quill.setHTML(entry.content || ''); // 恢复
              } else {
                  console.error("Quill (原文) 实例未准备好，无法设置内容。");
              }
              // 添加检查确保 analysisQuill 实例存在
              if (window.analysisQuill && window.analysisQuill.root) {
-                 window.analysisQuill.root.innerHTML = entry.analysis || ''; // 恢复
+                 window.analysisQuill.setHTML(entry.analysis || ''); // 恢复
              } else {
                  console.error("Quill (分析) 实例未准备好，无法设置内容。");
              }
@@ -2282,16 +1874,10 @@
                 
                 // 搜索过滤（含引用与著录字段）
                 const metaText = entry.metadata ? Object.values(entry.metadata).join(' ') : '';
-                const searchMatch = !searchQuery || 
-                    [entry.title, entry.content, entry.analysis, (entry.keywords || []).join(' '),
-                     entry.citation || '', entry.typeId || '', metaText]
-                        .join(' ')
-                        .toLowerCase()
-                        .includes(searchQuery.toLowerCase());
-                
+                const searchMatch = !searchQuery || ResearchSearch.text(entry).includes(searchQuery.toLowerCase());
+
                 // 高级筛选
-                const dateMatch = (!advancedFilter.startDate || entry.date >= advancedFilter.startDate) &&
-                                (!advancedFilter.endDate || entry.date <= advancedFilter.endDate);
+                const dateMatch = ResearchDates.overlaps(entry.date, advancedFilter.startDate, advancedFilter.endDate);
                 
                 // 标签交叉检索：对 entry.keywords 使用 AND / OR 逻辑
                 const entryTags = entry.keywords || [];
@@ -2322,8 +1908,8 @@
             // 添加排序逻辑：按日期升序 (从早到晚)
             filtered.sort((a, b) => {
                 // 确保 date 字段存在且为有效字符串进行比较
-                const dateA = a.date || '0000-00-00';
-                const dateB = b.date || '0000-00-00';
+                const dateA = ResearchDates.parse(a.date)?.start || '9999-12-31';
+                const dateB = ResearchDates.parse(b.date)?.start || '9999-12-31';
                 return dateA.localeCompare(dateB); // 升序排序 (从早到晚)
             });
 
@@ -2515,6 +2101,11 @@
 
         // 应用高级筛选
         function applyAdvancedSearch() {
+            const from = document.getElementById('startDate'), to = document.getElementById('endDate');
+            if (!from.reportValidity() || !to.reportValidity()) return;
+            if (from.value && to.value && ResearchDates.parse(from.value)?.start > ResearchDates.parse(to.value)?.end) {
+                showAlert('开始日期不能晚于结束日期', 'error'); return;
+            }
             advancedFilter = {
                 startDate: document.getElementById('startDate').value,
                 endDate: document.getElementById('endDate').value,
@@ -2857,9 +2448,7 @@
                     const entry = child.val();
                     checkedCount++;
                     
-                    if (!entry.hasOwnProperty('links') || entry.links === null || entry.links === undefined ||
-                        !entry.hasOwnProperty('keywords') || entry.keywords === null || entry.keywords === undefined ||
-                        !entry.hasOwnProperty('analysis') || entry.analysis === null || entry.analysis === undefined) {
+                    if (!entry.title || !entry.date || !ResearchDates.parse(entry.date)) {
                         hasIssues = true;
                     }
                 });
@@ -2874,8 +2463,8 @@
 
         // 页面卸载时清理监听器与定时器（减少内存占用）
         window.addEventListener('beforeunload', () => {
-            if (unsubscribeEntries) unsubscribeEntries();
-            if (unsubscribeCategories) unsubscribeCategories();
+            if (typeof unsubscribeEntries === 'function') unsubscribeEntries();
+            if (typeof unsubscribeCategories === 'function') unsubscribeCategories();
             if (typeof autoSaveTimer !== 'undefined' && autoSaveTimer) {
                 clearInterval(autoSaveTimer);
                 autoSaveTimer = null;
@@ -3046,8 +2635,8 @@
                 return;
             }
             const sortedEntries = [...entries].sort((a, b) => {
-                const dateA = a.date || '0000-00-00';
-                const dateB = b.date || '0000-00-00';
+                const dateA = ResearchDates.parse(a.date)?.start || '9999-12-31';
+                const dateB = ResearchDates.parse(b.date)?.start || '9999-12-31';
                 return dateA.localeCompare(dateB);
             });
             
@@ -3273,6 +2862,7 @@
          * 3D交互效果
          *********************/
         document.addEventListener('DOMContentLoaded', function() {
+            if (document.documentElement.dataset.design === 'editorial') return;
             // 尊重“减少动态效果”偏好：避免 JS 强行施加 3D/涟漪/入场动画
             try {
                 if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -3485,52 +3075,7 @@
         // 日志相关功能
         // 初始化日志编辑器
         function initLogQuill() {
-            if (logQuill) return logQuill;
-
-            const container = document.getElementById('log-editor-container');
-            if (!container) {
-                throw new Error('日志编辑器容器未找到');
-            }
-            if (typeof Quill === 'undefined') {
-                throw new Error('Quill 尚未加载');
-            }
-
-            const Font = Quill.import('formats/font');
-            Font.whitelist = Font.whitelist || ['SimSun', 'STFangsong', 'KaiTi', 'STZhongsong', 'Times New Roman', 'Arial'];
-            Quill.register(Font, true);
-
-            const Size = Quill.import('attributors/style/size');
-            Size.whitelist = Size.whitelist || [
-                '10px', '12px', '14px', '16px', '18px', '20px',
-                '24px', '28px', '32px', '36px', '48px', '72px'
-            ];
-            Quill.register(Size, true);
-
-            logQuill = new Quill('#log-editor-container', {
-                modules: {
-                    toolbar: [
-                        [{ 'font': Font.whitelist }],
-                        [{ 'size': Size.whitelist }],
-                        [{ 'header': [1, 2, 3, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ 'script': 'sub'}, { 'script': 'super' }],
-                        [{ 'color': [] }, { 'background': [] }],
-                        ['blockquote', 'code-block'],
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        [{ 'indent': '-1'}, { 'indent': '+1' }],
-                        [{ 'align': [] }],
-                        ['link', 'image'],
-                        ['clean']
-                    ]
-                },
-                theme: 'snow'
-            });
-
-            logQuill.container.style.height = '300px';
-            logQuill.container.style.overflowY = 'auto';
-            const editorEl = logQuill.container.querySelector('.ql-editor');
-            if (editorEl) editorEl.style.minHeight = '200px';
-
+            if (!logQuill) logQuill = new ResearchEditor('#log-editor-container');
             return logQuill;
         }
 
@@ -3578,7 +3123,7 @@
                 const today = new Date().toISOString().split('T')[0];
                 document.querySelector('#log-form [name="log-date"]').value = today;
                 document.querySelector('#log-form [name="log-title"]').value = '';
-                if (logQuill) logQuill.root.innerHTML = '';
+                if (logQuill) logQuill.setHTML('');
                 editingLogId = null;
             }).catch(error => {
                 console.error('日志编辑器初始化失败:', error);
@@ -3595,7 +3140,7 @@
             setTimeout(() => {
                 form.style.display = 'none';
                 // document.querySelector('#log-form form').reset();
-                 if (logQuill) logQuill.root.innerHTML = ''; // 恢复
+                 if (logQuill) logQuill.setHTML(''); // 恢复
                  editingLogId = null;
                 form.classList.remove('closing');
             }, 200);
@@ -3759,7 +3304,7 @@
                 const newLog = {
                     date: formData.get('log-date'),
                     title: formData.get('log-title'),
-                    content: logQuill.root.innerHTML, // 恢复
+                    content: logQuill.getHTML(), // 恢复
                     // content: logContentEditor ? logContentEditor.getData() : '', // 移除
                     updatedAt: firebase.database.ServerValue.TIMESTAMP
                 };
@@ -3804,7 +3349,7 @@
             ensureLogEditorInitialized().then(() => {
                 document.querySelector('[name="log-date"]').value = log.date || '';
                 document.querySelector('[name="log-title"]').value = log.title || '';
-                if (logQuill) logQuill.root.innerHTML = log.content || '';
+                if (logQuill) logQuill.setHTML(log.content || '');
             }).catch(error => {
                 console.error('日志编辑器初始化失败:', error);
                 showAlert('日志编辑器加载失败: ' + error.message, 'error');
@@ -5131,7 +4676,7 @@
         
         // 切换视图模式
         function changeViewMode(mode) {
-            const allowed = ['list', 'detail', 'card', 'word', 'timeline'];
+            const allowed = ['list', 'detail', 'word', 'timeline'];
             currentViewMode = allowed.includes(mode) ? mode : 'list';
             try { localStorage.setItem('v2_view_mode', currentViewMode); } catch (e) {}
             if ((currentViewMode === 'word' || currentViewMode === 'timeline') && bulkModeActive) {
@@ -5156,7 +4701,7 @@
         
         // 切换视图（在两种视图间切换）
         function toggleViewMode() {
-            const cycle = ['list', 'card', 'detail', 'word'];
+            const cycle = ['list', 'detail', 'word', 'timeline'];
             const idx = cycle.indexOf(currentViewMode);
             const newMode = cycle[(idx + 1) % cycle.length];
             changeViewMode(newMode);
@@ -5167,8 +4712,8 @@
             const btn = document.getElementById('toggle-view-btn');
             if (btn) {
                 const icon = btn.querySelector('.material-icons');
-                const icons = { list: 'table_rows', detail: 'view_list', card: 'grid_view', word: 'menu_book', timeline: 'timeline' };
-                const labels = { list: '数据库视图', detail: '详细视图', card: '卡片视图', word: 'Word 阅读视图', timeline: '时间线视图' };
+                const icons = { list: 'table_rows', detail: 'view_list', word: 'menu_book', timeline: 'timeline' };
+                const labels = { list: '数据库视图', detail: '详细视图', word: '阅读视图', timeline: '时间线视图' };
                 if (icon) icon.textContent = icons[currentViewMode] || 'view_module';
                 btn.title = labels[currentViewMode] || '切换视图';
                 btn.setAttribute('aria-label', btn.title);
@@ -5192,7 +4737,7 @@
                     draftId = currentDraftId;
                 } else {
                     // 尝试从localStorage获取
-                    draftId = localStorage.getItem('currentDraftId');
+                    draftId = localStorage.getItem('draft-id:' + getProjectPath());
                 }
                 
                 if (draftId) {
@@ -5230,19 +4775,7 @@
         }
 
         // 将用户手动输入的 8 位数字日期（如 19380307）规范化为 YYYY-MM-DD
-        function normalizeDateInput(raw) {
-            const value = (raw || '').trim();
-            // 只处理纯 8 位数字
-            if (!/^\d{8}$/.test(value)) return null;
-            const year = value.slice(0, 4);
-            const month = value.slice(4, 6);
-            const day = value.slice(6, 8);
-            // 简单校验月份和日期范围
-            const m = Number(month);
-            const d = Number(day);
-            if (m < 1 || m > 12 || d < 1 || d > 31) return null;
-            return `${year}-${month}-${day}`;
-        }
+        function normalizeDateInput(raw) { return window.ResearchDates?.parse(raw)?.value || null; }
 
         // 新增 getFormData 和 populateForm 函数
         function getFormData() {
@@ -5258,9 +4791,14 @@
 
             return {
                 date: dateValue,
+                dateInfo: ResearchDates.parse(dateValue),
+                dateOriginal: document.querySelector('#entry-form [name="dateOriginal"]')?.value || '',
+                contentFormat: 'tiptap-v1',
+                contentDocument: quill ? JSON.stringify(quill.getJSON()) : null,
+                analysisDocument: window.analysisQuill ? JSON.stringify(window.analysisQuill.getJSON()) : null,
                 title: document.querySelector('#entry-form [name="title"]')?.value || '',
-                content: quill ? quill.root.innerHTML : '',
-                analysis: window.analysisQuill ? window.analysisQuill.root.innerHTML : '',
+                content: quill ? quill.getHTML() : '',
+                analysis: window.analysisQuill ? window.analysisQuill.getHTML() : '',
                 links: (document.querySelector('#entry-form [name="links"]')?.value || '')
                     .split(',')
                     .map(link => link.trim())
@@ -5280,16 +4818,17 @@
                 
                 // 填充基本字段
                 document.querySelector('[name="date"]').value = data.date || '';
+                if (document.querySelector('[name="dateOriginal"]')) document.querySelector('[name="dateOriginal"]').value = data.dateOriginal || '';
                 document.querySelector('[name="title"]').value = data.title || '';
                 document.querySelector('[name="links"]').value = (data.links || []).join(',');
                 document.querySelector('[name="keywords"]').value = (data.keywords || []).join(',');
                 
                 // 填充富文本编辑器内容
-                if (quill && data.content) {
-                    quill.root.innerHTML = data.content;
+                if (quill) {
+                    quill.setHTML(data.content || '');
                 }
-                if (window.analysisQuill && data.analysis) {
-                    window.analysisQuill.root.innerHTML = data.analysis;
+                if (window.analysisQuill) {
+                    window.analysisQuill.setHTML(data.analysis || '');
                 }
             } catch (error) {
                 console.error('填充表单失败:', error);
@@ -5456,6 +4995,8 @@
 
         // 继续编辑草稿
         async function continueDraft(draftId) {
+            return ResearchWorkspace.continueCloudDraft(draftId);
+
             try {
                 const draftRef = db.ref(getProjectPath(`drafts/${draftId}`));
                 const snapshot = await draftRef.once('value');
@@ -5486,8 +5027,8 @@
                     }
 
                     // 先清空编辑器内容
-                    quill.root.innerHTML = '';
-                    window.analysisQuill.root.innerHTML = '';
+                    quill.setHTML('');
+                    window.analysisQuill.setHTML('');
                     
                     // 延迟填充确保编辑器初始化完成
                     setTimeout(() => {

@@ -126,9 +126,9 @@
     }
 
     function statusIcon(status) {
-        if (status === 'ok') return '<span class="v2-cc-ok">✅ 合规</span>';
-        if (status === 'warning') return '<span class="v2-cc-warn">⚠️ 字段缺失</span>';
-        return '<span class="v2-cc-err">❌ 无法解析</span>';
+        if (status === 'ok') return '<span class="v2-cc-ok"><span class="material-icons" aria-hidden="true">check_circle</span> 合规</span>';
+        if (status === 'warning') return '<span class="v2-cc-warn"><span class="material-icons" aria-hidden="true">info</span> 字段缺失</span>';
+        return '<span class="v2-cc-err"><span class="material-icons" aria-hidden="true">close</span> 无法解析</span>';
     }
 
     function ensureReportModal() {
@@ -277,9 +277,9 @@
                     </div>
                     <div class="v2-cc-dash-counts">
                         <div>共 <strong>${stats.total}</strong> 条引用</div>
-                        <div class="v2-cc-ok">✅ ${stats.ok} 合规</div>
-                        <div class="v2-cc-warn">⚠️ ${stats.warning} 缺失字段</div>
-                        <div class="v2-cc-err">❌ ${stats.error} 无法解析</div>
+                        <div class="v2-cc-ok"><span class="material-icons" aria-hidden="true">check_circle</span> ${stats.ok} 合规</div>
+                        <div class="v2-cc-warn"><span class="material-icons" aria-hidden="true">info</span> ${stats.warning} 缺失字段</div>
+                        <div class="v2-cc-err"><span class="material-icons" aria-hidden="true">close</span> ${stats.error} 无法解析</div>
                     </div>
                 </div>
                 ${issues.length ? `
@@ -300,7 +300,7 @@
                         </div>
                     `).join('')}
                     ${issues.length > 50 ? `<p class="v2-cc-more">还有 ${issues.length - 50} 条未显示</p>` : ''}
-                </div>` : '<p class="v2-tm-empty">当前样式下所有条目引用均合规 🎉</p>'}
+                </div>` : '<p class="v2-tm-empty">当前样式下所有条目引用均合规</p>'}
             </div>
         `;
     }

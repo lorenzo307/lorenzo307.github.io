@@ -193,8 +193,8 @@
                 <p class="meta">${esc(e.id)} · ${esc(e.date || '')}${typeName ? ' · ' + esc(typeName) : ''}</p>
                 ${cite ? `<p class="cite"><em>${esc(cite)}</em></p>` : ''}
                 <h3>原文</h3>
-                <div class="content">${e.content || '<p>（无）</p>'}</div>
-                ${e.analysis ? `<h3>分析</h3><div class="analysis">${e.analysis}</div>` : ''}
+                <div class="content">${DOMPurify.sanitize(e.content || '<p>（无）</p>')}</div>
+                ${e.analysis ? `<h3>分析</h3><div class="analysis">${DOMPurify.sanitize(e.analysis)}</div>` : ''}
                 ${e.keywords?.length ? `<p class="tags">标签：${e.keywords.map(esc).join('、')}</p>` : ''}
             </article>`;
         }).join('\n<hr>\n');
@@ -204,6 +204,7 @@
 <title>${esc(projectName())}</title>
 <style>
   body{font-family:"Songti SC","SimSun",serif;line-height:1.8;max-width:800px;margin:40px auto;padding:0 24px;color:#222}
+  table{width:100%;border-collapse:collapse}td,th{border:1px solid #bbb;padding:8px}img{max-width:100%;height:auto}figcaption{font-size:12px;color:#666}.research-footnote{font-size:.8em;background:#f5f2ea}
   h1{border-bottom:2px solid #333;padding-bottom:8px}
   h2{margin-top:1.6em;font-size:1.25rem}
   h3{font-size:1rem;color:#555;margin-top:1.2em}
@@ -224,6 +225,7 @@ ${body}
             exportedAt: new Date().toISOString(),
             count: list.length,
             entries: list.map(e => ({
+                ...e,
                 id: e.id,
                 date: e.date,
                 title: e.title,

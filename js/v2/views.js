@@ -1,5 +1,5 @@
 /**
- * V2.1 — Three view modes: table (list), card, word placeholder
+ * V2.1 — Workspace view selection and entry actions
  */
 (function (global) {
     'use strict';
@@ -7,8 +7,7 @@
     const VIEW_LABELS = {
         list: '数据库视图',
         detail: '详细视图',
-        card: '卡片视图',
-        word: 'Word 阅读视图',
+        word: '阅读视图',
         timeline: '时间线视图'
     };
 
@@ -23,38 +22,6 @@
             .replace(/"/g, '&quot;');
     }
 
-    function renderCardView(pageEntries) {
-        return `<div class="card-view">` + pageEntries.map(entry => {
-            const selected = (typeof selectedAll !== 'undefined' && selectedAll) ||
-                (typeof selectedEntryIds !== 'undefined' && selectedEntryIds.has(entry.id));
-            const bulk = typeof bulkModeActive !== 'undefined' && bulkModeActive;
-            const excerpt = V2Utils.excerpt(entry.content || entry.analysis, 120);
-            const typeLabel = (window.V2SourceTypes && V2SourceTypes.typeName(entry.typeId)) || '';
-            const citeText = (window.V2Citations && V2Citations.getDisplayCitation(entry)) || '';
-            const tags = (entry.keywords || []).map(kw =>
-                `<span class="keyword-tag" style="background:${V2Utils.tagColor(kw)};color:#fff;border:none" onclick="event.stopPropagation();filterByKeyword('${esc(kw).replace(/'/g, "\\'")}')">${esc(kw)}</span>`
-            ).join('');
-
-            const click = bulk
-                ? `onclick="handleEntryItemClick(event, '${entry.id}')"`
-                : `onclick="V2Views.selectEntry('${entry.id}')"`;
-
-            return `<div class="card-entry ${bulk ? 'bulk-mode' : ''} ${selected ? 'selected' : ''}" data-id="${entry.id}" ${click}>
-                <h3 class="card-entry-title">${esc(entry.title || '无标题')}${window.V2Events ? V2Events.eventBadgeHtml(entry) : ''}</h3>
-                <div class="card-entry-meta">${esc(entry.id)} · ${esc(entry.date || '')}${typeLabel ? ` · <span class="v2-type-badge">${esc(typeLabel)}</span>` : ''}</div>
-                ${citeText ? `<div class="v2-entry-citation">${esc(citeText)}</div>` : ''}
-                <div class="card-entry-excerpt">${esc(excerpt || '暂无摘要')}</div>
-                <div class="card-entry-tags">${tags}</div>
-                <div class="card-entry-actions">
-                    <button class="primary-btn btn-icon-only" onclick="event.stopPropagation();editEntry('${entry.id}')" title="编辑"><span class="material-icons">edit</span></button>
-                    <button class="icon-btn" onclick="event.stopPropagation();V2Views.toggleStar('${entry.id}')" title="收藏"><span class="material-icons">${entry.starred ? 'star' : 'star_border'}</span></button>
-                    <button class="danger-btn btn-icon-only" onclick="event.stopPropagation();deleteEntry('${entry.id}')" title="删除"><span class="material-icons">delete</span></button>
-                </div>
-                ${bulk ? `<input type="checkbox" class="select-entry" ${selected ? 'checked' : ''} onchange="handleEntrySelection('${entry.id}', this.checked)" style="display:none">` : ''}
-            </div>`;
-        }).join('') + `</div>`;
-    }
-
     function renderWordView(pageEntries) {
         // Delegated to V2Word (V2.3). Kept as fallback placeholder.
         if (window.V2Word && typeof V2Word.render === 'function' && typeof getFilteredEntries === 'function') {
@@ -63,29 +30,9 @@
         }
         return `<div class="word-view-placeholder">
             <span class="material-icons">menu_book</span>
-            <h3>Word 阅读视图</h3>
-            <p>正在加载 Word 模块…</p>
+            <h3>阅读视图</h3>
+            <p>正在准备阅读内容…</p>
         </div>`;
-    }
-
-    function renderPage(pageEntries, totalPages) {
-        const container = document.getElementById('entries-container');
-        if (!container) return;
-
-        const mode = (typeof currentViewMode !== 'undefined') ? currentViewMode : 'card';
-        if (mode === 'word') {
-            if (window.V2Word) {
-                V2Word.render(typeof getFilteredEntries === 'function' ? getFilteredEntries() : pageEntries);
-            }
-            return;
-        }
-
-        document.body.classList.remove('word-mode-active');
-        document.body.classList.remove('timeline-mode-active');
-        const html = renderCardView(pageEntries);
-        container.innerHTML = `<div class="${mode}-view entering" style="opacity:1;transform:none">${html}</div>`;
-
-        if (typeof updatePagination === 'function') updatePagination(totalPages);
     }
 
     function setWordEntry(id) {
@@ -114,11 +61,14 @@
         const entry = entries.find(e => e.id === id);
         if (!entry) return;
         entry.starred = !entry.starred;
+        if (typeof renderEntries === 'function') renderEntries();
         try {
             await db.ref(getProjectPath(`entries/${id}/starred`)).set(entry.starred || null);
         } catch (err) {
             console.error('收藏失败', err);
             entry.starred = !entry.starred;
+            if (typeof renderEntries === 'function') renderEntries();
+            if (typeof showAlert === 'function') showAlert('收藏同步失败，请重试', 'error');
             return;
         }
         if (typeof renderEntries === 'function') renderEntries();
@@ -191,8 +141,10 @@
 
     function restoreViewMode() {
         try {
-            const saved = localStorage.getItem('v2_view_mode');
-            if (saved && ['list', 'detail', 'card', 'word', 'timeline'].includes(saved) && typeof changeViewMode === 'function') {
+            const stored = localStorage.getItem('v2_view_mode');
+            const saved = stored === 'card' ? 'list' : stored;
+            if (stored === 'card') localStorage.setItem('v2_view_mode', 'list');
+            if (saved && ['list', 'detail', 'word', 'timeline'].includes(saved) && typeof changeViewMode === 'function') {
                 if (typeof currentViewMode !== 'undefined' && currentViewMode !== saved) {
                     changeViewMode(saved);
                     return;
@@ -235,10 +187,8 @@
     }
 
     global.V2Views = {
-        renderCardView,
         renderWordView,
         renderWordPlaceholder: renderWordView,
-        renderPage,
         openEntry,
         selectEntry,
         setWordEntry,

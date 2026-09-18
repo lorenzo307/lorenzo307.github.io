@@ -1,0 +1,157 @@
+/* Apple-inspired restraint, adapted to a research workspace rather than a storefront. */
+:root,html[data-theme],body{--paper:#f5f5f7;--ink:#1d1d1f;--muted:#6e6e73;--rule:#e5e5e7;--red:#0071e3;--link:#0066cc;--accent-1:#0071e3;--accent-2:#0071e3;--accent-1-rgb:0,113,227;--accent-2-rgb:0,113,227;--text-primary-rgb:29,29,31;--bg-secondary:#f5f5f7;--glass-border:#e5e5e7;--v2-border:1px solid #e5e5e7;--surface:#fff;--surface-muted:#f5f5f7;--control-hover:#e8e8ed;--focus-ring:#0071e380}
+html body{color:#1d1d1f!important;background:#f5f5f7!important}
+html body a{color:#0066cc}
+html body :is(button,.btn){font-weight:500;color:#1d1d1f}
+html body :is(button,.btn):hover{background-color:#e8e8ed}
+html body :is(.primary-btn,.btn-primary,.ed-primary){background:#0071e3!important;border-color:#0071e3!important;color:#fff!important;border-radius:980px!important}
+html body :is(.primary-btn,.btn-primary,.ed-primary):hover{background:#0077ed!important;border-color:#0077ed!important}
+html body :is(.btn-secondary,.btn-outline,.cancel-btn,.btn-cancel){background:#fff!important;color:#1d1d1f!important;border:1px solid #d2d2d7!important}
+html body :is(.danger-btn,.btn-danger){color:#6e6e73!important;background:transparent!important;border-color:#e5e5e7!important}
+html body :is(.danger-btn,.btn-danger):hover{color:#b42318!important;background:#fff2f0!important}
+html body :is(button,a,input,select,textarea,[tabindex]):focus-visible{outline:3px solid var(--focus-ring)!important;outline-offset:3px}
+html body :is(input,select,textarea){border-color:#d2d2d7!important;border-radius:9px!important;color:#1d1d1f!important}
+html body :is(input,select,textarea):focus{border-color:#0071e3!important}
+html body input::placeholder,html body textarea::placeholder{color:#86868b!important}
+html body input[type=checkbox],html body input[type=radio]{accent-color:#0071e3}
+html body :is(.ed-masthead,.v2-topbar){background:rgba(251,251,253,.9)!important;backdrop-filter:saturate(150%) blur(16px)!important;-webkit-backdrop-filter:saturate(150%) blur(16px)!important;border-bottom:1px solid #0000000c!important}
+html body.ed-home .ed-masthead{min-height:48px;gap:20px}
+html body.ed-home .ed-masthead a{font-size:16px;letter-spacing:0;font-weight:600}
+html body .ui-brand-caption{font-size:9px;color:#86868b;letter-spacing:.13em;border-color:#d2d2d7}
+html body.ed-home .user-avatar{background:#e8e8ed!important;color:#515154!important;width:30px;height:30px}
+html body.ed-home .user-name{color:#1d1d1f}.user-email{color:#86868b!important}
+html body.ed-home .main-content{padding-top:42px!important;max-width:1256px}
+html body.ed-home .page-header{margin-bottom:28px;gap:24px}
+html body.ed-home .page-title{font-size:38px!important;font-weight:650!important;letter-spacing:-.035em;line-height:1.3!important}
+html body .ui-page-intro p{font-size:14px;line-height:1.65;color:#6e6e73;margin:10px 0 0}
+html body.ed-home .header-actions .btn{border-radius:980px!important;min-height:38px;padding:9px 17px;font-size:12px}
+html body.ed-home .stats-grid{background:transparent!important;border:0;border-radius:0;gap:12px;margin:0 0 26px!important;overflow:visible}
+html body.ed-home .stat-card{background:#fff!important;border:0!important;border-radius:16px!important;padding:18px 22px!important;gap:7px;box-shadow:0 2px 12px #00000004!important}
+html body.ed-home .stat-value{font-size:30px!important;font-weight:500!important;letter-spacing:-.04em;color:#1d1d1f!important}
+html body.ed-home .stat-label{font-size:11px!important;color:#6e6e73}
+html body.ed-home .content-card{background:#fff!important;border:1px solid #ededf0!important;border-radius:20px!important;box-shadow:0 4px 24px #00000004!important}
+html body.ed-home .card-header{padding:24px 26px 18px!important}
+html body.ed-home .card-title{font-size:18px!important;font-weight:650!important}
+html body.ed-home .search-input{background:#f5f5f7!important;border-color:transparent!important;border-radius:10px!important}
+html body.ed-home .toolbar{padding:0 26px 16px!important}
+html body.ed-home .ed-home-tabs{background:#f0f0f3;padding:3px;border-radius:8px}
+html body.ed-home .ed-home-tabs button{color:#6e6e73;min-height:29px}
+html body.ed-home .ed-home-tabs button[aria-pressed=true]{color:#1d1d1f;background:#fff;box-shadow:0 1px 4px #00000014!important}
+html body.ed-home .toolbar-right button{color:#6e6e73!important}
+html body.ed-home #projectList{padding:0 26px}
+html body.ed-home .data-table th{background:#fbfbfd!important;color:#86868b!important;border-color:#ededf0}
+html body.ed-home .data-table td{border-color:#ededf0!important}
+html body.ed-home .data-table tr:hover td{background:#fafafa!important}
+html body.ed-home .project-link-transition{font-size:17px!important;font-weight:600!important;color:#1d1d1f!important}
+html body.ed-home .project-link-transition:hover{color:#0066cc!important}
+html body.ed-home .ed-project-summary{font-size:12px;color:#6e6e73}
+html body.ed-home .ed-project-meta{color:#86868b;font-size:11px}
+html body.ed-home .select-entry:checked~.custom-checkbox{background:#0071e3!important;border-color:#0071e3!important}
+html body.ed-home .ed-continue{background:#fff;border:1px solid #e5e5e7;border-radius:12px}
+html body.ed-home.ed-project-cards #projectList tr{border-radius:14px;border-color:#e5e5e7}
+/* Narrow chrome and broad reading surface remain unchanged in size. */
+html body.v2-layout .v2-sidebar{background:#f5f5f7!important;border-color:#e5e5e7!important}
+html body.v2-layout .v2-nav-item{color:#515154!important}
+html body.v2-layout .v2-nav-item:hover{background:#eaeaec!important}
+html body.v2-layout .v2-nav-item.active{background:#e5effb!important;color:#0066cc!important}
+html body .v2-nav-tags button{background:transparent!important;border-color:#dedee3!important;color:#6e6e73!important}
+html body .v2-nav-divider,html body .ed-nav-group{border-color:#e5e5e7;background-color:transparent}
+html body .ed-nav-group summary{color:#6e6e73}
+html body .v2-workspace-chrome{border-color:#e5e5e7;background:#f5f5f7!important}
+html body .v2-toolbar-search{background:#fff!important;border-color:#e5e5e7!important;border-radius:9px!important}
+html body .ed-view-tabs button{color:#6e6e73!important;font-weight:500}
+html body .ed-view-tabs button[aria-pressed=true]{background:#fff!important;color:#1d1d1f!important;box-shadow:0 1px 5px #0000000c!important}
+html body .ed-results{color:#86868b}
+html body .v2-toolbar-row select{background:#fff!important}
+html body .word-mode{background:#fff;border-color:#e5e5e7!important;border-radius:12px!important}
+html body :is(.word-toc-panel,.word-notes-panel,.v2-info-panel){background:#fbfbfd!important;border-color:#e5e5e7!important}
+html body .word-toc-item{background:transparent!important}
+html body .word-toc-item:hover{background:#f0f0f3!important}
+html body .word-toc-item.active{background:#eaf2fd!important;color:#0066cc!important}
+html body .word-toc-item-meta{color:#86868b}
+html body :is(.word-doc-header,.word-doc-paper,.word-doc-panel){background:#fff!important;border-color:#e5e5e7!important}
+html body .word-doc-title{color:#1d1d1f!important;font-weight:650!important}
+html body .word-body,html body .word-analysis{color:#1d1d1f!important}
+html body .word-doc-actions button{background:#f5f5f7!important;color:#515154!important;border-radius:7px!important}
+html body .word-doc-actions button:hover{background:#e8e8ed!important;color:#0066cc!important}
+html body .word-notes-empty,html body .word-doc-hint{color:#86868b}
+html body blockquote{background:#f5f5f7!important;border-left:2px solid #c5c5ca!important;color:#515154}
+html body .keyword-tag,html body .word-doc-tags .keyword-tag{background:#f5f5f7!important;color:#6e6e73!important;border-radius:5px!important}
+html body .research-footnote{background:#f0f5fc;color:#0066cc;border-color:#b8cce5}
+html body .ed-match{background:#e5effb;color:#1d1d1f}
+html body .ed-match-source{color:#0066cc}
+html body .ui-reading-menu summary{color:#6e6e73}
+html body .ui-reading-menu summary:hover{background:#e8e8ed}
+html body .ui-reading-menu .ed-reading-tools{border-color:#e5e5e7;box-shadow:0 8px 30px #00000010;border-radius:12px}
+html body .ui-reading-menu .ed-reading-tools button{background:#f5f5f7}
+html body :is(.entry-item,.detail-entry){border-color:#e5e5e7!important;background:#fff!important}
+html body .entry-item:hover{background:#fafafa!important}
+html body .v2-info-stat{background:#f5f5f7;color:#1d1d1f}
+html body .v2-info-empty{border-color:#d2d2d7;color:#86868b}
+/* Editor and dialogs share the same quiet, neutral surfaces. */
+html body #entry-form{border-radius:18px!important;box-shadow:0 24px 100px #00000022!important}
+html body #entry-form .ed-editor-meta{background:#f5f5f7;border-color:#e5e5e7;border-radius:12px}
+html body #entry-form .ed-editor-actions button{background:#f5f5f7;border-color:transparent!important;color:#515154!important}
+html body #entry-form .ed-editor-actions button:hover{background:#e8e8ed;color:#1d1d1f!important}
+html body #entry-form .ed-save-state{color:#6e6e73}
+html body #entry-form .form-row>label{color:#6e6e73}
+html body #entry-form .research-editor{border-color:#e5e5e7;border-radius:12px!important}
+html body #entry-form .ed-editor-toolbar{background:#fbfbfd;border-color:#e5e5e7}
+html body #entry-form .ed-editor-toolbar button{color:#515154!important}
+html body #entry-form .ed-editor-toolbar button[aria-pressed=true]{background:#e5effb!important;color:#0066cc!important}
+html body #entry-form .ed-editor-toolbar button:hover{background:#e8e8ed!important}
+html body #entry-form .v2-type-group-chip.active{background:#eaf2fd!important;border-color:#a5c5ed!important;color:#0066cc!important}
+html body #entry-form .action-buttons button[type=submit]{border-radius:980px!important}
+html body .ed-editor-status{background:#fbfbfd;border-color:#e5e5e7;color:#86868b}
+html body .ed-calendar-button{background:#f5f5f7;border-color:#e5e5e7;color:#6e6e73}
+html body .ed-date-help{color:#6e6e73}
+html body .ed-dialog{border-color:#e5e5e7;border-radius:18px!important;box-shadow:0 20px 80px #00000024!important}
+html body .ed-dialog::backdrop{background:#00000035;backdrop-filter:blur(5px)}
+html body .ed-dialog button{background:#f5f5f7;border-color:#e5e5e7}
+html body .ed-toast{background:#1d1d1f;border-radius:14px;box-shadow:0 8px 28px #00000020}
+/* A welcoming login screen without decorative illustration or ornamental colors. */
+html body.ed-login{background:#f5f5f7!important}
+html body.ed-login .auth-container{border:1px solid #ededf0;border-radius:24px!important;box-shadow:0 12px 50px #00000006!important}
+html body.ed-login .auth-left{background:#fbfbfd!important;border-color:#e5e5e7}
+html body.ed-login .auth-left h1{font-size:38px!important;font-weight:650!important;letter-spacing:-.035em}
+html body.ed-login .auth-left p{color:#6e6e73!important}
+html body.ed-login .feature-icon{background:#f0f0f3!important;color:#515154!important;border-radius:10px!important}
+html body.ed-login .feature-text h3{font-weight:600!important;color:#1d1d1f}
+html body.ed-login .auth-form h2{font-size:27px!important;font-weight:650!important}
+html body.ed-login .form-label{color:#6e6e73}
+html body.ed-login .btn{border-radius:980px!important;min-height:44px}
+html body.ed-login .form-input{border-radius:10px!important}
+@media(max-width:768px){
+ html body.ed-home .main-content{padding-top:28px!important}
+ html body.ed-home .page-title{font-size:29px!important}
+ html body .ui-page-intro p{font-size:12px}
+ html body.ed-home .header-actions .btn{padding:8px 12px;font-size:11px}
+ html body.ed-home .stats-grid{gap:6px;margin-bottom:20px!important}
+ html body.ed-home .stat-card{padding:14px 9px!important;border-radius:12px!important;gap:6px}
+ html body.ed-home .stat-card .stat-value{font-size:23px!important}
+ html body.ed-home .stat-label{font-size:9px!important}
+ html body.ed-home .content-card{border-radius:16px!important}
+ html body.ed-home .card-header{padding:18px 16px 12px!important}
+ html body.ed-home .card-title{font-size:16px!important}
+ html body.ed-home .toolbar{padding:0 16px 12px!important}
+ html body.ed-home #projectList{padding:0 16px}
+ html body.ed-home .project-link-transition{font-size:16px!important}
+ html body.ed-home .ed-project-summary{font-size:11px}
+ html body.ed-home .ed-project-meta{font-size:10px}
+ html body #entry-form{border-radius:0!important}
+ html body.ed-login .auth-container{border-radius:20px!important}
+ html body.ed-login .auth-left h1{font-size:30px!important}
+}
+@media(prefers-reduced-transparency:reduce){html body :is(.ed-masthead,.v2-topbar){background:#fbfbfd!important;backdrop-filter:none!important}}
+@media(prefers-reduced-motion:no-preference){
+ html body :is(.word-toc-item,.ed-view-tabs button,.btn,.ed-primary){transition:background-color 220ms ease,color 180ms ease,border-color 180ms ease,box-shadow 220ms ease!important}
+}
+@media print{html body{background:#fff!important}.word-doc-paper{box-shadow:none!important}}
+/* Keep spacing explicit where the original theme used important declarations. */
+html body.ed-home .stats-grid{gap:12px!important}
+html body.refined-ui.ed-home :is(.btn,button){box-shadow:none!important}
+html body.refined-ui.ed-home .ed-home-tabs button[aria-pressed=true]{box-shadow:0 1px 4px #00000014!important}
+@media(max-width:768px){html body.ed-home .stats-grid{gap:6px!important}}
+html body #entry-form .ed-save-state[data-state=error],html body .ed-date-help.is-error{color:#b42318!important}
+html body input[aria-invalid=true]{border-color:#b42318!important}
+html body button:disabled{opacity:.5;cursor:not-allowed}

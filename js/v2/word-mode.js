@@ -22,6 +22,37 @@
     let activeCommentId = null;
     let pendingSelection = null;
     let bound = false;
+    let lastRenderedId = null;
+
+    function panelExpanded(kind) {
+        return matchMedia('(max-width: 900px)').matches
+            ? document.body.classList.contains('reader-' + kind + '-open')
+            : !document.body.classList.contains('reader-' + kind + '-hidden');
+    }
+    function syncPanels() {
+        ['toc', 'notes'].forEach(kind => {
+            document.querySelectorAll('[data-reader-panel="' + kind + '"]').forEach(b => b.setAttribute('aria-expanded', String(panelExpanded(kind))));
+            const panel = document.querySelector('.word-' + kind + '-panel');
+            if (panel) panel.inert = !panelExpanded(kind);
+        });
+    }
+    function togglePanel(kind) {
+        if (!['toc', 'notes'].includes(kind)) return;
+        const mobile = matchMedia('(max-width: 900px)').matches;
+        document.body.classList.toggle('reader-' + kind + (mobile ? '-open' : '-hidden'));
+        if (mobile) document.body.classList.remove('reader-' + (kind === 'toc' ? 'notes' : 'toc') + '-open');
+        syncPanels();
+    }
+    window.addEventListener('resize', syncPanels);
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape' || !document.body.classList.contains('word-mode-active') || document.querySelector('dialog[open]')) return;
+        const kind = ['toc', 'notes'].find(k => document.body.classList.contains('reader-' + k + '-open'));
+        if (kind) {
+            document.body.classList.remove('reader-' + kind + '-open');
+            syncPanels();
+            document.querySelector('[data-reader-panel="' + kind + '"]')?.focus();
+        }
+    });
 
     function esc(s) {
         return String(s || '')
@@ -57,7 +88,7 @@
                     cmp = authorOf(a).localeCompare(authorOf(b), 'zh-CN');
                     break;
                 case 'date':
-                    cmp = String(a.date || '').localeCompare(String(b.date || ''));
+                    cmp = (ResearchDates.parse(a.date)?.start || '9999').localeCompare(ResearchDates.parse(b.date)?.start || '9999');
                     break;
                 case 'created':
                     cmp = (a.createdAt || 0) - (b.createdAt || 0);
@@ -147,12 +178,11 @@
         comments.filter(c => !c.resolved).forEach(c => {
             let s = c.startOffset;
             let e = c.endOffset;
-            if ((s == null || e == null) && c.quote) {
+            c.anchorLost = false;
+            if (c.quote && (s == null || e == null || plain.slice(s, e) !== c.quote)) {
                 const idx = plain.indexOf(c.quote);
-                if (idx >= 0) {
-                    s = idx;
-                    e = idx + c.quote.length;
-                }
+                if (idx >= 0 && plain.indexOf(c.quote, idx + 1) === -1) { s = idx; e = idx + c.quote.length; }
+                else { s = null; e = null; c.anchorLost = true; }
             }
             if (s != null && e != null) wrapRange(bodyEl, s, e, c.id, c.color);
         });
@@ -172,7 +202,7 @@
             container.innerHTML = `<div class="word-view entering" style="opacity:1">
                 <div class="word-view-placeholder">
                     <span class="material-icons">menu_book</span>
-                    <h3>Word 阅读视图</h3>
+                    <h3>阅读视图</h3>
                     <p>当前筛选下没有史料。请先添加条目或调整筛选条件。</p>
                 </div>
             </div>`;
@@ -200,7 +230,7 @@
         container.innerHTML = `
             <div class="word-view entering" style="opacity:1;transform:none">
                 <div class="word-mode">
-                    <aside class="word-toc-panel">
+                    <aside class="word-toc-panel" id="reader-toc-panel">
                         <div class="word-toc-toolbar">
                             <div class="word-toc-title-row">
                                 <span>目录</span>
@@ -229,12 +259,14 @@
                         </div>
                     </aside>
 
-                    <section class="word-doc-panel">
+                    <section class="word-doc-panel${lastRenderedId !== entry.id ? ' reader-content-enter' : ''}">
                         <header class="word-doc-header">
                             ${typeLabel ? `<span class="v2-type-badge">${esc(typeLabel)}</span>` : ''}
                             <h1 class="word-doc-title">${esc(entry.title || '无标题')}</h1>
                             <div class="word-doc-citation">${esc(citation)}</div>
                             <div class="word-doc-actions">
+                                <button type="button" class="reader-panel-toggle" data-reader-panel="toc" aria-controls="reader-toc-panel" aria-expanded="${panelExpanded('toc')}" onclick="V2Word.togglePanel('toc')" title="展开或收起目录"><span class="material-icons">list</span>目录</button>
+                                <button type="button" class="reader-panel-toggle" data-reader-panel="notes" aria-controls="reader-notes-panel" aria-expanded="${panelExpanded('notes')}" onclick="V2Word.togglePanel('notes')" title="展开或收起批注"><span class="material-icons">edit_note</span>批注</button>
                                 <button type="button" class="icon-btn" onclick="editEntry('${entry.id}')" title="编辑"><span class="material-icons">edit</span></button>
                                 <button type="button" class="icon-btn" onclick="V2Views.toggleStar('${entry.id}')" title="收藏"><span class="material-icons">${entry.starred ? 'star' : 'star_border'}</span></button>
                                 <button type="button" class="icon-btn" onclick="V2Views.copyCitation('${entry.id}')" title="复制引用"><span class="material-icons">content_copy</span></button>
@@ -248,7 +280,7 @@
                         </article>
                     </section>
 
-                    <aside class="word-notes-panel">
+                    <aside class="word-notes-panel" id="reader-notes-panel">
                         <div class="word-notes-toolbar">
                             <div class="word-notes-title-row">
                                 <span>批注</span>
@@ -276,10 +308,14 @@
             <div id="word-comment-dialog" class="word-comment-dialog" style="display:none"></div>
         `;
 
+        lastRenderedId = entry.id;
         const bodyEl = document.getElementById('word-body');
         if (bodyEl) applyHighlights(bodyEl, comments);
+        const noteList = document.getElementById('word-notes-list');
+        if (noteList) noteList.innerHTML = renderCommentsList(comments);
 
         bindWordUi(list);
+        syncPanels();
         if (typeof updatePagination === 'function' && totalPages) {
             updatePagination(totalPages);
         }
@@ -312,6 +348,7 @@
                         <span class="material-icons">${collapsed ? 'unfold_more' : 'unfold_less'}</span>
                     </button>
                 </div>
+                ${c.anchorLost ? `<p class="ed-anchor-lost">原文已变化。选中正确原文后，<button type="button" onclick="V2Word.reanchor('${c.id}')">重新关联</button></p>` : ''}
                 ${c.quote ? `<div class="word-note-quote" onclick="V2Word.focusComment('${c.id}')">“${esc(c.quote)}”</div>` : ''}
                 ${collapsed ? '' : `
                     <div class="word-note-text">${esc(c.text)}</div>
@@ -367,6 +404,7 @@
             activeId = btn.dataset.id;
             pendingSelection = null;
             activeCommentId = null;
+            if (matchMedia('(max-width: 900px)').matches) document.body.classList.remove('reader-toc-open');
             refresh();
         });
         document.getElementById('word-comment-search')?.addEventListener('input', (e) => {
@@ -602,7 +640,12 @@
     }
     document.addEventListener('firebaseReady', () => setTimeout(patchChangeView, 200));
 
-    global.V2Word = {
+    async function reanchor(id) {
+        if (!pendingSelection || !activeId) { showAlert('请先在正文选中新的批注位置', 'info'); return; }
+        await V2Comments.updateComment(activeId, id, { ...pendingSelection, anchorLost: false });
+        pendingSelection = null; refresh();
+    }
+    global.V2Word = { reanchor, togglePanel,
         render,
         refresh,
         setActiveEntry,

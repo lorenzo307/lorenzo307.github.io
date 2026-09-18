@@ -295,7 +295,7 @@
 
         wrap.innerHTML = `
             <div class="v2-tm-table-head">
-                <span>📋 当前样式「${esc(styleLabel)}」共 <strong>${types.length}</strong> 种文献类型</span>
+                <span><span class="material-icons" aria-hidden="true">file_copy</span> 当前样式「${esc(styleLabel)}」共 <strong>${types.length}</strong> 种文献类型</span>
                 <span class="v2-tm-table-hint">类型与引用模板由 JSON 导入时自动创建/填充</span>
             </div>
             <div class="v2-tm-table-scroll">

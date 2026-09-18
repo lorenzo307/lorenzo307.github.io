@@ -99,7 +99,7 @@
             note = document.createElement('div');
             note.id = 'v2-search-note';
             note.className = 'v2-search-note';
-            note.textContent = 'V2.4：可检索引用、批注、著录字段、标签、类型与关联文献；适用于所有视图。';
+            note.textContent = '同时检索引用、批注、来源、标签与关联文献。';
             const group = document.querySelector('.fulltext-search-group');
             group?.appendChild(note);
         }

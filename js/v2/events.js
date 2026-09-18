@@ -4,7 +4,7 @@
 (function (global) {
     'use strict';
 
-    const PX_PER_DAY = 3;
+    let PX_PER_DAY = 1;
     const MIN_SAME_DAY_GAP = 32;
     const TIMELINE_PAD_TOP = 48;
     const TIMELINE_PAD_BOTTOM = 80;
@@ -32,7 +32,7 @@
             .filter(e => e && typeof e === 'object')
             .map(e => ({
                 id: e.id || genEventId(),
-                date: String(e.date || '').slice(0, 10),
+                date: String(e.date || ''),
                 description: String(e.description || '').trim(),
                 createdAt: e.createdAt || Date.now()
             }))
@@ -40,7 +40,7 @@
     }
 
     function isValidDate(d) {
-        return /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d));
+        return !!window.ResearchDates?.parse(d);
     }
 
     function setFormEvents(list) {
@@ -119,7 +119,7 @@
         const description = (document.getElementById('v2-event-desc')?.value || '').trim();
 
         if (!isValidDate(date)) {
-            if (typeof showAlert === 'function') showAlert('请填写合法的事件日期（YYYY-MM-DD）', 'warning');
+            if (typeof showAlert === 'function') showAlert('请填写有效事件日期，可用年月日、年份、区间或“不详”', 'warning');
             return;
         }
         if (!description) {
@@ -191,8 +191,8 @@
     }
 
     function dateToMs(dateStr) {
-        if (!dateStr || !isValidDate(dateStr)) return null;
-        return Date.parse(dateStr + 'T00:00:00');
+        if (!ResearchDates.parse(dateStr)?.start) return null;
+        return Date.parse(ResearchDates.parse(dateStr).start + 'T00:00:00Z');
     }
 
     function daysBetween(d1, d2) {
@@ -208,7 +208,7 @@
             ? getFilteredEntries()
             : (typeof entries !== 'undefined' ? entries : []);
         source.forEach(entry => {
-            normalizeEvents(entry.events).forEach(ev => {
+            normalizeEvents(entry.events).filter(ev => dateToMs(ev.date) !== null).forEach(ev => {
                 all.push({
                     ...ev,
                     entryId: entry.id,
@@ -217,7 +217,7 @@
             });
         });
         all.sort((a, b) => {
-            const c = String(a.date).localeCompare(String(b.date));
+            const c = dateToMs(a.date) - dateToMs(b.date);
             if (c !== 0) return c;
             return (a.createdAt || 0) - (b.createdAt || 0);
         });
@@ -233,36 +233,14 @@
             return { height: 0, positions: [], markers: [], rangeLabel: '' };
         }
 
-        const minMs = dateToMs(events[0].date);
-        const maxMs = dateToMs(events[events.length - 1].date);
-        const dayIndex = {};
-        const positions = events.map((ev, index) => {
-            const baseTop = daysBetween(events[0].date, ev.date) * PX_PER_DAY + TIMELINE_PAD_TOP;
-            const idx = dayIndex[ev.date] || 0;
-            dayIndex[ev.date] = idx + 1;
-            return baseTop + idx * MIN_SAME_DAY_GAP;
+        const positions = [];
+        events.forEach((ev,i) => {
+            const gap = i ? Math.min(600, Math.max(150, daysBetween(events[i-1].date, ev.date) * PX_PER_DAY)) : TIMELINE_PAD_TOP;
+            positions.push((i ? positions[i-1] : 0) + gap);
         });
-
-        const height = Math.max(...positions) + TIMELINE_PAD_BOTTOM;
-        const markers = [];
-
-        if (minMs != null && maxMs != null) {
-            const startYear = new Date(minMs).getFullYear();
-            const endYear = new Date(maxMs).getFullYear();
-            for (let year = startYear; year <= endYear; year++) {
-                const yearDate = `${year}-01-01`;
-                const clampDate = yearDate < events[0].date ? events[0].date : yearDate;
-                if (clampDate > events[events.length - 1].date) break;
-                const top = daysBetween(events[0].date, clampDate) * PX_PER_DAY + TIMELINE_PAD_TOP;
-                markers.push({ year, top });
-            }
-        }
-
-        const rangeLabel = events.length
-            ? `${events[0].date} — ${events[events.length - 1].date}`
-            : '';
-
-        return { height, positions, markers, rangeLabel, spanDays: daysBetween(events[0].date, events[events.length - 1].date) };
+        const seen = new Set(), markers = [];
+        events.forEach((ev,i) => { const year = ResearchDates.parse(ev.date).start.slice(0,4); if (!seen.has(year)) { seen.add(year); markers.push({year,top:Math.max(0,positions[i]-30)}); } });
+        return { height: positions.at(-1) + 240, positions, markers, rangeLabel: events[0].date + ' — ' + events.at(-1).date, spanDays: daysBetween(events[0].date,events.at(-1).date) };
     }
 
     function renderTimelineItems(events, layout) {
@@ -271,8 +249,8 @@
             return `
                 <div class="timeline-item ${side} v2-timeline-item-proportional"
                      style="top:${layout.positions[index]}px"
-                     data-event-id="${esc(ev.id)}">
-                    <div class="timeline-date">${esc(ev.date)}</div>
+                     data-event-id="${esc(ev.id)}" data-year="${ResearchDates.parse(ev.date)?.start?.slice(0,4) || ''}">
+                    <div class="timeline-date">${esc(ev.date)}${ResearchDates.parse(ev.date)?.precision !== 'day' || ResearchDates.parse(ev.date)?.approximate ? '<small class="ed-date-uncertain"> · 非精确日期</small>' : ''}</div>
                     <div class="timeline-content v2-timeline-event-card" role="button" tabindex="0" title="点击查看所属条目">
                         <p class="v2-timeline-event-desc">${esc(ev.description)}</p>
                         <div class="v2-timeline-entry-source" hidden>
@@ -296,6 +274,7 @@
     function bindTimelineInteractions(root) {
         if (!root || root.dataset.v2TimelineBound) return;
         root.dataset.v2TimelineBound = '1';
+        root.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.v2-timeline-event-card')) { e.preventDefault(); e.target.click(); } });
 
         root.addEventListener('click', (e) => {
             const link = e.target.closest('.v2-timeline-entry-link');
@@ -342,7 +321,7 @@
                     <div class="v2-timeline-empty">
                         <span class="material-icons">timeline</span>
                         <p>暂无关联事件</p>
-                        <p class="v2-timeline-empty-hint">在条目编辑中添加「关联事件」后，将按事件日期显示在此时间轴上。</p>
+                        <p class="v2-timeline-empty-hint">在条目编辑中添加关联事件后显示时间轴。日期不详的事件保留在条目中。</p>
                     </div>
                 </div>`;
             return;
@@ -350,7 +329,7 @@
 
         const layout = buildTimelineLayout(allEvents);
         const scaleHint = layout.spanDays > 0
-            ? `时间跨度 ${Math.round(layout.spanDays)} 天 · 每 ${PX_PER_DAY}px 代表 1 天`
+            ? `时间跨度 ${Math.round(layout.spanDays)} 天 · 长间隔压缩显示`
             : '同日事件';
 
         container.innerHTML = `
@@ -363,6 +342,8 @@
                     <div class="v2-timeline-meta">
                         <span class="v2-timeline-range">${esc(layout.rangeLabel)}</span>
                         <span class="v2-timeline-scale">${esc(scaleHint)}</span>
+                        <label>跳转年份 <select id="ed-timeline-year">${layout.markers.map(m=>`<option value="${m.year}">${m.year}年</option>`).join('')}</select></label>
+                        <label>间距 <input id="ed-timeline-zoom" aria-label="时间线间距" type="range" min="0.2" max="3" step="0.2" value="${PX_PER_DAY}"></label>
                     </div>
                 </header>
                 <div class="v2-timeline-body">
@@ -377,6 +358,8 @@
             </div>`;
 
         bindTimelineInteractions(container.querySelector('.v2-timeline-view'));
+        document.getElementById('ed-timeline-year')?.addEventListener('change', e => container.querySelector(`[data-year="${e.target.value}"]`)?.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}));
+        document.getElementById('ed-timeline-zoom')?.addEventListener('change', e => { PX_PER_DAY = +e.target.value; render(); });
     }
 
     function showTimelineView() {

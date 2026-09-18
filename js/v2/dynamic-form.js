@@ -50,18 +50,21 @@
             </div>
         `;
 
-        const dateRow = form.querySelector('.form-row');
+        const dateRow = form.querySelector('[name="date"]')?.closest('.form-row') || form.querySelector('.form-row');
         if (!dateRow) return false;
 
-        form.insertBefore(typeRow, dateRow);
+        dateRow.before(typeRow);
         const titleRow = form.querySelector('[name="title"]')?.closest('.form-row');
-        if (titleRow && titleRow.nextSibling) {
-            form.insertBefore(metaBlock, titleRow.nextSibling);
+        if (form.querySelector('.ed-editor-meta')) {
+            form.querySelector('.ed-editor-meta').append(metaBlock);
+        } else if (titleRow && titleRow.nextSibling) {
+            titleRow.after(metaBlock);
         } else {
             form.insertBefore(metaBlock, form.querySelector('.action-buttons') || null);
         }
         const actions = form.querySelector('.action-buttons');
-        if (actions) form.insertBefore(citeBlock, actions);
+        if (form.querySelector('.ed-editor-meta')) form.querySelector('.ed-editor-meta').append(citeBlock);
+        else if (actions) form.insertBefore(citeBlock, actions);
         else form.appendChild(citeBlock);
 
         form.dataset.v2Form = '1';

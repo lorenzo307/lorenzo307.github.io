@@ -1,0 +1,8 @@
+TABLE 1
+EDIT-EXISTING {
+  title: '卢沟桥事变：报刊记载与地方档案',
+  content: '<h2>史料摘录</h2><p>历史研究始于对材料的细读。报刊记录呈现了事件发生时的社会视角，也留下了值得追问的空白。</p><blockquote><p>比较不同来源，才能理解同一事件的多重面貌。<'
+}
+FINAL ERRORS []
+PASS: date validation, editor conversion, table, notes/image roundtrip, create, revision history, conflict protection, history restore, mobile layout, search, reading and timeline.
+PASS: offline draft recovery, calendar leap-year navigation, reset validity, lossless JSON/HTML export, login layouts.
