@@ -2,6 +2,18 @@
 (function () {
   'use strict';
   const paths = {
+    save:'M4 3h13l4 4v14H3V3h1Zm3 0v6h10V3M7 21v-8h10v8',
+    saveClose:'M3 3h13v18H3V3Zm3 0v6h7V3M6 21v-7h7v7M18 7l4 5-4 5',
+    network:'M12 4 4 18h16L12 4ZM12 4v10M4 18l8-4 8 4',
+    compact:'M4 5h16M4 10h16M4 15h16M4 20h16',
+    restore:'M3 10a9 9 0 1 1 2 9M3 4v6h6M12 7v5l3 2',
+    table:'M3 4h18v16H3zM3 10h18M10 4v16',
+    image:'M3 3h18v18H3zM3 16l6-6 5 5 3-3 4 4M16 7h.01',
+    expand:'M4 9l8-6 8 6M4 15l8 6 8-6',
+    collapse:'M4 3l8 6 8-6M4 21l8-6 8 6',
+    color:'m7 17 5-13 5 13M9 12h6M4 21h16',
+    highlight:'m9 14 7-10 5 4-7 10-5-4ZM9 14l-3 5h5M3 22h18',
+    comment:'M3 4h18v13H9l-6 4V4Zm5 5h8M8 13h5',
     menu:'M4 6h16M4 12h16M4 18h16',
     plus:'M12 5v14M5 12h14',
     close:'m6 6 12 12M18 6 6 18',
@@ -55,9 +67,83 @@
   }
   const aliases={menu:'menu',arrow_back:'arrow',arrow_upward:'up',note_add:'plus',upload:'upload',file_upload:'upload',download:'download',file_download:'download',style:'file',library_books:'book',star:'star',star_border:'star',schedule:'clock',history:'clock',sell:'tag',label:'tag',table_rows:'list',grid_view:'grid',view_list:'list',menu_book:'book',timeline:'timeline',settings:'settings',tune:'settings',filter_list:'filter',search:'search',manage_search:'search',edit:'edit',delete:'trash',delete_sweep:'trash',close:'close',done:'check',done_all:'check',check:'check',check_circle:'check',content_copy:'copy',format_quote:'quote',calendar_today:'calendar',event:'calendar',restart_alt:'refresh',refresh:'refresh',sort:'sort',arrow_downward:'down',chevron_right:'chevron',more_vert:'more',more_horiz:'more',info:'info',archive:'archive'};
   const fa={'plus':'plus','trash':'trash','trash-alt':'trash','sync-alt':'refresh','sign-out-alt':'logout','list-check':'list','search':'search','sort':'sort','download':'download','upload':'upload','archive':'archive','times':'close','edit':'edit','folder':'folder','folder-open':'folder','chevron-right':'chevron','arrow-left':'arrow','check':'check','save':'archive'};
-  const labels={'☰':['menu','切换导航'], '全屏编辑':['fullscreen'], '左右对照':['columns'], '历史版本':['clock'], '立即同步草稿':['refresh'], '导出草稿备份':['download'], '本机恢复草稿':['archive'], '新增史料':['plus'], '撤销':['undo'], '重做':['redo'], '加粗':['bold'], '斜体':['italic'], '下划线':['underline'], '引用':['quote'], '列表':['list'], '编号':['list'], '链接':['link'], '插入':['plus'], '查找':['search'], '更多格式':['more'], '清除格式':['clear']};
+  const labels={'字体颜色':['color'],'高亮设置':['highlight'],'添加批注':['comment'],'☰':['menu','切换导航'], '全屏编辑':['fullscreen'], '左右对照':['columns'], '历史版本':['clock'], '立即同步草稿':['refresh'], '导出草稿备份':['download'], '本机恢复草稿':['archive'], '新增史料':['plus'], '撤销':['undo'], '重做':['redo'], '加粗':['bold'], '斜体':['italic'], '下划线':['underline'], '引用':['quote'], '列表':['list'], '编号':['list'], '链接':['link'], '插入':['plus'], '查找':['search'], '更多格式':['more'], '清除格式':['clear']};
   Object.assign(aliases,{list:'list',add:'plus',add_comment:'file',add_link:'link',analytics:'grid',auto_awesome:'settings',backspace:'clear',build:'settings',category:'grid',drafts:'archive',edit_note:'edit',fact_check:'check',file_copy:'copy',hub:'columns',person:'user',post_add:'plus',remove_circle:'close',reply:'undo',save:'archive',select_all:'grid',tag:'tag',view_module:'grid',article:'file',inventory_2:'archive'});
   Object.assign(fa,{'sign-in-alt':'logout','user-plus':'user',key:'key'});
+  Object.assign(labels,{
+    '数据库视图':['table'],'详细视图':['file'],'全部课题':['folder'],'最近使用':['clock'],'已归档':['archive'],'研究工具与管理':['settings'],'高级维护':['key'],'保存史料':['save'],'保存批注':['save'],'保存':['save'],'保存草稿并关闭':['saveClose'],
+    '取消':['close'],'关闭':['close'],'关闭对照':['close'],'关闭回收站':['close'],
+    '全部批注':['comment'],'批注':['comment'],'目录':['list'],'阅读':['book'],'阅读视图':['book'],'列表视图':['list'],'时间线':['timeline'],'时间线视图':['timeline'],
+    '新增课题':['plus'],'新建课题':['plus'],'创建课题':['plus'],'新建':['plus'],'添加':['plus'],'添加事件':['calendar'],
+    '筛选':['filter'],'搜索':['search'],'重置':['refresh'],'刷新':['refresh'],'清空':['clear'],'紧凑':['compact'],
+    '编辑':['edit'],'修改':['edit'],'进入编辑界面':['edit'],'打开':['book'],'预览':['book'],
+    '删除':['trash'],'删除批注':['trash'],'删除回复':['trash'],'永久删除':['trash'],'批量删除':['trash'],
+    '清空回收站':['trash'],'清理30天前草稿':['trash'],'恢复':['restore'],'恢复草稿':['restore'],'撤销删除':['restore'],
+    '回复':['undo'],'标为已解决':['check'],'重新打开':['restore'],'解决':['check'],'重开':['restore'],
+    '收藏':['star'],'取消收藏':['star'],'归档':['archive'],'批量归档':['archive'],'导出':['download'],'导入':['upload'],'同步':['refresh'],
+    '导出草稿备份':['download'],'导出选中项':['download'],'导出课题':['download'],'取消选择':['close'],'清除选择':['close'],
+    '打开知识网络':['network'],'知识网络':['network'],'设置':['settings'],'返回':['arrow'],'返回顶部':['up'],
+    '退出登录':['logout'],'退出':['logout'],'继续编辑':['edit'],'复制':['copy'],'复制引文':['copy'],
+    '表格':['table'],'图片与图注':['image'],'分隔线':['compact'],'史料关联':['link'],'引用到分析':['quote'],
+    '更多':['more'],'展开':['expand'],'收起':['collapse']
+  });
+  Object.assign(aliases,{folder_special:'archive',hub:'network',add_comment:'comment',edit_note:'comment',save:'save',unfold_more:'expand',unfold_less:'collapse'});
+  const contentControls='.word-toc-item,.v2-nav-tag,.v2-rel-open,.v2-rel-link,.ed-thread-list button,.date-preset-btn,.ed-calendar-days button,.ed-color-swatches button,.word-color-dot,[data-type-id],[data-type],.v2-type-option';
+  const readableWorkspaceControls=[
+    '.v2-nav-item',
+    '.ed-nav-group>summary',
+    '.ed-top-actions button',
+    '.ed-view-tabs button',
+    '.entry-actions button',
+    '.v2-info-actions button',
+    '.word-doc-actions button',
+    '.bulk-operations button',
+    '.v2-adv-toolbar-actions button:not(:last-child)',
+    '.v2-events-editor-actions button',
+    '.v2-events-add-btn',
+    '.v2-citation-style-bar button',
+    '.form-popup .action-buttons button',
+    '.category-manager .action-buttons button',
+    '#entry-form>.action-buttons button',
+    '#entry-form form>.action-buttons button'
+  ].join(',');
+  function usesVisibleLabel(button){
+    return !!document.querySelector('.v2-main')&&button.matches(readableWorkspaceControls);
+  }
+  function iconActions(root){
+    root.querySelectorAll('button,a.btn,a.icon-btn,.ed-nav-group>summary').forEach(b=>{
+      if(b.matches(contentControls)||b.querySelector('input,select,textarea')||b.closest('.v2-type-selector,.v2-type-grid'))return;
+      const copy=b.cloneNode(true);copy.querySelectorAll('svg,.material-icons,.fas,.far,.v2-nav-badge').forEach(el=>el.remove());
+      const text=copy.textContent.trim().replace(/\s+/g,' ');
+      const label=text||b.getAttribute('aria-label')||b.title;
+      if(!label)return;
+      const match=labels[label];let existing=b.querySelector('svg');
+      if(!match&&!existing)return;
+      // Preserve existing children and their event handlers, including navigation counters.
+      if(!existing){existing=icon(match[0]);b.prepend(existing);}
+      if(b.classList.contains('ui-icon-only')&&b.dataset.iconLabel===label&&b.querySelector('.ui-button-label'))return;
+      b.setAttribute('aria-label',label);b.title=label;b.dataset.iconLabel=label;
+      [...b.childNodes].forEach(n=>{
+        if(n.nodeType===3&&n.textContent.trim()){const span=document.createElement('span');span.className='ui-button-label';n.replaceWith(span);span.append(n);}
+        else if(n.nodeType===1&&!n.matches('svg,.material-icons,.fas,.far,.ui-icon-wrap,.v2-nav-badge')&&!n.querySelector('svg'))n.classList.add('ui-button-label');
+      });
+      if(usesVisibleLabel(b)){
+        if(!b.querySelector('.ui-button-label')){const span=document.createElement('span');span.className='ui-button-label';span.textContent=label;b.append(span);}
+        b.classList.remove('ui-icon-only');
+        b.classList.add('ui-labeled-action','ui-icon-button');
+      }else{
+        b.classList.remove('ui-labeled-action');
+        b.classList.add('ui-icon-only','ui-icon-button');
+      }
+    });
+  }
+  function tooltips(){
+    const tip=document.createElement('div');tip.id='ui-action-tooltip';tip.className='ui-action-tooltip';tip.setAttribute('role','tooltip');tip.hidden=true;document.body.append(tip);let owner;
+    const hide=()=>{tip.hidden=true;if(owner){const ids=(owner.getAttribute('aria-describedby')||'').split(' ').filter(id=>id&&id!==tip.id);if(ids.length)owner.setAttribute('aria-describedby',ids.join(' '));else owner.removeAttribute('aria-describedby');}owner=null;};
+    const show=target=>{const b=target.closest?.('.ui-icon-only');if(!b||b.disabled)return;hide();owner=b;tip.textContent=b.getAttribute('aria-label');tip.hidden=false;b.setAttribute('aria-describedby',((b.getAttribute('aria-describedby')||'')+' '+tip.id).trim());const r=b.getBoundingClientRect();const width=tip.offsetWidth,height=tip.offsetHeight;tip.style.left=Math.max(8,Math.min(innerWidth-width-8,r.left+r.width/2-width/2))+'px';tip.style.top=(r.bottom+height+14<innerHeight?r.bottom+7:Math.max(8,r.top-height-7))+'px';};
+    document.addEventListener('pointerover',e=>{if(e.pointerType!=='touch')show(e.target);});document.addEventListener('focusin',e=>show(e.target));
+    document.addEventListener('pointerout',e=>{if(owner&&!owner.contains(e.relatedTarget))hide();});document.addEventListener('focusout',hide);document.addEventListener('click',hide);document.addEventListener('scroll',hide,true);window.addEventListener('resize',hide);document.addEventListener('keydown',e=>{if(e.key==='Escape')hide();});
+  }
   function polish(root=document) {
     root.querySelectorAll('.material-icons, i.fas, i.far').forEach(el=>{
       if(el.querySelector('svg'))return;
@@ -74,6 +160,8 @@
     });
   }
   document.addEventListener('DOMContentLoaded',()=>{
+    document.body.classList.add('ui-minimal-actions');tooltips();
+    if(document.querySelector('.v2-main'))document.body.classList.add('ui-readable-actions');
     document.body.classList.add('refined-ui');
     const masthead=document.querySelector('.ed-masthead');
     if(masthead){
@@ -91,7 +179,7 @@
     if(reading){const details=document.createElement('details');details.className='ui-reading-menu';const summary=document.createElement('summary');summary.append(icon('type'));summary.setAttribute('aria-label','阅读外观');summary.title='阅读外观';reading.before(details);details.append(summary,reading);document.addEventListener('click',e=>{if(!details.contains(e.target))details.open=false;});}
     document.querySelectorAll('.feature-icon').forEach((el,i)=>el.replaceChildren(icon(['folder','book','clock'][i]||'file')));
     document.querySelectorAll('.ed-calendar-button').forEach(el=>{el.replaceChildren(icon('calendar'));el.title='选择日期';el.setAttribute('aria-label','选择日期');});
-    polish();
-    let queued=false;new MutationObserver(records=>{if(!records.some(r=>r.addedNodes.length)||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;polish();});}).observe(document.body,{childList:true,subtree:true});
+    polish();iconActions(document);
+    let queued=false;new MutationObserver(records=>{if(!records.some(r=>r.addedNodes.length)||queued)return;queued=true;requestAnimationFrame(()=>{queued=false;polish();iconActions(document);});}).observe(document.body,{childList:true,subtree:true});
   });
 })();

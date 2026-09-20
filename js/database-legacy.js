@@ -621,6 +621,7 @@
                 
                 // 检查草稿
                 const openingEntry = editingId ? entries.find(e => e.id === editingId) : null;
+                if (!editingId) V2Comments.begin();
                 ResearchWorkspace.opened(openingEntry);
             }).catch(error => {
                 console.error('表单初始化失败:', error);
@@ -1707,6 +1708,7 @@
             }
             
             editingId = id; // 保留原始ID用于后续判断
+            V2Comments.begin(entry);
             
             // 填充表单数据（主类/子类已从编辑表单中移除）
             document.querySelector('[name="date"]').value = entry.date || '';
@@ -4793,6 +4795,7 @@
                 date: dateValue,
                 dateInfo: ResearchDates.parse(dateValue),
                 dateOriginal: document.querySelector('#entry-form [name="dateOriginal"]')?.value || '',
+                commentChanges: V2Comments.changes(),
                 contentFormat: 'tiptap-v1',
                 contentDocument: quill ? JSON.stringify(quill.getJSON()) : null,
                 analysisDocument: window.analysisQuill ? JSON.stringify(window.analysisQuill.getJSON()) : null,
@@ -4816,6 +4819,7 @@
                 // 等待编辑器初始化
                 await ensureEditorsInitialized();
                 
+                V2Comments.begin({...data,id:editingId||data.originalId||data.id||null});
                 // 填充基本字段
                 document.querySelector('[name="date"]').value = data.date || '';
                 if (document.querySelector('[name="dateOriginal"]')) document.querySelector('[name="dateOriginal"]').value = data.dateOriginal || '';

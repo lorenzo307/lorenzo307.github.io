@@ -17,6 +17,10 @@
     let activeId = null;
     let sortBy = 'title';
     let sortAsc = true;
+    let tagFilter = '';
+    let tocPage = 1;
+    let tocPageSize = 10;
+    let syncTocPageToActive = false;
     let commentFilter = '';
     let showResolved = true;
     let activeCommentId = null;
@@ -67,11 +71,30 @@
             const s = JSON.parse(localStorage.getItem('v2_word_sort') || '{}');
             if (s.by) sortBy = s.by;
             if (typeof s.asc === 'boolean') sortAsc = s.asc;
+            tagFilter = localStorage.getItem('v2_word_tag') || '';
+            const savedPageSize = Number(localStorage.getItem('v2_word_page_size'));
+            if (Number.isSafeInteger(savedPageSize) && savedPageSize >= 1 && savedPageSize <= 100) tocPageSize = savedPageSize;
         } catch (e) {}
     }
 
     function saveSortPref() {
         try { localStorage.setItem('v2_word_sort', JSON.stringify({ by: sortBy, asc: sortAsc })); } catch (e) {}
+    }
+
+    function saveTagPref() {
+        try { localStorage.setItem('v2_word_tag', tagFilter); } catch (e) {}
+    }
+
+    function savePageSizePref() {
+        try { localStorage.setItem('v2_word_page_size', String(tocPageSize)); } catch (e) {}
+    }
+
+    function setTagFilter(tag) {
+        tagFilter = String(tag || '');
+        saveTagPref();
+        activeId = null;
+        tocPage = 1;
+        refresh();
     }
 
     function authorOf(entry) {
@@ -116,8 +139,9 @@
 
     /* ---------- Text range helpers ---------- */
 
+    function textWalker(root){return document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>n.parentElement.closest('[data-note],[data-comment-marker]')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT});}
     function getPlainOffset(root, node, offset) {
-        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const walker = textWalker(root);
         let count = 0;
         let n;
         while ((n = walker.nextNode())) {
@@ -138,7 +162,7 @@
 
     function wrapRange(root, start, end, commentId, color) {
         if (start == null || end == null || end <= start) return;
-        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const walker = textWalker(root);
         let count = 0;
         const nodes = [];
         let n;
@@ -173,9 +197,12 @@
     }
 
     function applyHighlights(bodyEl, comments) {
+        bodyEl.querySelectorAll('[data-comment-marker]').forEach(e=>e.remove());
+        bodyEl.querySelectorAll('[data-note][data-comment-id]').forEach(el=>{if(!comments.some(c=>c.id===el.dataset.commentId))el.remove();});
         unwrapHighlights(bodyEl);
-        const plain = bodyEl.textContent || '';
-        comments.filter(c => !c.resolved).forEach(c => {
+        const walker=textWalker(bodyEl);let plain='',node;while(node=walker.nextNode())plain+=node.textContent;
+        const section=bodyEl.classList.contains('word-analysis')?'analysis':'content';
+        comments.filter(c => (c.section||'content')===section).forEach(c => {
             let s = c.startOffset;
             let e = c.endOffset;
             c.anchorLost = false;
@@ -184,7 +211,10 @@
                 if (idx >= 0 && plain.indexOf(c.quote, idx + 1) === -1) { s = idx; e = idx + c.quote.length; }
                 else { s = null; e = null; c.anchorLost = true; }
             }
-            if (s != null && e != null) wrapRange(bodyEl, s, e, c.id, c.color);
+            if (s != null && e != null && !c.resolved) wrapRange(bodyEl, s, e, c.id, c.color);
+            const old=[...bodyEl.querySelectorAll('[data-comment-id]')].find(el=>el.dataset.commentId===c.id);
+            if(old){old.dataset.cid=c.id;old.title=c.text;old.setAttribute('aria-label','打开批注：'+c.text);}
+            else {const marks=[...bodyEl.querySelectorAll('mark.word-hl')].filter(el=>el.dataset.cid===c.id);const last=marks.at(-1);if(last){const b=document.createElement('button');b.type='button';b.className='research-footnote';b.dataset.commentMarker='true';b.dataset.cid=c.id;b.textContent='▤';b.title=c.text;b.setAttribute('aria-label','打开批注：'+c.text);last.after(b);}}
         });
     }
 
@@ -197,22 +227,40 @@
         const container = document.getElementById('entries-container');
         if (!container) return;
 
-        const list = sortEntries(pageEntries || []);
+        const source = pageEntries || [];
+        const tagCounts = new Map();
+        source.forEach(entry => (entry.keywords || []).forEach(tag => {
+            if (tag) tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
+        }));
+        const availableTags = [...tagCounts.keys()].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+        const list = sortEntries(source.filter(entry => !tagFilter || (entry.keywords || []).includes(tagFilter)));
         if (!list.length) {
             container.innerHTML = `<div class="word-view entering" style="opacity:1">
                 <div class="word-view-placeholder">
                     <span class="material-icons">menu_book</span>
                     <h3>阅读视图</h3>
-                    <p>当前筛选下没有史料。请先添加条目或调整筛选条件。</p>
+                    <p>${tagFilter ? `当前没有带“${esc(tagFilter)}”标签的史料。` : '当前筛选下没有史料。请先添加条目或调整筛选条件。'}</p>
+                    ${tagFilter ? '<button type="button" class="primary-btn" id="word-clear-tag-filter">显示全部标签</button>' : ''}
                 </div>
             </div>`;
+            document.getElementById('word-clear-tag-filter')?.addEventListener('click', () => setTagFilter(''));
             hideSelectionToolbar();
             return;
         }
 
         if (!activeId || !list.some(e => e.id === activeId)) {
             activeId = list[0].id;
+            tocPage = 1;
         }
+
+        if (syncTocPageToActive) {
+            const activeIndex = list.findIndex(e => e.id === activeId);
+            if (activeIndex >= 0) tocPage = Math.floor(activeIndex / tocPageSize) + 1;
+            syncTocPageToActive = false;
+        }
+        const tocTotalPages = Math.max(1, Math.ceil(list.length / tocPageSize));
+        tocPage = Math.max(1, Math.min(tocPage, tocTotalPages));
+        const tocEntries = list.slice((tocPage - 1) * tocPageSize, tocPage * tocPageSize);
 
         const entry = list.find(e => e.id === activeId) || list[0];
         activeId = entry.id;
@@ -244,9 +292,16 @@
                                     <span class="material-icons">${sortAsc ? 'arrow_upward' : 'arrow_downward'}</span>
                                 </button>
                             </div>
+                            <label class="word-toc-tag-filter">
+                                <span>显示标签</span>
+                                <select id="word-tag-filter" aria-label="按标签筛选阅读条目">
+                                    <option value="">全部标签（${source.length}）</option>
+                                    ${availableTags.map(tag => `<option value="${esc(tag)}" ${tag === tagFilter ? 'selected' : ''}>${esc(tag)}（${tagCounts.get(tag)}）</option>`).join('')}
+                                </select>
+                            </label>
                         </div>
                         <div class="word-toc-list" id="word-toc-list">
-                            ${list.map(e => {
+                            ${tocEntries.map(e => {
                                 const n = V2Comments.commentsOf(e).filter(c => !c.resolved).length;
                                 return `<button type="button" class="word-toc-item ${e.id === entry.id ? 'active' : ''}" data-id="${e.id}">
                                     <span class="word-toc-item-title">${esc(e.title || '无标题')}</span>
@@ -256,6 +311,14 @@
                                     </span>
                                 </button>`;
                             }).join('')}
+                        </div>
+                        <div class="word-toc-pagination" aria-label="阅读目录分页">
+                            <div class="word-toc-page-nav">
+                                <button type="button" id="word-toc-prev" aria-label="上一页" title="上一页" ${tocPage === 1 ? 'disabled' : ''}><span class="material-icons">chevron_left</span></button>
+                                <span><strong>${tocPage}</strong> / ${tocTotalPages}</span>
+                                <button type="button" id="word-toc-next" aria-label="下一页" title="下一页" ${tocPage === tocTotalPages ? 'disabled' : ''}><span class="material-icons">chevron_right</span></button>
+                            </div>
+                            <label class="word-toc-page-size">每页 <input id="word-toc-page-size" type="number" inputmode="numeric" min="1" max="100" step="1" value="${tocPageSize}" aria-label="阅读目录每页条数"> 条</label>
                         </div>
                     </aside>
 
@@ -311,10 +374,11 @@
         lastRenderedId = entry.id;
         const bodyEl = document.getElementById('word-body');
         if (bodyEl) applyHighlights(bodyEl, comments);
+        const analysisEl=document.querySelector('.word-analysis');if(analysisEl)applyHighlights(analysisEl,comments);
         const noteList = document.getElementById('word-notes-list');
         if (noteList) noteList.innerHTML = renderCommentsList(comments);
 
-        bindWordUi(list);
+        bindWordUi(list, tocTotalPages);
         syncPanels();
         if (typeof updatePagination === 'function' && totalPages) {
             updatePagination(totalPages);
@@ -387,7 +451,7 @@
         } catch (e) { return ''; }
     }
 
-    function bindWordUi(list) {
+    function bindWordUi(list, tocTotalPages) {
         document.getElementById('word-sort-by')?.addEventListener('change', (e) => {
             sortBy = e.target.value;
             saveSortPref();
@@ -398,6 +462,33 @@
             saveSortPref();
             refresh();
         });
+        document.getElementById('word-tag-filter')?.addEventListener('change', (e) => {
+            setTagFilter(e.target.value);
+        });
+        const changeTocPage = next => {
+            const page = Math.max(1, Math.min(Number(next) || 1, tocTotalPages));
+            if (page === tocPage) return;
+            tocPage = page;
+            refresh();
+        };
+        document.getElementById('word-toc-prev')?.addEventListener('click', () => changeTocPage(tocPage - 1));
+        document.getElementById('word-toc-next')?.addEventListener('click', () => changeTocPage(tocPage + 1));
+        const pageSizeInput = document.getElementById('word-toc-page-size');
+        const applyPageSize = () => {
+            const size = Number(pageSizeInput?.value);
+            if (!Number.isSafeInteger(size) || size < 1 || size > 100) {
+                pageSizeInput?.reportValidity();
+                return;
+            }
+            if (size === tocPageSize) return;
+            const firstVisibleIndex = (tocPage - 1) * tocPageSize;
+            tocPageSize = size;
+            tocPage = Math.floor(firstVisibleIndex / tocPageSize) + 1;
+            savePageSizePref();
+            refresh();
+        };
+        pageSizeInput?.addEventListener('change', applyPageSize);
+        pageSizeInput?.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); applyPageSize(); } });
         document.getElementById('word-toc-list')?.addEventListener('click', (e) => {
             const btn = e.target.closest('.word-toc-item');
             if (!btn) return;
@@ -421,11 +512,10 @@
             V2Comments.setAuthorName(e.target.value);
         });
 
-        const body = document.getElementById('word-body');
-        if (body) {
+        for(const body of document.querySelectorAll('#word-body,.word-analysis')) {
             body.addEventListener('mouseup', onBodyMouseUp);
             body.addEventListener('click', (e) => {
-                const mark = e.target.closest('mark.word-hl');
+                const mark = e.target.closest('[data-cid]');
                 if (mark && mark.dataset.cid) focusComment(mark.dataset.cid);
             });
         }
@@ -446,7 +536,7 @@
     }
 
     function onBodyMouseUp(e) {
-        const body = document.getElementById('word-body');
+        const body = e.currentTarget;
         const sel = window.getSelection();
         if (!body || !sel || sel.isCollapsed || !sel.rangeCount) {
             hideSelectionToolbar();
@@ -464,7 +554,7 @@
         }
         const startOffset = getPlainOffset(body, range.startContainer, range.startOffset);
         const endOffset = getPlainOffset(body, range.endContainer, range.endOffset);
-        pendingSelection = { quote, startOffset, endOffset };
+        pendingSelection = { quote, startOffset, endOffset,section:body.classList.contains('word-analysis')?'analysis':'content' };
         showSelectionToolbar(e.clientX, e.clientY);
     }
 
@@ -539,10 +629,12 @@
         if (listEl && entry) listEl.innerHTML = renderCommentsList(V2Comments.commentsOf(entry));
         const body = document.getElementById('word-body');
         if (body && entry) applyHighlights(body, V2Comments.commentsOf(entry));
+        const analysis=document.querySelector('.word-analysis');if(analysis&&entry)applyHighlights(analysis,V2Comments.commentsOf(entry));
     }
 
     function focusComment(cid) {
         activeCommentId = cid;
+        if(!panelExpanded('notes'))togglePanel('notes');
         refreshNotesOnly();
         const note = document.querySelector(`.word-note[data-cid="${cid}"]`);
         note?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -612,6 +704,7 @@
 
     function setActiveEntry(id) {
         activeId = id;
+        syncTocPageToActive = true;
         refresh();
     }
 
@@ -648,6 +741,7 @@
     global.V2Word = { reanchor, togglePanel,
         render,
         refresh,
+        setTagFilter,
         setActiveEntry,
         focusComment,
         toggleCollapse,
@@ -658,6 +752,7 @@
         replyTo,
         removeReply,
         exitWordMode,
-        getActiveId: () => activeId
+        getActiveId: () => activeId,
+        getTagFilter: () => tagFilter
     };
 })(window);

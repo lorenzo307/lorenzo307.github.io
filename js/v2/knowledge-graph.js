@@ -33,7 +33,16 @@
         return clean;
     }
 
-    async function addRelation(fromId, toId) {
+    async function addRelation(fromId, toId, mode='single') {
+        if(fromId===toId)throw new Error('不能关联自身');
+        if(mode==='double'){
+            const a=entries.find(e=>e.id===fromId),b=entries.find(e=>e.id===toId);
+            if(!a||!b)throw new Error('找不到条目');
+            const left=[...new Set([...relatedOf(a),toId])],right=[...new Set([...relatedOf(b),fromId])];
+            await db.ref(getProjectPath('entries')).update({[fromId+'/relatedSources']:left,[toId+'/relatedSources']:right});
+            a.relatedSources=left;b.relatedSources=right;
+            document.dispatchEvent(new CustomEvent('v2RelationsChanged',{detail:{entryId:fromId}}));return left;
+        }
         const entry = entries.find(e => e.id === fromId);
         if (!entry) throw new Error('找不到条目');
         const list = relatedOf(entry);
@@ -79,7 +88,9 @@
                 nodes.get(to).degree++;
             });
         });
-        return { nodes: [...nodes.values()], links };
+        const seen=new Set();const merged=[];
+        links.forEach(l=>{const key=JSON.stringify([l.source,l.target].sort());if(seen.has(key))return;seen.add(key);merged.push({...l,bidirectional:links.some(r=>r.source===l.target&&r.target===l.source)});});
+        return { nodes: [...nodes.values()], links:merged };
     }
 
     /* ---------- Relation editor (for form / info panel) ---------- */
@@ -99,7 +110,7 @@
                     ${related.length ? related.map(id => {
                         const t = entries.find(e => e.id === id);
                         return `<span class="v2-rel-chip">
-                            <button type="button" class="v2-rel-open" data-id="${esc(id)}">${esc(t?.title || id)}</button>
+                            <button type="button" class="v2-rel-open" data-id="${esc(id)}">${relatedOf(t).includes(entryId)?'↔':'→'} ${esc(t?.title || id)}</button>
                             <button type="button" class="v2-rel-del" data-id="${esc(id)}" title="移除">×</button>
                         </span>`;
                     }).join('') : '<span class="v2-rel-empty">暂无关联文献</span>'}
@@ -110,7 +121,7 @@
                         <option value="">选择史料…</option>
                         ${options.map(e => `<option value="${esc(e.id)}">${esc(e.title || e.id)}</option>`).join('')}
                     </select>
-                    <button type="button" class="primary-btn btn-icon-only v2-rel-add-btn" title="添加"><span class="material-icons">add_link</span></button>
+                    <select class="v2-rel-mode" aria-label="连接方式"><option value="single">单链 →</option><option value="double">双链 ↔</option></select><button type="button" class="primary-btn btn-icon-only v2-rel-add-btn" title="添加"><span class="material-icons">add_link</span></button>
                 </div>
             </div>
         `;
@@ -128,7 +139,7 @@
             const to = select.value;
             if (!to) return;
             try {
-                await addRelation(entryId, to);
+                await addRelation(entryId, to, container.querySelector('.v2-rel-mode').value);
                 renderRelationPicker(entryId, container);
                 if (typeof showAlert === 'function') showAlert('已添加关联', 'success');
             } catch (err) {
@@ -147,6 +158,20 @@
     }
 
     function openEntry(id) {
+        return compareEntry(id);
+    }
+    async function compareEntry(id){
+        const entry=entries.find(e=>e.id===id);if(!entry)return;
+        await loadQuillScript();
+        document.querySelector('.research-comparison')?.remove();
+        const panel=document.createElement('aside');panel.className='research-comparison';panel.setAttribute('aria-label','关联文献对照');
+        panel.innerHTML='<header><strong>关联文献 · 对照阅读</strong><button type="button" data-close>关闭对照</button></header><h2>'+esc(entry.title)+'</h2><p>'+esc(entry.date||'')+'</p><button type="button" data-edit>进入编辑界面</button><div class="research-comparison-body"><h3>原文摘抄</h3>'+ResearchHTML.clean(entry.content||'')+'<h3>研究分析</h3>'+ResearchHTML.clean(entry.analysis||'')+'</div>';
+        const form=document.getElementById('entry-form'),inForm=form&&getComputedStyle(form).display!=='none';
+        (inForm?form:document.body).append(panel);document.body.classList.add('research-comparing');
+        const close=()=>{panel.remove();document.body.classList.remove('research-comparing');};panel.querySelector('[data-close]').onclick=close;
+        panel.querySelector('[data-edit]').onclick=async()=>{if(window.ResearchWorkspace?.isDirty()){const ok=await ResearchWorkspace.persistLocal();if(!ok)return;}if(inForm)await ResearchWorkspace.close();close();hide();await editEntry(id);};
+    }
+    function navigateEntry(id) {
         if (typeof currentViewMode !== 'undefined' && currentViewMode === 'word' && window.V2Word) {
             V2Word.setActiveEntry(id);
             return;
@@ -170,7 +195,7 @@
         modal.style.display = 'none';
         modal.innerHTML = `
             <h2>知识网络</h2>
-            <p class="v2-kg-desc">展示史料之间的「引用 / 关联」关系。点击节点可打开该条；在条目编辑中可添加关联。</p>
+            <p class="v2-kg-desc">单链 → 表示单向关联，双链 ↔ 表示互相关联。点击节点可打开该条；在条目编辑中可添加关联。</p>
             <div class="v2-kg-toolbar">
                 <label><input type="checkbox" id="v2-kg-filtered" checked> 仅当前筛选</label>
                 <button type="button" class="primary-btn btn-outline" id="v2-kg-refresh">刷新</button>
@@ -198,7 +223,9 @@
         draw();
     }
 
+    let animationFrame;
     function hide() {
+        cancelAnimationFrame(animationFrame);
         const modal = document.getElementById('v2-knowledge-graph');
         if (!modal) return;
         modal.classList.add('closing');
@@ -209,6 +236,7 @@
     }
 
     function draw() {
+        cancelAnimationFrame(animationFrame);
         const svg = document.getElementById('v2-kg-svg');
         const stats = document.getElementById('v2-kg-stats');
         if (!svg) return;
@@ -220,7 +248,10 @@
         const graph = buildGraph(base);
 
         const width = svg.clientWidth || 640;
-        const height = Math.max(420, svg.clientHeight || 420);
+        const columns = Math.max(2, Math.floor((width - 80) / 140));
+        const rows = Math.ceil(graph.nodes.length / columns);
+        const height = Math.max(480, Math.min(1800, rows * 135 + 100));
+        svg.style.height = `${height}px`;
         svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
         svg.innerHTML = '';
 
@@ -235,22 +266,32 @@
             return;
         }
 
-        // Simple force-ish layout: circular + jitter for linked
+        // Spacious network layout: a circle for small sets and a loose grid for
+        // larger sets, followed by link attraction and label-aware collision.
         const cx = width / 2;
         const cy = height / 2;
-        const radius = Math.min(width, height) * 0.36;
+        const radius = Math.min(width, height) * 0.39;
         const pos = new Map();
         graph.nodes.forEach((n, i) => {
+            if (graph.nodes.length > 8) {
+                const col = i % columns;
+                const row = Math.floor(i / columns);
+                const cellWidth = (width - 120) / Math.max(1, columns - 1);
+                const cellHeight = (height - 120) / Math.max(1, rows - 1);
+                pos.set(n.id, {x: 60 + col * cellWidth, y: 55 + row * cellHeight});
+                return;
+            }
             const angle = (i / graph.nodes.length) * Math.PI * 2 - Math.PI / 2;
-            const r = n.degree > 0 ? radius : radius * 0.55;
+            const r = n.degree > 0 ? radius : radius * 0.7;
             pos.set(n.id, {
                 x: cx + Math.cos(angle) * r,
                 y: cy + Math.sin(angle) * r
             });
         });
 
-        // One relaxation pass toward linked neighbors
-        for (let iter = 0; iter < 40; iter++) {
+        // Pull related nodes together without allowing labels to collide.
+        const minimumDistance = 118;
+        for (let iter = 0; iter < 80; iter++) {
             graph.links.forEach(l => {
                 const a = pos.get(l.source);
                 const b = pos.get(l.target);
@@ -258,16 +299,32 @@
                 const dx = b.x - a.x;
                 const dy = b.y - a.y;
                 const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-                const force = (dist - 120) * 0.02;
+                const force = (dist - 175) * 0.012;
                 a.x += dx / dist * force;
                 a.y += dy / dist * force;
                 b.x -= dx / dist * force;
                 b.y -= dy / dist * force;
             });
+            for (let i = 0; i < graph.nodes.length; i++) {
+                for (let j = i + 1; j < graph.nodes.length; j++) {
+                    const a = pos.get(graph.nodes[i].id);
+                    const b = pos.get(graph.nodes[j].id);
+                    let dx = b.x - a.x;
+                    let dy = b.y - a.y;
+                    let dist = Math.hypot(dx, dy);
+                    if (dist >= minimumDistance) continue;
+                    if (dist < 0.01) { dx = 1; dy = 0; dist = 1; }
+                    const push = (minimumDistance - dist) * 0.18;
+                    a.x -= dx / dist * push;
+                    a.y -= dy / dist * push;
+                    b.x += dx / dist * push;
+                    b.y += dy / dist * push;
+                }
+            }
             // Keep in bounds
             pos.forEach(p => {
-                p.x = Math.max(40, Math.min(width - 40, p.x));
-                p.y = Math.max(40, Math.min(height - 40, p.y));
+                p.x = Math.max(62, Math.min(width - 62, p.x));
+                p.y = Math.max(46, Math.min(height - 68, p.y));
             });
         }
 
@@ -283,17 +340,25 @@
             line.setAttribute('y2', b.y);
             line.setAttribute('class', 'v2-kg-link');
             // arrow
-            line.setAttribute('marker-end', 'url(#v2-kg-arrow)');
+            line.setAttribute('marker-end', 'url(#v2-kg-arrow)');if(l.bidirectional){line.setAttribute('marker-start','url(#v2-kg-arrow)');line.classList.add('is-double');}
             gLinks.appendChild(line);
         });
 
         const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        defs.innerHTML = `<marker id="v2-kg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+        defs.innerHTML = `<marker id="v2-kg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto-start-reverse">
             <path d="M0,0 L6,3 L0,6 Z" fill="var(--text-secondary)" />
         </marker>`;
         svg.appendChild(defs);
         svg.appendChild(gLinks);
 
+        const nodeRadius = n => Math.min(22, 10 + n.degree * 2);
+        const labelLines = title => {
+            const value = String(title || '无标题').replace(/\s+/g, ' ').trim();
+            if (value.length <= 7) return [value];
+            const first = value.slice(0, 7);
+            const second = value.slice(7, 14) + (value.length > 14 ? '…' : '');
+            return [first, second];
+        };
         const gNodes = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         graph.nodes.forEach(n => {
             const p = pos.get(n.id);
@@ -303,16 +368,25 @@
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', p.x);
             circle.setAttribute('cy', p.y);
-            circle.setAttribute('r', Math.min(22, 10 + n.degree * 2));
+            circle.setAttribute('r', nodeRadius(n));
             circle.setAttribute('class', 'v2-kg-circle');
             const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             label.setAttribute('x', p.x);
-            label.setAttribute('y', p.y + 28);
+            label.setAttribute('y', p.y + nodeRadius(n) + 10);
             label.setAttribute('text-anchor', 'middle');
             label.setAttribute('class', 'v2-kg-label');
-            label.textContent = (n.title || '').slice(0, 10) + ((n.title || '').length > 10 ? '…' : '');
+            labelLines(n.title).forEach((line, index) => {
+                const span = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                span.setAttribute('x', p.x);
+                span.setAttribute('dy', index ? '1.25em' : '0');
+                span.textContent = line;
+                label.appendChild(span);
+            });
+            const fullTitle = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+            fullTitle.textContent = n.title || '无标题';
             g.appendChild(circle);
             g.appendChild(label);
+            g.appendChild(fullTitle);
             g.addEventListener('click', () => showNodeDetail(n.id));
             g.addEventListener('dblclick', () => {
                 hide();
@@ -321,6 +395,13 @@
             gNodes.appendChild(g);
         });
         svg.appendChild(gNodes);
+        const origins=new Map([...pos].map(([id,p])=>[id,{...p}]));
+        function frame(time){
+            if(!svg.isConnected||document.getElementById('v2-knowledge-graph').style.display==='none')return;
+            graph.nodes.forEach((n,i)=>{const p=pos.get(n.id),o=origins.get(n.id);p.x=o.x+Math.sin(time/2200+i*1.7)*6;p.y=o.y+Math.cos(time/2600+i*1.3)*5;const g=gNodes.children[i],label=g.querySelector('text');g.querySelector('circle').setAttribute('cx',p.x);g.querySelector('circle').setAttribute('cy',p.y);label.setAttribute('x',p.x);label.setAttribute('y',p.y+nodeRadius(n)+10);label.querySelectorAll('tspan').forEach(span=>span.setAttribute('x',p.x));});
+            graph.links.forEach((l,i)=>{const a=pos.get(l.source),b=pos.get(l.target),line=gLinks.children[i];const dx=b.x-a.x,dy=b.y-a.y,dist=Math.hypot(dx,dy)||1;const ra=nodeRadius(graph.nodes.find(n=>n.id===l.source))+5,rb=nodeRadius(graph.nodes.find(n=>n.id===l.target))+6;line.setAttribute('x1',a.x+dx/dist*ra);line.setAttribute('y1',a.y+dy/dist*ra);line.setAttribute('x2',b.x-dx/dist*rb);line.setAttribute('y2',b.y-dy/dist*rb);});
+            if(!matchMedia('(prefers-reduced-motion: reduce)').matches)animationFrame=requestAnimationFrame(frame);
+        }frame(0);
     }
 
     function showNodeDetail(id) {
@@ -333,6 +414,7 @@
         box.innerHTML = `
             <h4>${esc(entry.title || '无标题')}</h4>
             <p class="v2-kg-meta">${esc(entry.id)} · ${esc(entry.date || '')}${typeName ? ' · ' + esc(typeName) : ''}</p>
+            <div class="v2-kg-source-preview">${window.DOMPurify?DOMPurify.sanitize(entry.content||''):esc(entry.content||'')}</div>
             ${entry.citation ? `<p class="v2-kg-cite">${esc(entry.citation)}</p>` : ''}
             <div class="v2-kg-rel-block">
                 <strong>引用了（${outs.length}）</strong>
@@ -353,7 +435,7 @@
         box.querySelectorAll('[data-open]').forEach(a => {
             a.addEventListener('click', (e) => {
                 e.preventDefault();
-                showNodeDetail(a.dataset.open);
+                compareEntry(a.dataset.open);
             });
         });
         box.querySelector('[data-edit]')?.addEventListener('click', () => {
@@ -370,16 +452,26 @@
 
     function ensureFormRelations() {
         const form = document.querySelector('#entry-form form');
-        if (!form || form.dataset.v2Rel === '1') return;
-        const row = document.createElement('div');
-        row.className = 'form-row v2-rel-form-row';
-        row.innerHTML = `
-            <label>关联文献：</label>
-            <div id="v2-form-relations" class="v2-form-relations"></div>
-        `;
-        const actions = form.querySelector('.action-buttons');
-        if (actions) form.insertBefore(row, actions);
-        else form.appendChild(row);
+        if (!form) return;
+        let row = form.querySelector('.v2-rel-form-row');
+        if (!row) {
+            row = document.createElement('div');
+            row.className = 'form-row v2-rel-form-row';
+            row.innerHTML = `
+                <label>关联文献：</label>
+                <div id="v2-form-relations" class="v2-form-relations"></div>
+            `;
+        }
+        // Relations are entry metadata. Keeping them inside the metadata rail
+        // prevents the row from creating an implicit second grid column in
+        // fullscreen writing mode.
+        const meta = form.querySelector('.ed-editor-meta');
+        if (meta) meta.appendChild(row);
+        else {
+            const actions = form.querySelector('.action-buttons');
+            if (actions) form.insertBefore(row, actions);
+            else form.appendChild(row);
+        }
         form.dataset.v2Rel = '1';
     }
 
