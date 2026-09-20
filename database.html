@@ -131,7 +131,7 @@
                     <button type="button" class="v2-nav-item" data-nav="starred"><span class="material-icons">star</span> 收藏 <span class="nav-badge" id="nav-badge-starred"></span></button>
                     <button type="button" class="v2-nav-item" data-nav="recent"><span class="material-icons">schedule</span> 最近打开 <span class="nav-badge" id="nav-badge-recent"></span></button>
                     <button type="button" class="v2-nav-item" data-nav="tags"><span class="material-icons">sell</span> 标签</button>
-                    <div class="v2-nav-tags" id="v2-nav-tags"></div>
+                    <!-- #v2-nav-tags 已移至右侧信息面板 -->
                 </div>
                 <div class="v2-nav-divider"></div>
                 <div class="v2-nav-section">
@@ -295,6 +295,14 @@
                     <div class="v2-info-stat"><span class="v2-info-stat-value" id="stat-total">0</span><span class="v2-info-stat-label">总条目</span></div>
                     <div class="v2-info-stat"><span class="v2-info-stat-value" id="stat-wordcount">0</span><span class="v2-info-stat-label">字数(万)</span></div>
                     <div class="v2-info-stat"><span class="v2-info-stat-value" id="stat-keywords">0</span><span class="v2-info-stat-label">关键词</span></div>
+                </div>
+                <!-- ===== 标签栏（从左侧移到此处，横向加宽） ===== -->
+                <div class="v2-info-tags-section">
+                    <div class="v2-info-tags-header">
+                        <span class="material-icons">sell</span>
+                        <span>标签</span>
+                    </div>
+                    <div class="v2-nav-tags" id="v2-nav-tags"></div>
                 </div>
                 <div class="v2-info-empty" id="v2-info-empty">选择一条史料查看摘要与标签</div>
                 <div class="v2-info-content" id="v2-info-content" style="display:none"></div>
@@ -918,9 +926,459 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
-</style>
+    </style>
 
-   
+    <!-- ===== 紧凑布局覆写（图标化后的空间回收 + 按钮横向排列） ===== -->
+    <style id="compact-layout-override">
+    /* ------------------------------------------------------------------
+       目标：
+       1. 图标已简化为纯图标/小图标，但容器仍按「大图标 + 大留白」排版，
+          造成大量无效空白。以下覆写统一收紧尺寸、间距与行高。
+       2. 将条目内「编辑 / 收藏 / 复制引用」三个圆形按钮从纵向改为横向。
+    ------------------------------------------------------------------ */
+
+    /* ---------- 1. 顶部栏 ---------- */
+    .v2-topbar {
+        height: 46px !important;
+        min-height: 46px !important;
+        padding: 0 8px !important;
+        gap: 6px !important;
+    }
+    .v2-topbar-title {
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .v2-topbar .icon-btn,
+    .v2-topbar .back-btn,
+    .v2-topbar .btn-icon-only {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+    .v2-topbar .material-icons {
+        font-size: 18px !important;
+        line-height: 1 !important;
+    }
+
+    /* ---------- 2. 侧边导航 ---------- */
+    .v2-sidebar {
+        width: 172px !important;
+        padding: 6px !important;
+        gap: 0 !important;
+    }
+    .v2-nav-section {
+        padding: 1px 0 !important;
+        margin: 0 !important;
+    }
+    .v2-nav-label {
+        font-size: 0.68rem !important;
+        line-height: 1.2 !important;
+        letter-spacing: 0.05em !important;
+        font-weight: 600;
+        padding: 5px 8px 2px !important;
+        margin: 0 !important;
+        opacity: 0.55;
+    }
+    .v2-nav-item {
+        height: 28px !important;
+        min-height: 28px !important;
+        padding: 0 8px !important;
+        margin: 0 !important;
+        gap: 8px !important;
+        font-size: 0.8rem !important;
+        line-height: 1 !important;
+        border-radius: 6px !important;
+        display: flex !important;
+        align-items: center;
+    }
+    .v2-nav-item .material-icons {
+        font-size: 16px !important;
+        width: 16px !important;
+        height: 16px !important;
+        line-height: 1 !important;
+        flex-shrink: 0;
+    }
+    .v2-nav-item .nav-badge {
+        font-size: 0.65rem !important;
+        line-height: 1.2 !important;
+        padding: 1px 5px !important;
+        min-width: 0 !important;
+        margin-left: auto;
+    }
+    .v2-nav-divider {
+        height: 1px !important;
+        margin: 4px 6px !important;
+    }
+    .v2-nav-spacer {
+        min-height: 0 !important;
+        flex: 1 1 auto;
+    }
+
+    /* ---------- 3. 工具栏（搜索 / 每页条数 / 图标按钮） ---------- */
+    .v2-workspace-chrome {
+        padding: 4px 6px !important;
+        gap: 0 !important;
+    }
+    .v2-toolbar-row {
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0 !important;
+        gap: 4px !important;
+        display: flex !important;
+        align-items: center;
+    }
+    .v2-toolbar-search {
+        height: 28px !important;
+        min-height: 28px !important;
+        padding: 0 8px !important;
+        border-radius: 6px !important;
+        display: flex !important;
+        align-items: center;
+        gap: 6px !important;
+        flex: 1 1 160px !important;
+        max-width: 340px;
+    }
+    .v2-toolbar-search .material-icons {
+        font-size: 16px !important;
+    }
+    .v2-toolbar-search input {
+        font-size: 0.8rem !important;
+        line-height: 1 !important;
+        height: 100% !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+    }
+    .v2-toolbar-row .icon-btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        padding: 0 !important;
+    }
+    .v2-toolbar-row .icon-btn .material-icons {
+        font-size: 17px !important;
+    }
+    .page-size-wrapper {
+        gap: 4px !important;
+    }
+    .page-size-circle {
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 0.7rem !important;
+        line-height: 1 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #pageSize {
+        height: 26px !important;
+        font-size: 0.75rem !important;
+        padding: 0 4px !important;
+    }
+
+    /* ---------- 4. 高级检索面板 ---------- */
+    .v2-adv-toolbar {
+        min-height: 32px !important;
+        padding: 4px 6px !important;
+        gap: 6px !important;
+    }
+    .v2-adv-toolbar-title {
+        font-size: 0.8rem !important;
+        gap: 4px !important;
+        display: inline-flex;
+        align-items: center;
+    }
+    .v2-adv-toolbar-title .material-icons {
+        font-size: 16px !important;
+    }
+    .v2-adv-toolbar-actions {
+        gap: 3px !important;
+    }
+    .v2-adv-toolbar-actions button {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        min-height: 26px !important;
+        padding: 0 !important;
+    }
+    .v2-adv-toolbar-actions .material-icons {
+        font-size: 16px !important;
+    }
+    .v2-adv-body {
+        padding: 6px 8px !important;
+        gap: 4px !important;
+    }
+    .v2-adv-row {
+        padding: 3px 0 !important;
+        gap: 6px !important;
+        font-size: 0.78rem !important;
+        align-items: center;
+    }
+    .v2-adv-row label {
+        font-size: 0.75rem !important;
+        min-width: 30px;
+    }
+    .v2-adv-row input,
+    .v2-adv-row select {
+        height: 26px !important;
+        font-size: 0.75rem !important;
+        padding: 0 6px !important;
+    }
+    .date-preset-btn {
+        height: 24px !important;
+        padding: 2px 6px !important;
+        font-size: 0.7rem !important;
+    }
+
+    /* ---------- 5. 条目滚动区 + 分页 ---------- */
+    .v2-main-scroll {
+        padding: 6px 8px !important;
+    }
+    #entries-container-wrapper {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .pagination {
+        min-height: 32px !important;
+        padding: 4px 8px !important;
+        gap: 4px !important;
+    }
+    #pagination-buttons button,
+    .pagination button {
+        min-width: 26px !important;
+        height: 26px !important;
+        padding: 0 6px !important;
+        font-size: 0.75rem !important;
+    }
+    .pagination-jump-inline input {
+        width: 44px !important;
+        height: 26px !important;
+        font-size: 0.75rem !important;
+        padding: 0 4px !important;
+    }
+
+    /* ---------- 6. 右侧详情面板（加宽以容纳标签栏） ---------- */
+    .v2-info-panel {
+        width: 300px !important;
+        padding: 8px !important;
+        gap: 8px !important;
+    }
+    .v2-info-header {
+        font-size: 0.8rem !important;
+        padding: 2px 2px 6px !important;
+        margin: 0 !important;
+    }
+    .v2-info-stat-grid {
+        gap: 4px !important;
+        padding: 0 0 6px !important;
+        margin: 0 !important;
+    }
+    .v2-info-stat {
+        padding: 5px 2px !important;
+        border-radius: 6px !important;
+    }
+    .v2-info-stat-value {
+        font-size: 0.95rem !important;
+        line-height: 1.1 !important;
+    }
+    .v2-info-stat-label {
+        font-size: 0.62rem !important;
+        line-height: 1.2 !important;
+        margin-top: 1px !important;
+    }
+    .v2-info-empty {
+        font-size: 0.75rem !important;
+        padding: 12px 8px !important;
+    }
+
+    /* ============================================================
+       7. 标签栏（从左侧移到右侧信息面板下方并加宽）
+       ============================================================ */
+    .v2-info-tags-section {
+        margin-top: 4px;
+        padding: 8px;
+        border-top: 1px solid var(--glass-border);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .v2-info-tags-header {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        opacity: 0.55;
+        text-transform: uppercase;
+    }
+    .v2-info-tags-header .material-icons {
+        font-size: 14px !important;
+        line-height: 1;
+    }
+    /* 标签容器：横向加宽，允许换行，可滚动 */
+    .v2-info-panel .v2-nav-tags,
+    #v2-nav-tags {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-content: flex-start;
+        gap: 6px !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-height: 28px;
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 4px 2px !important;
+        font-size: 0.78rem !important;
+    }
+    /* 标签 chip 元素（兼容原有类名/结构） */
+    #v2-nav-tags .tag-item,
+    #v2-nav-tags .nav-tag,
+    #v2-nav-tags > * {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--accent-1-15, rgba(120,140,200,0.15));
+        border: 1px solid var(--accent-1-25, rgba(120,140,200,0.25));
+        font-size: 0.74rem;
+        line-height: 1.5;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+    }
+    #v2-nav-tags > *:hover {
+        background: var(--accent-1-25, rgba(120,140,200,0.25));
+    }
+
+    /* ============================================================
+       8. 条目内的圆形操作按钮组：强制横向排列
+       ------------------------------------------------------------
+       综合使用 :has()、常见类名及直接子元素选择器，尽可能覆盖
+       动态生成的条目结构。核心目标是让「编辑、收藏、复制引用」
+       三个按钮在同一行显示。
+       ============================================================ */
+
+    /* 8.1 使用 :has() 匹配包含多个按钮的父元素（现代浏览器） */
+    #entries-container *:has(> .btn-icon-only + .btn-icon-only),
+    #entries-container *:has(> .icon-btn + .icon-btn),
+    #entries-container *:has(> button + button),
+    #entries-container *:has(> .material-icons + button),
+    #entries-container *:has(> .action-btn + .action-btn) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+    }
+
+    /* 8.2 常见操作容器类名（回退方案） */
+    #entries-container .entry-actions,
+    #entries-container .entry-item-actions,
+    #entries-container .entry-card-actions,
+    #entries-container .entry-buttons,
+    #entries-container .entry-tools,
+    #entries-container .entry-operations,
+    #entries-container .entry-footer-actions,
+    #entries-container .action-buttons,
+    #entries-container .actions,
+    .entry-item .action-buttons,
+    .entry-card .action-buttons {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+    }
+
+    /* 8.3 进一步：任何直接包含两个以上圆形按钮的 div/span/section */
+    #entries-container div:has(> .btn-icon-only + .btn-icon-only),
+    #entries-container div:has(> .icon-btn + .icon-btn),
+    #entries-container span:has(> .btn-icon-only + .btn-icon-only),
+    #entries-container span:has(> .icon-btn + .icon-btn),
+    #entries-container section:has(> .btn-icon-only + .btn-icon-only),
+    #entries-container section:has(> .icon-btn + .icon-btn) {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 8px !important;
+    }
+
+    /* 8.4 如果按钮是 inline-block 或 block，统一改为 inline-flex，避免换行 */
+    #entries-container .btn-icon-only,
+    #entries-container .icon-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto !important;
+    }
+
+    /* 8.5 极端情况：按钮是 <a> 或 <span> 模拟的，也尝试横向 */
+    #entries-container a.btn-icon-only + a.btn-icon-only,
+    #entries-container span.btn-icon-only + span.btn-icon-only {
+        display: inline-flex !important;
+    }
+
+    /* ---------- 9. 批量操作条 ---------- */
+    .bulk-actions-bar {
+        min-height: 34px !important;
+        padding: 3px 8px !important;
+        gap: 8px !important;
+    }
+    .bulk-actions-bar button {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        padding: 0 !important;
+    }
+    .bulk-actions-bar .material-icons {
+        font-size: 17px !important;
+    }
+
+    /* ---------- 10. 移动端适配 ---------- */
+    @media (max-width: 768px) {
+        .v2-sidebar {
+            width: 208px !important;
+            padding: 8px !important;
+        }
+        .v2-nav-item {
+            height: 36px !important;
+            min-height: 36px !important;
+            font-size: 0.86rem !important;
+        }
+        .v2-nav-item .material-icons {
+            font-size: 18px !important;
+            width: 18px !important;
+            height: 18px !important;
+        }
+        .v2-toolbar-search {
+            max-width: none;
+        }
+        .v2-info-panel {
+            width: 280px !important;
+        }
+    }
+    </style>
+
     <script src="js/v3/workspace.js" defer></script>
     <script src="js/v3/presentation.js" defer></script>
     <script src="js/v3/compact-workspace.js" defer></script>
