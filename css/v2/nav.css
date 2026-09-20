@@ -1,0 +1,130 @@
+/**
+ * V2.1 — Left navigation sidebar
+ */
+.v2-sidebar {
+    width: var(--v2-sidebar-width);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--v2-bg-panel);
+    border-right: var(--v2-border);
+    backdrop-filter: blur(12px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.v2-sidebar-logo {
+    padding: 14px 16px 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.v2-nav-section {
+    padding: 4px 8px;
+}
+
+.v2-nav-label {
+    padding: 8px 12px 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    opacity: 0.85;
+}
+
+.v2-nav-divider {
+    height: 1px;
+    margin: 8px 12px;
+    background: var(--glass-border);
+}
+
+.v2-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: var(--v2-nav-item-height);
+    padding: 0 12px;
+    border: none;
+    border-radius: var(--v2-radius);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background var(--v2-transition), color var(--v2-transition);
+    text-align: left;
+}
+
+.v2-nav-item:hover {
+    background: var(--accent-1-15);
+}
+
+.v2-nav-item.active {
+    background: var(--accent-1-25);
+    color: var(--accent-1);
+    font-weight: 600;
+}
+
+.v2-nav-item .material-icons {
+    font-size: 20px;
+    opacity: 0.85;
+    flex-shrink: 0;
+}
+
+.v2-nav-item .nav-badge {
+    margin-left: auto;
+    font-size: 0.75rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--accent-1-15);
+    color: var(--text-secondary);
+}
+
+.v2-nav-spacer {
+    flex: 1;
+    min-height: 12px;
+}
+
+.v2-nav-tags {
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 0 8px 8px;
+}
+
+.v2-nav-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 3px 4px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: none;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: #fff;
+    opacity: 0.92;
+    transition: opacity var(--v2-transition), transform 0.15s;
+}
+
+.v2-nav-tag:hover {
+    opacity: 1;
+    transform: scale(1.04);
+}
+
+.v2-nav-tag.active {
+    outline: 2px solid #fff;
+    box-shadow: 0 0 0 2px var(--accent-1);
+    opacity: 1;
+    font-weight: 600;
+}
+
+.v2-nav-tag-more {
+    background: var(--accent-1-15) !important;
+    color: var(--text-primary) !important;
+}

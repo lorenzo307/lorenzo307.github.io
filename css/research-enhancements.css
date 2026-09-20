@@ -1,0 +1,22 @@
+
+html body #entry-form :is(#editor-container,#analysis-editor-container) .research-prose{height:360px!important;min-height:200px!important;max-height:55vh!important;overflow-y:scroll!important;scrollbar-gutter:stable;overscroll-behavior:contain}
+html body .research-footnote{display:inline-flex;vertical-align:super;font:11px/1.2 sans-serif!important;padding:1px 4px;border:1px solid #527991;border-radius:5px 5px 5px 0;background:#e8f3fa;color:#285c78;cursor:pointer;user-select:none}
+html body .research-footnote:before{content:none!important}.research-footnote:focus{outline:2px solid #285c98;outline-offset:2px}
+.ed-color-swatches{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.ed-color-swatches button{border:1px solid #ccc;border-radius:6px;padding:10px}
+.research-comparison{position:fixed;right:12px;top:20px;bottom:20px;width:43vw;z-index:10020;background:var(--paper,#fff);color:var(--ink,#222);border:1px solid #ccc;border-radius:12px;padding:22px;box-shadow:0 8px 40px #0002;overflow:auto;box-sizing:border-box}.research-comparison header{display:flex;justify-content:space-between;gap:12px}.research-comparison button{padding:8px 12px;cursor:pointer}.research-comparison-body{overflow-wrap:anywhere;line-height:1.9}.research-comparison-body img{max-width:100%}
+html body.research-comparing #entry-form{right:46vw!important;left:1vw!important;width:53vw!important;transform:none!important;max-width:53vw!important}
+html body.research-comparing #entry-form form{display:flex!important;flex-direction:column}
+body.research-comparing .v2-main{margin-right:45vw}.v2-kg-link.is-double{stroke:#397c89!important;stroke-width:2.5!important;opacity:.85}.v2-kg-circle{filter:drop-shadow(0 3px 4px #0002)}.v2-rel-add-row{flex-wrap:wrap}
+@media(max-width:768px){.research-comparison{top:45vh;bottom:6px;width:calc(100vw - 12px);right:6px}html body.research-comparing #entry-form{width:100vw!important;max-width:100vw!important;left:0!important;right:0!important}body.research-comparing .v2-main{margin-right:0}}
+html body #entry-form .ed-editor-toolbar button:not(.ui-icon-button){width:auto!important;min-width:32px;white-space:nowrap;flex-shrink:0}
+.v2-kg-source-preview{max-height:260px;overflow-y:auto;line-height:1.8;border-block:1px solid #ddd;padding-block:12px}.v2-kg-source-preview img{max-width:100%}
+html body .ed-color-swatches button.ed-color-swatch{width:38px;height:38px;min-width:38px;padding:0!important;border:1px solid #0003!important;border-radius:50%!important;background:var(--swatch-color)!important;box-shadow:inset 0 0 0 3px #fff}
+.ed-color-swatch:hover,.ed-color-swatch:focus-visible{outline:2px solid #457aab;outline-offset:3px}
+.ed-comment-replies>div{border-left:3px solid #dce4ec;padding:8px 12px;margin:10px 0;background:#f6f8fa}.ed-comment-replies p{white-space:pre-wrap}.ed-comment-context{color:#666;font-size:13px}.ed-comment-actions{display:flex;gap:12px;margin:12px 0}.ed-thread-list{display:grid;gap:8px}.ed-thread-list button{text-align:left;padding:12px;white-space:normal}.ed-dialog blockquote{max-height:130px;overflow:auto}.ed-comment-anchor{border-bottom:1px dotted #b18a39}
+html body .ed-color-popover{position:fixed;inset:auto;margin:0;width:244px;max-width:calc(100vw - 16px);box-sizing:border-box;padding:14px;background:#fff;color:#242424;border:1px solid #dedee3;border-radius:10px;box-shadow:0 8px 28px #0002;font:13px/1.5 Arial,sans-serif;overflow:visible}
+.ed-color-popover::backdrop{background:transparent;pointer-events:none}
+html body .ed-color-popover .ed-color-swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:12px 0}
+html body .ed-color-popover .ed-color-swatches button.ed-color-swatch{width:30px;height:30px;min-width:30px;border-radius:6px!important}
+html body .ed-color-popover .ed-custom-color{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;margin:0;padding:8px 0;border-top:1px solid #eee}
+html body .ed-color-popover input[type=color]{width:42px;min-width:42px;height:28px;min-height:28px;margin:0;padding:2px;border:1px solid #ddd;border-radius:5px;cursor:pointer}
+html body .ed-color-popover>button{width:100%;min-height:30px;padding:5px 8px;border:0;border-radius:5px;background:#f4f5f7;color:#333;text-align:left;font-size:12px;cursor:pointer}

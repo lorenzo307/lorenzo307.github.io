@@ -1,0 +1,27 @@
+/* Fine-line pagination: count, nearby pages, and a quiet jump control. */
+html body.ed-home .pagination.line-pagination,html body.v2-layout .v2-main .pagination.line-pagination{display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:16px;min-height:48px;height:auto;padding:8px 0!important;margin:0!important;border:0!important;border-top:1px solid #e5e5e7!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;flex-shrink:0;font:12px/1.5 var(--sans)}
+.line-pager-total{grid-column:3;grid-row:1;justify-self:end;color:#515154;white-space:nowrap;font-variant-numeric:tabular-nums}
+.line-pager-controls,.line-pager-pages,.line-pager-jump{display:flex;align-items:center;gap:8px}
+.line-pager-controls{grid-column:2;grid-row:1;justify-self:center;gap:20px}
+html body .line-pagination #pagination-buttons{gap:6px}
+html body .line-pagination .line-pager-pages .page-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;min-width:28px;min-height:28px;height:28px;margin:0;padding:0!important;border:1px solid transparent!important;border-radius:50%!important;background:transparent!important;box-shadow:none!important;color:#515154!important;font:12px/1 Arial,sans-serif;flex:none}
+html body .line-pagination .line-pager-pages .page-btn:hover{background:#f0f0f3!important;color:#1d1d1f!important}
+html body .line-pagination .line-pager-pages .page-btn.active{background:#0071e3!important;border-color:#0071e3!important;color:#fff!important}
+html body .line-pagination .line-pager-pages .line-pager-arrow{border-color:#e5e5e7!important;color:#6e6e73!important}
+html body .line-pagination .line-pager-arrow .ui-icon{width:16px;height:16px}
+html body .line-pagination .line-pager-pages .page-btn:disabled{opacity:.35;cursor:default;background:transparent!important}
+.line-pager-jump{gap:8px;color:#6e6e73;white-space:nowrap;font-size:12px;margin:0}
+html body .line-pagination .line-pager-jump input,html body.v2-layout .line-pagination #page-jump-inline{width:46px!important;min-height:28px;height:28px;padding:3px 6px!important;border:1px solid #dedee3!important;border-radius:6px!important;background:#fafafa!important;box-shadow:none!important;text-align:center;font:12px/1.5 Arial,sans-serif;appearance:textfield;-moz-appearance:textfield}
+.line-pager-jump input::-webkit-inner-spin-button,.line-pager-jump input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+html body .line-pagination .line-pager-jump input:focus{border-color:#0071e3!important;background:#fff!important}
+html body .line-pagination .line-pager-jump input:disabled{color:#86868b;background:transparent!important}
+html body.word-mode-active .v2-main-scroll>.pagination.line-pagination{display:none!important}
+@media(max-width:560px){
+ html body.ed-home .pagination.line-pagination,html body.v2-layout .v2-main .pagination.line-pagination{display:grid!important;grid-template-columns:1fr auto;gap:6px 12px;padding:8px 0!important;min-height:76px}
+ .line-pager-controls{display:contents}.line-pager-total{grid-row:1;grid-column:1;font-size:11px}.line-pager-jump{grid-row:1;grid-column:2;font-size:11px;gap:6px}
+ .line-pager-pages{grid-row:2;grid-column:1/-1;justify-content:center;gap:8px}
+ html body .line-pagination .line-pager-pages .page-btn{width:30px;min-width:30px;height:30px;min-height:30px}
+ html body .line-pagination .line-pager-jump input,html body.v2-layout .line-pagination #page-jump-inline{height:26px;min-height:26px;width:42px!important}
+}
+@media print{html body .pagination.line-pagination{display:none!important}}
+html body.word-mode-active .v2-main .v2-main-scroll>.pagination.line-pagination{display:none!important}

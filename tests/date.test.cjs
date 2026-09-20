@@ -1,0 +1,7 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const dates=require('../js/v3/dates.js');
+test('civil dates and Chinese/pasted input',()=>{for(const value of ['1937-7-7','19370707','1937年7月7日','1937/7/7'])assert.equal(dates.parse(value).value,'1937-07-07');});
+test('reject impossible dates, ambiguous formats and rollover',()=>{for(const value of ['1900-02-29','2023-02-29','1937-02-30','1937-13-01','1937-00-10','07/08/1937','0000-01-01'])assert.equal(dates.parse(value),null);assert.equal(dates.parse('2000-02-29').value,'2000-02-29');assert.equal(dates.parse('0001-01-01').start,'0001-01-01');});
+test('historical precision remains explicit',()=>{assert.equal(dates.parse('1937').precision,'year');assert.equal(dates.parse('1937').end,'1937-12-31');assert.equal(dates.parse('1937-02').end,'1937-02-28');assert.equal(dates.parse('约1937').approximate,true);assert.equal(dates.parse('1937至1939').end,'1939-12-31');assert.equal(dates.parse('1939至1937'),null);assert.equal(dates.parse('不详').start,null);});
+test('filter ranges overlap rather than inventing exact dates',()=>{assert.equal(dates.overlaps('1937','1937-07-01','1937-07-31'),true);assert.equal(dates.overlaps('1936至1938','1937-07-01','1937-07-31'),true);assert.equal(dates.overlaps('1936','1937-01-01','1937-12-31'),false);assert.equal(dates.overlaps('不详','',''),true);assert.equal(dates.overlaps('不详','1937','1939'),false);});

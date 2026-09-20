@@ -1,0 +1,131 @@
+/* Reading-first proportions. */
+:root,html[data-theme],body{--sans:Arial,'Source Han Serif SC',serif;--serif:Arial,'Source Han Serif SC',serif;--read-font:Arial,'Source Han Serif SC',serif;--v2-topbar-height:48px;--reader-ease:cubic-bezier(.22,.61,.36,1)}
+html body.v2-layout,html body .v2-app{height:100dvh;max-height:100dvh}
+html body.v2-layout .v2-topbar{height:48px;min-height:48px;padding:0 18px;gap:10px}
+html body.v2-layout .v2-topbar-title{font-size:16px!important;line-height:1.4}
+html body.v2-layout .v2-topbar :is(button,summary){min-height:30px;height:30px}
+html body .ed-top-actions button{padding:6px 10px;font-size:12px}
+html body.ed-home .ed-masthead{min-height:56px}
+html body.v2-layout .v2-workspace-chrome{padding:10px 0 0;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px}
+html body .v2-toolbar-row{grid-column:1/-1;margin:0 0 6px;gap:8px!important}
+html body .v2-advanced-search{grid-column:1/-1}
+html body .ed-view-tabs{grid-column:1;margin:0;padding:0 0 6px;align-items:center}
+html body .ed-view-tabs button{min-height:28px;padding:5px 10px;font-size:12px!important}
+html body .ed-results{grid-column:2;align-self:center;min-height:28px;padding:0 0 6px;justify-content:flex-end;font-size:11px}
+html body .v2-toolbar-search,html body #search-box{min-height:34px}
+html body #search-box input{min-height:32px;height:32px;padding:6px 10px!important;font-size:12px!important}
+html body .v2-toolbar-row :is(.icon-btn,select,.page-size-circle){min-height:30px;height:30px;padding:5px 8px}
+html body.v2-layout .v2-main{padding-inline:18px!important}
+html body.v2-layout #entries-container-wrapper{margin-top:8px}
+html body.v2-layout .v2-main .pagination{min-height:30px;height:30px;padding:2px 0!important;gap:8px;flex-direction:row!important;margin:0!important}
+html body.v2-layout #pagination-buttons{display:flex;align-items:center;gap:4px;flex-wrap:nowrap}
+html body.v2-layout .page-btn{min-height:24px;height:24px;min-width:26px;padding:2px 7px!important;font-size:11px}
+html body.v2-layout .pagination-jump-inline{display:flex;align-items:center;margin:0;padding:0;width:auto}
+html body.v2-layout #page-jump-inline{width:42px!important;min-height:24px;height:24px;font-size:11px;padding:2px 5px!important;border-radius:4px!important}
+/* Reading shows the entire filtered collection in the TOC; pagination is redundant here. */
+html body.word-mode-active .v2-main-scroll>.pagination{display:none!important}
+html body.word-mode-active .v2-sidebar{width:166px;flex-basis:166px;padding:14px 9px}
+html body.word-mode-active .v2-nav-item{font-size:11px!important;padding:8px!important;min-height:34px;gap:7px}
+html body.word-mode-active .v2-nav-section{margin-bottom:8px}
+html body.word-mode-active .v2-nav-divider{margin:10px 8px}
+html body.word-mode-active .v2-nav-label{margin-bottom:4px}
+html body.word-mode-active .v2-main{padding:0 12px 10px!important}
+html body.word-mode-active .v2-main-scroll{overflow:hidden;min-height:0}
+html body.word-mode-active :is(#entries-container-wrapper,#entries-container,.word-view){height:100%;min-height:0;max-height:100%;overflow:hidden}
+html body.word-mode-active .word-mode{--toc-width:144px;--notes-width:172px;display:grid;grid-template-columns:var(--toc-width) minmax(0,1fr) var(--notes-width);gap:0;height:100%;min-height:0;max-height:100%;border-radius:9px;position:relative;overflow:hidden;transition:grid-template-columns 260ms var(--reader-ease)}
+html body.word-mode-active.reader-toc-hidden .word-mode{--toc-width:0px}
+html body.word-mode-active.reader-notes-hidden .word-mode{--notes-width:0px}
+html body.word-mode-active :is(.word-toc-panel,.word-notes-panel){min-width:0;min-height:0;overflow:hidden;transition:opacity 180ms ease,visibility 180ms ease}
+html body.word-mode-active.reader-toc-hidden .word-toc-panel,html body.word-mode-active.reader-notes-hidden .word-notes-panel{opacity:0;visibility:hidden;pointer-events:none}
+html body .word-toc-toolbar,html body .word-notes-toolbar{padding:10px!important}
+html body .word-toc-title-row,html body .word-notes-title-row{font-size:12px;margin-bottom:6px}
+html body .word-toc-list{padding:4px;min-height:0}
+html body .word-toc-item{padding:9px 7px!important;margin:0 0 3px;width:100%;gap:3px}
+html body .word-toc-item-title{font-size:12px!important;line-height:1.65!important}
+html body .word-toc-item-meta{font-size:10px!important}
+html body .word-toc-sort select{min-width:0;min-height:28px;height:28px;font-size:11px;padding:4px 6px}
+html body .word-toc-sort .icon-btn{width:27px;min-width:27px;min-height:28px;height:28px;padding:5px!important}
+html body .word-notes-toolbar input:not([type=checkbox]){min-height:30px;height:30px;padding:5px 7px;font-size:11px}
+html body .word-notes-toggle{margin:7px 0;font-size:11px;gap:5px;line-height:1.5}
+html body .word-notes-toggle input{min-height:0;width:13px;height:13px}
+html body .word-author-row{margin-top:6px;gap:5px}
+html body .word-notes-list{padding:8px;min-height:0}
+html body .word-notes-empty{padding:12px 4px;font-size:11px;line-height:1.8}
+html body .word-doc-panel{min-height:0;min-width:0;height:100%;overflow:hidden;background:#fff}
+html body .word-doc-header{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;row-gap:4px;padding:14px 24px 12px!important;align-items:center}
+html body .word-doc-header>.v2-type-badge{grid-column:1;width:max-content;max-width:100%;font-size:10px}
+html body .word-doc-title{grid-column:1;font-size:23px!important;margin:0!important;line-height:1.5!important;letter-spacing:0}
+html body .word-doc-citation{grid-column:1/-1;font-size:11px;line-height:1.6;margin:0;max-height:3.2em;overflow:auto;color:var(--muted)}
+html body .word-doc-actions{grid-column:2;grid-row:1/span 2;display:flex;flex-wrap:wrap;gap:4px;max-width:194px;margin:0!important;align-self:start;justify-content:flex-end}
+html body .word-doc-actions button{height:28px;min-height:28px;width:28px;padding:5px!important}
+html body .word-doc-actions .reader-panel-toggle{width:auto;display:inline-flex;align-items:center;gap:4px;padding:5px 7px!important;font-size:11px}
+html body .word-doc-actions .reader-panel-toggle[aria-expanded=false]{background:transparent!important;color:var(--muted)!important}
+html body .word-doc-paper{width:100%;max-width:none;margin:0;padding:20px 28px 32px!important;min-height:0;scroll-behavior:smooth}
+html body .word-doc-hint{font-size:10px;margin-bottom:12px;opacity:1;color:#6e6e73}
+html body .word-body,html body .word-analysis{font-family:var(--read-font)!important;font-size:var(--read-size,18px)!important;line-height:1.95!important}
+html body .word-body :is(h1,h2,h3){margin:18px 0 12px!important;letter-spacing:0}
+html body .word-body h2{font-size:23px!important}
+@media(max-width:1200px) and (min-width:901px){html body.word-mode-active .word-mode{--toc-width:126px;--notes-width:150px}html body .word-doc-header{padding-inline:18px!important;column-gap:10px}html body .word-doc-actions{max-width:150px}html body .word-doc-paper{padding-inline:22px!important}}
+@media(max-width:900px){
+ html body.word-mode-active .word-mode{display:block;height:100%;min-height:0;position:relative;overflow:hidden}
+ html body.word-mode-active :is(.word-toc-panel,.word-notes-panel){position:absolute;top:104px;bottom:0;width:min(260px,85%);max-height:none;z-index:30;opacity:0;visibility:hidden;pointer-events:none;box-shadow:0 10px 32px #1d1d1f18!important;transition:translate 260ms var(--reader-ease),opacity 200ms ease,visibility 200ms ease}
+ html body.word-mode-active .word-toc-panel{left:0;translate:-100% 0}
+ html body.word-mode-active .word-notes-panel{right:0;translate:100% 0}
+ html body.word-mode-active.reader-toc-open .word-toc-panel,html body.word-mode-active.reader-notes-open .word-notes-panel{translate:0 0;opacity:1;visibility:visible;pointer-events:auto}
+ html body .word-doc-header{padding:12px 16px!important;column-gap:8px}
+ html body .word-doc-title{font-size:21px!important}
+ html body .word-doc-actions{max-width:138px}
+ html body .word-doc-paper{padding:16px 20px 28px!important}
+}
+@media(max-width:768px){
+ :root,html[data-theme],body{--v2-topbar-height:44px}
+ html body.v2-layout .v2-topbar{min-height:44px;height:44px;padding:0 10px;gap:5px}
+ html body.v2-layout .v2-topbar-title{font-size:13px!important}
+ html body.v2-layout .ed-top-actions .ed-primary{min-height:28px!important;height:28px!important;padding:5px 8px!important}
+ html body.v2-layout .v2-workspace-chrome{padding-top:7px;gap:0 6px}
+ html body .v2-toolbar-row{margin-bottom:5px;gap:5px!important;grid-template-columns:minmax(0,1fr) 30px 30px 30px}
+ html body #search-box input{font-size:12px!important;min-height:30px;height:30px}
+ html body .v2-toolbar-search,html body #search-box{min-height:32px}
+ html body .v2-toolbar-row :is(select,.icon-btn,.page-size-circle){min-height:27px;height:27px;padding:4px 6px!important}
+ html body #citation-style-switcher{min-height:27px;height:27px;width:115px!important}
+ html body .ed-view-tabs{gap:0;padding:0 0 5px;justify-content:flex-start}
+ html body .ed-view-tabs button{padding:5px 7px!important;min-height:28px!important;font-size:11px!important}
+ html body .ed-results{font-size:10px;min-height:28px;padding:0 0 5px}
+ html body .ed-results:has(.ed-chip){grid-column:1/-1;justify-content:flex-start}
+ html body.word-mode-active .v2-main{padding:0 8px 8px!important}
+ html body.word-mode-active #entries-container-wrapper{margin-top:5px}
+ html body .word-doc-title{font-size:19px!important;grid-column:1/-1}
+ html body .word-doc-header{grid-template-columns:1fr auto;row-gap:5px;padding:10px 14px!important}
+ html body .word-doc-actions{grid-column:2;grid-row:1;max-width:none;gap:3px}
+ html body .word-doc-actions button{width:26px;height:27px;min-height:27px;padding:4px!important}
+ html body .word-doc-actions .reader-panel-toggle{font-size:11px;padding:4px 5px!important;gap:3px}
+ html body .word-doc-actions .reader-panel-toggle .ui-icon{width:14px;height:14px}
+ html body .word-doc-paper{padding:14px 18px 24px!important}
+ html body .word-body,html body .word-analysis{font-size:var(--read-size,17px)!important}
+ html body .word-doc-citation{font-size:10px}
+ html body .word-doc-hint{margin-bottom:10px}
+}
+/* Motion follows direct interactions; nothing floats or loops while reading. */
+@media(prefers-reduced-motion:no-preference){
+ html body :is(button,.btn,a,input,select,textarea){transition:background-color 180ms ease,border-color 180ms ease,color 180ms ease,box-shadow 220ms ease!important}
+ html body .ed-view-tabs button{transition:background-color 200ms ease,color 180ms ease!important}
+ html body .v2-sidebar{transition:transform 280ms var(--reader-ease),width 260ms var(--reader-ease),flex-basis 260ms var(--reader-ease)!important}
+ html body .word-doc-panel.reader-content-enter{animation:reader-content-in 240ms var(--reader-ease)!important}
+ html body .ed-dialog[open]{animation:reader-dialog-in 200ms var(--reader-ease)!important}
+ html body .word-doc-paper,html body .word-toc-list,html body .word-notes-list{scroll-behavior:smooth}
+ @keyframes reader-content-in{from{opacity:.4;translate:0 4px}to{opacity:1;translate:0 0}}
+ @keyframes reader-dialog-in{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
+}
+@media(prefers-reduced-motion:reduce){html body *,html body *::before,html body *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+html body .v2-workspace-chrome:has(#toggle-advanced-search-btn[aria-expanded="false"]) .v2-advanced-search{display:none!important;margin:0!important}
+html body .v2-advanced-search{margin-bottom:6px}
+html body.word-mode-active .word-view{padding:0!important;margin:0!important}
+html body .word-doc-actions{max-width:none;flex-wrap:nowrap}
+html body .word-doc-actions button{flex-shrink:0}
+html body .word-body :is(h1,h2,h3){padding-left:0!important}
+html body.word-mode-active #entries-container-wrapper{padding:0!important;margin-bottom:0!important;backdrop-filter:none!important}
+@media print{
+ html body.v2-layout,html body.word-mode-active :is(.v2-app,.v2-body,.v2-main,.v2-main-scroll,#entries-container-wrapper,#entries-container,.word-view,.word-mode,.word-doc-panel,.word-doc-paper){height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important}
+ html body.word-mode-active .word-mode{display:block!important;border:0!important}
+ html body.word-mode-active :is(.word-toc-panel,.word-notes-panel,.word-doc-actions,.word-doc-hint){display:none!important}
+}

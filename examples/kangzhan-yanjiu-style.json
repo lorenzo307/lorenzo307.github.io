@@ -1,0 +1,38 @@
+{
+  "schema": "1.0",
+  "styleName": "《抗日战争研究》技术处理规定",
+  "description": "适用于历史学抗战史研究，脚注连续编码",
+  "templates": {
+    "book": {
+      "label": "普通图书",
+      "fields": ["author", "title", "volume", "publisher", "year", "pages"],
+      "format": "{author}：《{title}》{volume}，{publisher}{year}年版，第{pages}页。",
+      "rules": {
+        "author_limit": 3,
+        "et_al": "等",
+        "page_connector": "—",
+        "year_suffix": "年版"
+      }
+    },
+    "journal": {
+      "label": "期刊文章",
+      "fields": ["author", "title", "journal", "year", "issue", "pages"],
+      "format": "{author}：《{title}》，{journal}{year}年第{issue}期，第{pages}页。",
+      "rules": {
+        "city_prefix": true,
+        "page_connector": "—"
+      }
+    },
+    "archive": {
+      "label": "未刊档案",
+      "fields": ["title", "date", "repository", "collection", "file_no", "pages"],
+      "format": "《{title}》（{date}），{repository}藏，{collection}，{file_no}，第{pages}页。"
+    }
+  },
+  "globalRules": {
+    "note_type": "footnote",
+    "numbering": "continuous",
+    "repeat_citation": "full",
+    "date_format": "arabic"
+  }
+}

@@ -1,0 +1,107 @@
+/**
+ * V2.1 — Card view (Obsidian-style)
+ */
+.card-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    padding: 8px 0 16px;
+}
+
+.card-entry {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    border-radius: var(--v2-radius-lg);
+    background: var(--glass-bg);
+    border: var(--v2-border);
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    transition: transform var(--v2-transition), box-shadow var(--v2-transition);
+    min-height: 140px;
+}
+
+.card-entry:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.card-entry.selected {
+    /* 批量选中仅改关键词标签，卡片本体不变 */
+    border-color: var(--glass-border);
+    box-shadow: var(--shadow-card);
+}
+
+.card-entry.selected .keyword-tag,
+.card-entry.selected .keyword-tag:hover {
+    background: #111 !important;
+    border-color: #111 !important;
+    color: #fff !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.card-entry.bulk-mode {
+    cursor: pointer;
+}
+
+.card-entry-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.card-entry-meta {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.card-entry-excerpt {
+    flex: 1;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.card-entry-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: auto;
+}
+
+.card-entry-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity var(--v2-transition);
+}
+
+.card-entry:hover .card-entry-actions {
+    opacity: 1;
+}
+
+@media (max-width: 600px) {
+    .card-view {
+        grid-template-columns: 1fr;
+    }
+
+    .card-entry-actions {
+        opacity: 1;
+    }
+}

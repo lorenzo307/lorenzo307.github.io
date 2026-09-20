@@ -1,0 +1,17 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": "auth != null && auth.uid == $uid",
+        "projects": {
+          ".indexOn": ["createdAt", "updatedAt"]
+        }
+      }
+    },
+    "legacyEntries": {
+      ".read": "auth != null",
+      ".write": false
+    }
+  }
+} 
