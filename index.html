@@ -2222,6 +2222,7 @@
     <link rel="stylesheet" href="css/reading-focus.css">
     <link rel="stylesheet" href="css/apple-inspired.css">
     <link rel="stylesheet" href="css/pagination.css">
+    <link rel="stylesheet" href="css/cer.css">
     <script src="js/v3/dates.js" defer></script>
     <script src="js/v3/workspace.js" defer></script>
     <script src="js/v3/presentation.js" defer></script>
@@ -2565,7 +2566,12 @@
                         // 如果缓存是5分钟内的
                         if (now - state.timestamp < CACHE_DURATION) {
                             // 立即使用缓存数据
-                            projects = state.projects || [];
+                            if (Array.isArray(state.projects) && state.projects.length) {
+                                projects = state.projects;
+                            } else {
+                                const localCache = loadFromLocalCache(user.uid);
+                                if (localCache) projects = localCache.data || projects;
+                            }
                             currentFilter = state.filter || '';
                             currentSort = state.sort || { field: 'createdAt', order: 'desc' };
                             currentPage = state.page || 1;
@@ -3352,6 +3358,12 @@
 
         // 优化的导航函数 - 保存页面状态以便快速返回
         function navigateToDatabase(projectId) {
+            if (!projectId) {
+                hideLoading();
+                console.error('无法进入项目：缺少项目 ID');
+                return;
+            }
+
             // 获取项目名称用于显示
             const projectToNavigate = projects.find(p => p.id === projectId);
             const projectName = projectToNavigate ? projectToNavigate.name : `ID: ${projectId}`;
@@ -3375,7 +3387,6 @@
 
             // 保存当前页面状态到 sessionStorage，以便返回时快速恢复
             const state = {
-                projects: projects,  // 保存当前项目数据
                 timestamp: Date.now(),
                 filter: currentFilter,
                 sort: currentSort,
@@ -3383,42 +3394,80 @@
                 itemsPerPage: itemsPerPage,
                 scrollY: window.scrollY
             };
-            sessionStorage.setItem('cachedIndexState', JSON.stringify(state));
+            try {
+                sessionStorage.setItem('cachedIndexState', JSON.stringify(state));
+                sessionStorage.setItem('pendingProjectName', projectName);
 
-            // 使用 requestIdleCallback 优化跳转时机（如果支持）
+                // 首页已经持有项目条目；写入轻量索引，工作台无需等待网络即可先显示列表。
+                const rawEntries = projectToNavigate && projectToNavigate.entries;
+                if (rawEntries && typeof rawEntries === 'object') {
+                    const entryList = Array.isArray(rawEntries) ? rawEntries : Object.values(rawEntries);
+                    const indexEntries = entryList.map(entry => ({
+                        id: entry.id,
+                        date: entry.date,
+                        title: entry.title || '',
+                        keywords: entry.keywords || [],
+                        typeId: entry.typeId || 'general',
+                        citation: entry.citation || '',
+                        starred: !!entry.starred,
+                        updatedAt: entry.updatedAt || 0
+                    }));
+                    localStorage.setItem(`entries_index_${projectId}`, JSON.stringify({
+                        version: 2,
+                        projectId,
+                        timestamp: Date.now(),
+                        entries: indexEntries
+                    }));
+                }
+            } catch (error) {
+                // 项目条目较多时整份数据可能超过 sessionStorage 容量。
+                // 返回页缓存只是优化，失败不能阻止用户进入项目。
+                console.warn('首页状态缓存失败，将直接进入项目:', error);
+                try {
+                    sessionStorage.removeItem('cachedIndexState');
+                } catch (_) {}
+            }
+
             const navigate = () => {
-                // 保存项目ID到sessionStorage，database.html可以立即使用
-                sessionStorage.setItem('pendingProjectId', projectId);
-                sessionStorage.setItem('navigationTimestamp', Date.now().toString());
+                try {
+                    // 保存项目ID到sessionStorage，database.html可以立即使用
+                    sessionStorage.setItem('pendingProjectId', projectId);
+                    sessionStorage.setItem('navigationTimestamp', Date.now().toString());
+                } catch (error) {
+                    console.warn('项目临时状态保存失败，将通过网址参数进入:', error);
+                }
 
-                // 延迟跳转以显示转场效果
-                setTimeout(() => {
-                    window.location.href = `database.html?project=${projectId}`;
-                }, 600); // 增加延迟时间让转场效果更明显
+                // 网址参数是进入项目的可靠来源；编码可兼容特殊字符。
+                window.location.assign(`database.html?project=${encodeURIComponent(projectId)}`);
             };
 
-            // 如果浏览器支持，在下一个空闲时间执行跳转
-            if (window.requestIdleCallback) {
-                requestIdleCallback(navigate, { timeout: 150 });
-            } else {
-                // 立即执行，但使用 setTimeout 让转场效果先显示
-                setTimeout(navigate, 200);
-            }
+            // 只保留很短的转场展示时间，不再依赖可能长期不执行的空闲回调。
+            navigate();
         }
         
         // 预加载 database.html（鼠标悬停时）
         function preloadDatabasePage(projectId) {
+            window.__databasePrefetches = window.__databasePrefetches || new Set();
+            const key = String(projectId || 'default');
+            if (window.__databasePrefetches.has(key)) return;
+            window.__databasePrefetches.add(key);
             // 创建隐藏的 link 标签预加载页面
             const link = document.createElement('link');
             link.rel = 'prefetch';
-            link.href = `database.html?project=${projectId}`;
+            link.href = `database.html?project=${encodeURIComponent(projectId)}`;
             link.as = 'document';
             document.head.appendChild(link);
             
             // 预加载关键资源
+            if (window.__databaseAssetsPrefetched) return;
+            window.__databaseAssetsPrefetched = true;
             const resources = [
-                'css/editorial.css',
-                'js/vendor/research-editor.js'
+                'css/database.css',
+                'css/refined.css',
+                'css/cer.css',
+                'js/vendor/purify.min.js',
+                'js/v3/search.js',
+                'js/database-legacy.js'
             ];
             
             resources.forEach(resource => {
