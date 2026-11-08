@@ -99,10 +99,6 @@
                 <div class="v2-info-excerpt" style="-webkit-line-clamp:4;line-clamp:4">${esc((window.V2Citations && V2Citations.getDisplayCitation(entry)) || entry.citation)}</div>
             </div>` : ''}
             <div class="v2-info-section">
-                <div class="v2-info-section-label">原文摘要</div>
-                <div class="v2-info-excerpt">${esc(V2Utils.excerpt(entry.content, 200) || '暂无')}</div>
-            </div>
-            <div class="v2-info-section">
                 <div class="v2-info-section-label">标签</div>
                 <div class="v2-info-tags">${(entry.keywords || []).map(kw =>
                     `<span class="keyword-tag" style="background:${V2Utils.tagColor(kw)};color:#fff;border:none;cursor:pointer" onclick="filterByKeyword('${esc(kw).replace(/'/g, "\\'")}')">${esc(kw)}</span>`

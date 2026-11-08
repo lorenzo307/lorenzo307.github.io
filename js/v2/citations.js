@@ -83,6 +83,10 @@
 
     function buildContext(entry, metadata) {
         const meta = metadata || entry.metadata || {};
+        const archiveNumber = meta.archiveNumber || ['fond', 'catalog', 'file', 'document']
+            .map(key => meta[key])
+            .filter(Boolean)
+            .join('-');
         return Object.assign({}, meta, {
             title: entry.title || meta.title || '',
             date: entry.date || meta.date || meta.formedAt || '',
@@ -93,6 +97,7 @@
             file_no: meta.file_no || meta.file || '',
             issue: meta.issue || meta.volume || '',
             archive: meta.archive || meta.repository || '',
+            archiveNumber,
             fond: meta.fond || meta.collection || '',
             file: meta.file || meta.file_no || '',
             formedAt: meta.formedAt || meta.date || entry.date || ''

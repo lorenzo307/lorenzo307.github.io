@@ -205,8 +205,42 @@
         const type = (V2SourceTypes.getEffectiveType && V2SourceTypes.getEffectiveType(currentTypeId, styleId))
             || (V2SourceTypes.getTypeExact && V2SourceTypes.getTypeExact(currentTypeId))
             || V2SourceTypes.getType(currentTypeId);
-        const fields = (type?.fields || []).filter(f => f.showInForm !== false)
+        let fields = (type?.fields || []).filter(f => f.showInForm !== false)
             .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+        // 档案编号在实际著录中通常作为一个整体使用。即使旧的自定义样式仍
+        // 带有全宗/目录/案卷/文件四项，录入界面也统一为一个“档案号”。
+        if (currentTypeId === 'archive') {
+            const legacyKeys = new Set(['fond', 'catalog', 'file', 'document']);
+            const legacyFields = fields.filter(f => legacyKeys.has(f.key));
+            fields = fields.filter(f => !legacyKeys.has(f.key));
+            if (!fields.some(f => f.key === 'archiveName')) {
+                fields.push({
+                    key: 'archiveName',
+                    label: '档案名称',
+                    type: 'text',
+                    required: false,
+                    showInForm: true,
+                    inCitation: true,
+                    order: 2
+                });
+            }
+            if (!fields.some(f => f.key === 'archiveNumber')) {
+                const firstOrder = legacyFields.length
+                    ? Math.min(...legacyFields.map(f => f.order || 2))
+                    : 3;
+                fields.push({
+                    key: 'archiveNumber',
+                    label: '档案号',
+                    type: 'text',
+                    required: legacyFields.some(f => f.required),
+                    showInForm: true,
+                    inCitation: true,
+                    order: Math.max(3, firstOrder)
+                });
+            }
+            fields.sort((a, b) => (a.order || 0) - (b.order || 0));
+        }
 
         if (!fields.length) {
             container.innerHTML = '';
@@ -265,7 +299,13 @@
     }
 
     function fillMetadata(meta) {
-        const data = meta || {};
+        const data = Object.assign({}, meta || {});
+        if (!data.archiveNumber) {
+            data.archiveNumber = ['fond', 'catalog', 'file', 'document']
+                .map(key => data[key])
+                .filter(Boolean)
+                .join('-');
+        }
         document.querySelectorAll('#v2-dynamic-fields [data-meta-key]').forEach(input => {
             input.value = data[input.dataset.metaKey] || '';
         });

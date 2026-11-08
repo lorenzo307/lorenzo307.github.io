@@ -175,8 +175,6 @@
       const cardTitle=document.querySelector('.card-title');if(cardTitle)cardTitle.textContent='课题目录';
       const toggle=tabs?.querySelector('button:last-child');if(toggle){toggle.textContent='';toggle.append(icon('grid'));toggle.setAttribute('aria-label','切换目录或卡片');toggle.title='切换目录或卡片';toggle.classList.add('ui-layout-toggle');}
     }
-    const reading=document.querySelector('.ed-reading-tools');
-    if(reading){const details=document.createElement('details');details.className='ui-reading-menu';const summary=document.createElement('summary');summary.append(icon('type'));summary.setAttribute('aria-label','阅读外观');summary.title='阅读外观';reading.before(details);details.append(summary,reading);document.addEventListener('click',e=>{if(!details.contains(e.target))details.open=false;});}
     document.querySelectorAll('.feature-icon').forEach((el,i)=>el.replaceChildren(icon(['folder','book','clock'][i]||'file')));
     document.querySelectorAll('.ed-calendar-button').forEach(el=>{el.replaceChildren(icon('calendar'));el.title='选择日期';el.setAttribute('aria-label','选择日期');});
     polish();iconActions(document);

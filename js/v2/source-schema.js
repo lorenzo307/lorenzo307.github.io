@@ -193,18 +193,16 @@
             isBuiltin: true,
             fields: [
                 field('archive', '档案馆', { required: true, order: 1 }),
-                field('fond', '全宗', { order: 2 }),
-                field('catalog', '目录', { order: 3 }),
-                field('file', '案卷', { order: 4 }),
-                field('document', '文件', { order: 5 }),
-                field('formedAt', '形成时间', { order: 6 }),
-                field('pages', '页码', { order: 7 })
+                field('archiveName', '档案名称', { order: 2 }),
+                field('archiveNumber', '档案号', { order: 3 }),
+                field('formedAt', '形成时间', { order: 4 }),
+                field('pages', '页码', { order: 5 })
             ],
             citationTemplates: {
-                'history-cn': '{archive}藏：{fond?, {fond}全宗}{catalog?, ，目录{catalog}}{file?, ，案卷{file}}{document?, ，{document}}{formedAt?, （{formedAt}）}{pages?, ，第{pages}页}。',
-                'modern-cn': '{archive}，{fond}全宗{file?, /{file}}，{title}。',
-                'gbt7714': '{title}[A]. {archive}{fond?, , {fond}}{file?, /{file}}.',
-                'chicago': '{document?, {document}, }{archive}{fond?, , {fond}}{file?, /{file}}.'
+                'history-cn': '{archive}藏：{archiveName?, 《{archiveName}》，}{archiveNumber}{formedAt?, （{formedAt}）}{pages?, ，第{pages}页}。',
+                'modern-cn': '{archive}，{archiveName?, 《{archiveName}》，}{archiveNumber}，{title}。',
+                'gbt7714': '{archiveName?, {archiveName}. }{title}[A]. {archive}{archiveNumber?, , {archiveNumber}}.',
+                'chicago': '{archiveName?, {archiveName}. }{title}. {archive}{archiveNumber?, , {archiveNumber}}.'
             }
         },
         {

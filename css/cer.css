@@ -1,0 +1,105 @@
+/* Content first: quiet surfaces, readable hierarchy, inexpensive feedback. */
+/* Reset legacy column flex-bases: in a column, a 220px basis became blank height. */
+html body .v2-advanced-search .v2-adv-row{grid-template-columns:44px minmax(0,1fr)!important;padding:9px 0!important;gap:6px 10px!important}
+html body .v2-advanced-search .v2-adv-row :is(.date-range-group,.fulltext-search-group){flex-direction:row!important;flex-wrap:wrap!important;gap:8px!important;height:auto!important;min-height:0!important;margin:0!important;padding:0!important}
+html body .v2-advanced-search .fulltext-input-wrapper{flex:1 1 200px!important;height:auto!important;min-height:0!important;margin:0!important}
+html body .v2-advanced-search .fulltext-input-wrapper::before,
+html body .v2-advanced-search .date-input-wrapper::after{content:none!important;display:none!important}
+html body .v2-advanced-search .fulltext-options{flex-direction:row!important;flex-wrap:nowrap!important;flex:0 1 auto!important;width:auto!important;margin:0!important}
+html body .v2-advanced-search :is(#fulltext-logic,#fulltext-scope,#keywordLogic){min-width:0!important;max-width:none!important;width:auto!important;padding:6px 9px!important}
+html body .v2-advanced-search #fulltext-search{height:36px!important;min-height:36px!important;padding:6px 10px!important;background:#f7f7f8!important;box-shadow:none!important;backdrop-filter:none!important;border:1px solid #dedee2!important}
+html body .v2-advanced-search .date-input-wrapper{flex:1 1 170px!important;min-width:0!important;max-width:280px}
+html body .v2-advanced-search .date-input-wrapper .ed-date-help{display:none}
+html body .v2-advanced-search .date-input-wrapper .ed-date{margin:0!important;gap:4px!important}
+html body .v2-advanced-search .date-presets{gap:5px!important}
+html body .v2-advanced-search .date-preset-btn{padding:4px 10px!important;min-height:30px!important;font-size:13px!important}
+html body .v2-advanced-search .tag-selector-container{padding:4px!important;border:0!important;background:transparent!important;box-shadow:none!important;min-height:0!important;max-height:100px!important}
+html body .v2-advanced-search .tag-cloud{display:flex!important;flex-wrap:wrap;gap:6px!important;padding:0!important}
+html body .v2-advanced-search .tag-item{margin:0!important;padding:5px 9px!important;min-height:30px!important;border-radius:8px!important;box-shadow:none!important;font-size:13px!important;flex:0 1 auto!important}
+@media(max-width:560px){html body .v2-advanced-search .v2-adv-row{grid-template-columns:minmax(0,1fr)!important}html body .v2-advanced-search .date-input-wrapper{flex-basis:130px!important}html body .v2-advanced-search .fulltext-input-wrapper{flex-basis:100%!important}html body .v2-advanced-search .date-preset-btn{min-height:40px!important}html body .v2-advanced-search #fulltext-search{height:44px!important;min-height:44px!important}}
+/* Advanced search: stable label column and fluid field groups. */
+html body .v2-advanced-search.is-open .advanced-panel{max-height:min(55dvh,480px)!important;overflow-y:auto!important;background:#fff!important;border:1px solid #dedee2!important;border-radius:14px!important;padding:0!important;box-shadow:none!important}
+html body .v2-adv-toolbar{position:sticky;top:0;z-index:2;background:#fff!important;padding:12px 16px!important;display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #e7e7ea}
+html body .v2-adv-toolbar-title{font-size:15px!important;font-weight:700;color:#252528}
+html body .v2-adv-toolbar-actions{display:flex;flex-wrap:wrap;gap:8px!important}
+html body .v2-adv-toolbar-actions button{min-width:36px!important;min-height:36px!important;border-radius:9px!important}
+html body .v2-adv-body{display:flex!important;flex-direction:column;gap:0!important;padding:0 16px!important;max-height:none!important;overflow:visible!important}
+html body .v2-adv-row{display:grid!important;grid-template-columns:64px minmax(0,1fr);gap:10px 16px!important;align-items:center;padding:16px 0!important;margin:0!important;border-bottom:1px solid #ededf0}
+html body .v2-adv-row:last-child{border-bottom:0}
+html body .v2-adv-row>label{grid-column:1;grid-row:1;font-size:14px!important;font-weight:650!important;margin:0!important;color:#45454c}
+html body .v2-adv-row :is(.date-range-group,.fulltext-search-group){grid-column:2;display:flex!important;align-items:center;flex-wrap:wrap;gap:10px!important;min-width:0;width:100%}
+html body .v2-adv-row .date-input-wrapper{flex:1;min-width:120px}
+html body .v2-adv-row .date-presets{grid-column:2;display:flex;flex-wrap:wrap;gap:8px!important;margin:0!important}
+html body .v2-adv-row .fulltext-input-wrapper{flex:1 1 220px;min-width:0}
+html body .v2-adv-row .fulltext-options{display:flex;flex-wrap:wrap;gap:8px!important}
+html body .v2-adv-row :is(input,select){box-sizing:border-box;max-width:100%;min-height:38px!important;background:#f7f7f8!important;box-shadow:none!important;border:1px solid #dedee2!important;border-radius:9px!important;font-size:14px!important;padding:8px 10px!important}
+html body .v2-adv-row input{width:100%!important}
+html body .v2-adv-row #keywordLogic{grid-column:2;justify-self:start;width:auto!important}
+html body .v2-adv-row :is(.tag-filter-summary,.tag-selector-container){grid-column:2;min-width:0;max-width:100%;margin:0!important}
+html body .v2-adv-row .date-preset-btn{border-radius:8px!important;padding:6px 12px!important;min-height:34px;color:#45454c!important;background:#f2f2f5!important;box-shadow:none!important}
+@media(max-width:560px){
+ html body .v2-adv-toolbar{flex-wrap:wrap;padding:12px!important}
+ html body .v2-adv-body{padding:0 12px!important}
+ html body .v2-adv-row{grid-template-columns:minmax(0,1fr);gap:10px!important}
+ html body .v2-adv-row>label{grid-row:auto}
+ html body .v2-adv-row>*{grid-column:1!important}
+ html body .v2-adv-row :is(input,select){min-height:44px!important;font-size:16px!important}
+ html body .v2-adv-row .fulltext-options{width:100%}
+ html body .v2-adv-row .fulltext-options select{flex:1;min-width:0}
+}
+/* The container owns the search surface; the input must not draw another one. */
+html body #search-box.v2-toolbar-search{box-sizing:border-box;display:flex!important;align-items:center;min-height:38px!important;height:auto!important;box-shadow:none!important}
+html body #search-box.v2-toolbar-search #search-input,
+html body #search-box.v2-toolbar-search #search-input:focus{
+ flex:1;min-width:0;width:100%!important;box-sizing:border-box;
+ height:36px!important;min-height:36px!important;margin:0!important;
+ padding:6px 10px 6px 30px!important;border:0!important;border-radius:0!important;
+ background:transparent!important;background-image:none!important;box-shadow:none!important;
+ backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+html body #search-box.v2-toolbar-search #search-input::before,
+html body #search-box.v2-toolbar-search #search-input::after{content:none!important;display:none!important}
+html body #search-box.v2-toolbar-search:focus-within{outline:2px solid #52525b;outline-offset:2px}
+html body #search-box.v2-toolbar-search #search-input:focus-visible{outline:none!important}
+@media(max-width:768px){html body #search-box.v2-toolbar-search{min-height:46px!important}html body #search-box.v2-toolbar-search #search-input{height:44px!important;min-height:44px!important}}
+:root,html[data-theme],html body{--paper:#f7f7f8;--ink:#18181b;--muted:#626268;--rule:#dedee2;--red:#252528;--link:#303036;--accent-1:#252528;--accent-2:#404047;--surface:#fff;--focus-ring:#52525b;--accent-1-rgb:37,37,40}
+html body{color:var(--ink);background:var(--paper)}
+html body :is(button,a,input,select,textarea){transition:background-color 120ms ease,color 120ms ease,border-color 120ms ease!important}
+html body :is(.page-transition-overlay,.loading-wave,.page-loader){pointer-events:none}
+html body :is(.main-page-enter,.main-page-exit,.table-row-enter,.loading-mask-enter){animation:none!important;transform:none!important}
+html body :is(.v2-topbar,.ed-masthead){backdrop-filter:none!important;background:#fff!important}
+html body :is(.content-card,.stat-card,.entry-card,.word-doc-paper){box-shadow:none!important}
+html body.ed-home .page-title{font-family:var(--sans),sans-serif!important;font-size:36px!important;font-weight:750!important;letter-spacing:-.035em}
+html body.ed-home .content-card{border-radius:20px!important;border:0!important;padding:24px!important}
+html body.ed-home .stats-grid{gap:0!important;background:transparent!important;margin-block:20px!important}
+html body.ed-home .stat-card{background:transparent!important;border:0!important;border-right:1px solid var(--rule)!important;border-radius:0!important;padding:12px 24px!important}
+html body.ed-home .stat-card:last-child{border-right:0!important}
+html body.ed-home .stat-value{font-size:28px!important;font-weight:650!important}
+html body.ed-home .stat-label{font-size:13px!important;color:var(--muted)!important}
+html body.ed-home .project-link-transition{font-size:21px!important;font-weight:700!important;color:var(--ink)!important}
+html body.ed-home :is(.ed-project-summary,.ed-project-meta,.data-table th){font-size:13px!important;color:var(--muted)!important}
+html body.ed-home .data-table td{border-bottom:1px solid #e7e7ea!important;padding-block:22px!important}
+html body :is(.ed-results,.word-toc-item-meta,.word-notes-empty,.word-doc-hint,.v2-info-empty,.ed-editor-status){color:var(--muted)!important;font-size:12px!important}
+html body :is(input,textarea)::placeholder{color:#65656b!important;opacity:1}
+html body :is(.ed-primary,.primary-btn,button[type=submit],.pagination-btn.active){background:#252528!important;color:#fff!important;border-color:#252528!important;box-shadow:none!important}
+html body .v2-nav-item.active,html body .ed-view-tabs button[aria-pressed=true]{background:#e7e7eb!important;color:#18181b!important}
+html body .v2-nav-item{font-size:14px!important;border-radius:10px!important}
+html body .ed-view-tabs button{border-radius:10px!important;min-height:36px}
+html body.ui-density-layout #entry-form .form-row>label{font-size:13px!important;color:#525258!important}
+html body.ui-density-layout #entry-form .ed-editor-meta :is(input,select,textarea){font-size:14px!important;min-height:38px!important;border-radius:10px!important}
+html body #entry-form .ed-editor-meta{background:#f7f7f8!important}
+html body :is(button,a,input,select,textarea,[tabindex]):focus-visible{outline:2px solid #52525b!important;outline-offset:3px}
+@media(max-width:768px){
+ html body.ed-home .page-title{font-size:30px!important}
+ html body.ed-home .content-card{padding:16px!important}
+ html body.ed-home .stat-card{padding:8px!important}
+ html body.ed-home .stat-label{font-size:12px!important}
+ html body.ed-home .project-link-transition{font-size:20px!important}
+ html body :is(button,select,input:not([type=checkbox]):not([type=radio])){min-height:44px!important}
+ html body .ed-view-tabs{flex-wrap:nowrap!important;overflow-x:auto;max-width:100%;gap:6px!important}
+ html body .ed-view-tabs button{flex-shrink:0;white-space:nowrap}
+ html body .ed-top-actions .ed-density{display:none!important}
+ html body.ui-density-layout #entry-form .ed-editor-meta :is(input,select,textarea){font-size:16px!important;min-height:44px!important}
+ html body.ui-density-layout #entry-form .ed-editor-toolbar button.ui-icon-only{min-width:44px!important;width:44px!important;max-width:none!important;min-height:44px!important;flex-basis:44px!important}
+}
+@media(prefers-reduced-motion:reduce){html body *,html body *::before,html body *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

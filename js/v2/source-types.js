@@ -351,6 +351,19 @@
                     ? def.parseRules
                     : (cur.parseRules || {})
             });
+            // 将旧版档案四段式编号模板升级为统一的“档案号”。只迁移仍引用
+            // 旧字段的模板，避免覆盖用户已经自行修改过的新模板。
+            if (def.id === 'archive') {
+                Object.keys(def.citationTemplates || {}).forEach(sid => {
+                    const template = next.citationTemplates[sid] || '';
+                    if (/\{(?:fond|catalog|file|document)(?:\?|\})/.test(template) && !template.includes('{archiveNumber')) {
+                        next.citationTemplates[sid] = def.citationTemplates[sid];
+                    } else if (template.includes('{archiveNumber') && !template.includes('{archiveName')) {
+                        // 升级上一版内置模板，补入新增的“档案名称”。
+                        next.citationTemplates[sid] = def.citationTemplates[sid];
+                    }
+                });
+            }
             Object.keys(def.citationTemplates || {}).forEach(sid => {
                 if (!next.citationTemplates[sid]) {
                     next.citationTemplates[sid] = def.citationTemplates[sid];

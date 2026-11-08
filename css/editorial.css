@@ -201,3 +201,34 @@ html body.ed-home .select-entry:checked~.custom-checkbox{background:var(--red)!i
 html body.ed-home .select-entry:checked~.custom-checkbox::after{display:block!important;content:'✓';width:100%;height:100%;color:#fff;text-align:center;line-height:22px;box-shadow:none!important}
 html body.ed-home .select-entry:focus-visible~.custom-checkbox{outline:2px solid var(--red);outline-offset:3px}
 @media(prefers-reduced-motion:reduce){html body .ed-view-tabs button{transition:none!important}}
+
+/* Accessible empty state: explain why the workspace is blank and offer the next action. */
+.ed-empty-state{min-height:clamp(280px,52vh,560px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px;color:var(--ink)}
+.ed-empty-state h2{margin:0;font:700 24px/1.4 var(--serif)}
+.ed-empty-state p{max-width:460px;margin:10px 0 22px;color:var(--muted);font-size:14px;line-height:1.7}
+.ed-empty-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.ed-empty-actions button{min-height:40px;padding:9px 16px;border:1px solid var(--rule);border-radius:999px;background:#fff;color:var(--ink);cursor:pointer}
+.ed-empty-actions .ed-empty-primary{background:var(--accent-1);border-color:var(--accent-1);color:#fff}
+
+@media(max-width:768px){
+ html body .ed-top-actions .ed-density,html body .ed-top-actions .ed-sync{display:none!important}
+ html body .v2-topbar .v2-topbar-title{min-width:0;flex:1;max-width:none!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+ html body .ed-top-actions{margin-left:0;flex:0 0 auto}
+ html body .ed-top-actions .ed-primary{min-height:40px;padding:8px 12px!important}
+ html body .v2-toolbar-row :is(button,select,input){min-height:44px!important}
+ html body .ed-view-tabs{width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;padding-bottom:2px}
+ html body .ed-view-tabs::-webkit-scrollbar{display:none}
+ html body .ed-view-tabs button{min-height:44px;flex:0 0 auto;padding:9px 12px!important}
+ /* On compact screens put bibliographic metadata between the title and the two long editors. */
+ html body #entry-form .ed-editor-main{display:contents!important}
+ html body #entry-form .ed-title-row{order:-4!important}
+ html body #entry-form .ed-editor-meta{order:-3!important}
+ html body #entry-form .ed-original-row{order:-2!important}
+ html body #entry-form .ed-analysis-row{order:-1!important}
+ html body #entry-form .ed-editor-meta :is(input:not([type=checkbox]),select,textarea,button){min-height:44px!important;font-size:16px!important}
+ html body #entry-form .form-row>label{font-size:13px!important}
+ html body #entry-form .ed-editor-status{font-size:12px!important}
+ .ed-empty-state{min-height:50vh;padding:32px 18px}
+ .ed-empty-state h2{font-size:21px}
+ .ed-empty-actions{width:100%}.ed-empty-actions button{min-height:44px;flex:1 1 145px}
+}

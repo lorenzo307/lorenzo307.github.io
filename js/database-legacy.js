@@ -43,6 +43,7 @@
         let unsubscribeEntries = null;
         let authResolved = false;
         let cachedAuthUser = null;
+        let renderedEntriesFromCache = false;
 
         function resolveProjectId() {
             let projectId = sessionStorage.getItem('pendingProjectId');
@@ -145,13 +146,15 @@
                             const write = () => {
                                 try {
                                     const indexEntries = entries.map(e => ({
-                                        id: e.id, date: e.date, title: e.title || '', keywords: e.keywords || []
+                                        id: e.id, date: e.date, title: e.title || '', keywords: e.keywords || [],
+                                        typeId: e.typeId || 'general', citation: e.citation || '',
+                                        starred: !!e.starred, updatedAt: e.updatedAt || 0
                                     }));
                                     const fullPath = getProjectPath();
                                     const match = fullPath && fullPath.match(/projects\/([^\/]+)\//);
                                     const projectId = match ? match[1] : (localStorage.getItem('currentProject') || 'default');
                                     localStorage.setItem(`entries_index_${projectId}`, JSON.stringify({
-                                        version: 1, projectId, timestamp: Date.now(), entries: indexEntries
+                                        version: 2, projectId, timestamp: Date.now(), entries: indexEntries
                                     }));
                                 } catch (e) { console.warn('写入 entries 索引缓存失败:', e); }
                             };
@@ -162,11 +165,15 @@
                     })();
                     window._flushEntriesCache = function() {
                         if (window._cacheWriteTimer) { clearTimeout(window._cacheWriteTimer); window._cacheWriteTimer = null; }
-                        try {
-                            const idx = entries.map(e => ({ id: e.id, date: e.date, title: e.title || '', keywords: e.keywords || [] }));
+                        if (!renderedEntriesFromCache) try {
+                            const idx = entries.map(e => ({
+                                id: e.id, date: e.date, title: e.title || '', keywords: e.keywords || [],
+                                typeId: e.typeId || 'general', citation: e.citation || '',
+                                starred: !!e.starred, updatedAt: e.updatedAt || 0
+                            }));
                             const m = getProjectPath() && getProjectPath().match(/projects\/([^\/]+)\//);
                             const pid = m ? m[1] : (localStorage.getItem('currentProject') || 'default');
-                            localStorage.setItem('entries_index_' + pid, JSON.stringify({ version: 1, projectId: pid, timestamp: Date.now(), entries: idx }));
+                            localStorage.setItem('entries_index_' + pid, JSON.stringify({ version: 2, projectId: pid, timestamp: Date.now(), entries: idx }));
                         } catch (e) {}
                     };
                 } catch (error) {
@@ -208,6 +215,7 @@
                                     entries = data.entries;
                                     currentPage = 1;
                                     renderEntries(); // 立即渲染上次的列表
+                                    renderedEntriesFromCache = true;
                                 }
                             }
                         } catch (e) {
@@ -215,7 +223,7 @@
                         }
 
                         // 3. 启动实时数据监听，在后台同步最新数据
-                        showLoading('正在同步最新数据...');
+                        if (!renderedEntriesFromCache) showLoading('正在同步最新数据...');
                         initDataListeners();
                         // initTimeTracking(); // 暂时注释掉，函数未定义
                         restoreCachedSessions();
@@ -223,15 +231,17 @@
 
                         // 4. 异步获取项目名称并更新标题，不阻塞列表渲染
                         try {
-                            const projectRef = window.db.ref(`users/${user.uid}/projects/${projectId}`);
+                            const projectRef = window.db.ref(`users/${user.uid}/projects/${projectId}/name`);
                             const snapshot = await projectRef.once('value');
-                            const projectName = snapshot.exists() ? snapshot.val().name : '未命名课题';
+                            const projectName = snapshot.exists() ? snapshot.val() :
+                                (sessionStorage.getItem('pendingProjectName') || '未命名课题');
 
                             document.title = `${projectName} - 史料数据库`;
                             const titleEl = document.getElementById('projectTitle');
                             if (titleEl) titleEl.textContent = projectName;
                             const v2Title = document.getElementById('v2-project-title');
                             if (v2Title) v2Title.textContent = projectName;
+                            sessionStorage.removeItem('pendingProjectName');
                         } catch (nameError) {
                             console.warn('获取项目名称失败:', nameError);
                         }
@@ -297,6 +307,25 @@
             results: [],
             highlights: {}
         };
+
+        // 不等待 Firebase 认证：先用首页或上次访问留下的轻量索引绘制列表。
+        (function renderNavigationCache() {
+            try {
+                const projectId = new URLSearchParams(window.location.search).get('project') ||
+                    sessionStorage.getItem('pendingProjectId') || localStorage.getItem('currentProject');
+                if (!projectId) return;
+                const cached = localStorage.getItem(`entries_index_${projectId}`);
+                if (!cached) return;
+                const data = JSON.parse(cached);
+                if (!Array.isArray(data.entries) || Date.now() - data.timestamp >= 5 * 60 * 1000) return;
+                entries = data.entries;
+                currentPage = 1;
+                renderEntries();
+                renderedEntriesFromCache = true;
+            } catch (error) {
+                console.warn('预渲染条目缓存失败:', error);
+            }
+        })();
         
         // --- 新增加载提示函数 - 顶部进度条形式 ---
         function showLoading(message = '加载中...') {
@@ -313,10 +342,7 @@
         function hideLoading() {
             const loader = document.getElementById('loading-overlay');
             if (loader) {
-                // 延迟移除，让进度条完成动画
-                setTimeout(() => {
-                    loader.classList.remove('active');
-                }, 300);
+                loader.classList.remove('active');
             }
         }
         // --- 结束加载提示函数 ---

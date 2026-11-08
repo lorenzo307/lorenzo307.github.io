@@ -89,4 +89,17 @@ html body.ui-density-layout.ui-readable-actions .ui-labeled-action .ui-icon{widt
  html body.ui-density-layout .pagination.line-pagination{box-sizing:border-box;min-height:76px!important;height:76px!important}
 }
 @media(pointer:coarse){html body.ui-density-layout #entry-form :is(.ed-editor-toolbar,.ed-editor-actions) button.ui-icon-only{width:40px!important;min-width:40px!important;max-width:40px!important;height:40px!important;min-height:40px!important;flex-basis:40px!important}}
+
+/* Final compact-layout accessibility overrides. */
+.ed-empty-state h2::before,.ed-empty-state h2::after{display:none!important;content:none!important}
+@media(max-width:768px){
+ html body.ui-density-layout .ed-top-actions :is(.ui-reading-menu,.ed-density,.ed-sync){display:none!important}
+ html body.ui-density-layout .ed-top-actions{margin-left:auto!important;width:auto!important;min-width:0!important;flex:0 0 auto!important}
+ html body.ui-density-layout.v2-layout .v2-topbar-title{display:block!important;left:94px!important;right:104px!important;width:auto!important;max-width:none!important;transform:none!important;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ html body.ui-density-layout .ed-top-actions .ed-primary{min-height:42px!important;padding:8px 12px!important;font-size:12px!important}
+ html body.ui-density-layout .v2-toolbar-row :is(button,select,input){min-height:44px!important}
+ html body.ui-density-layout .ed-view-tabs button{min-height:44px!important;font-size:12px!important}
+ html body.ui-density-layout :is(.pagination,.v2-pagination) :is(button,input,select){min-width:44px!important;min-height:44px!important}
+ html body.ui-density-layout #entry-form .ed-editor-meta :is(input:not([type=checkbox]),select,textarea,button){min-height:44px!important;font-size:16px!important}
+}
 @media print{html body.ui-density-layout .ed-compact-header{display:none!important}}

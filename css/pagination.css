@@ -25,3 +25,46 @@ html body.word-mode-active .v2-main-scroll>.pagination.line-pagination{display:n
 }
 @media print{html body .pagination.line-pagination{display:none!important}}
 html body.word-mode-active .v2-main .v2-main-scroll>.pagination.line-pagination{display:none!important}
+
+/* Quiet rounded controls shared by the project list and research workspace. */
+html body.ed-home .pagination.line-pagination,
+html body.v2-layout .v2-main .pagination.line-pagination{
+ padding:16px 0!important;gap:12px;min-height:72px;
+ grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);font-size:13px;
+ margin-top:auto!important;width:100%;box-sizing:border-box;
+}
+.line-pager-total{grid-column:1;justify-self:start;color:#626268;font-size:13px}
+.line-pager-controls{display:contents}
+html body .line-pagination .line-pager-pages{grid-column:2;grid-row:1;justify-self:center}
+html body .line-pagination .line-pager-jump{grid-column:3;grid-row:1;justify-self:end}
+html body .line-pagination .line-pager-pages{gap:6px}
+html body .line-pagination .line-pager-pages .page-btn{
+ width:36px;min-width:36px;height:36px;min-height:36px;
+ border-radius:11px!important;font-size:14px;font-weight:550;
+ color:#45454c!important;transition:background-color 120ms ease,color 120ms ease!important;
+}
+html body .line-pagination .line-pager-pages .page-btn:hover:not(:disabled){background:#eaeaee!important;color:#18181b!important}
+html body .line-pagination .line-pager-pages .page-btn.active,
+html body .line-pagination .line-pager-pages .page-btn.active:hover{
+ background:#252528!important;border-color:#252528!important;color:#fff!important;font-weight:700;
+}
+html body .line-pagination .line-pager-pages .line-pager-arrow{background:#fff!important;border-color:#dedee2!important}
+html body .line-pagination .line-pager-pages .page-btn:disabled{opacity:.4;background:#f7f7f8!important}
+.line-pager-jump{gap:8px;color:#626268;font-size:13px}
+html body .line-pagination .line-pager-jump input,
+html body.v2-layout .line-pagination #page-jump-inline{
+ width:52px!important;height:36px;min-height:36px;border-radius:10px!important;
+ background:#fff!important;font-size:14px;color:#252528!important;
+}
+html body .line-pagination .line-pager-jump input:focus{border-color:#52525b!important;outline:2px solid #52525b;outline-offset:2px}
+@media(max-width:560px){
+ html body.ed-home .pagination.line-pagination,
+ html body.v2-layout .v2-main .pagination.line-pagination{grid-template-columns:1fr auto;gap:12px;padding:14px 0!important}
+ .line-pager-controls{display:contents}
+ .line-pager-total{grid-column:1;grid-row:1;justify-self:start;font-size:12px}
+ html body .line-pagination .line-pager-jump{grid-column:2;grid-row:1;font-size:12px}
+ html body .line-pagination .line-pager-pages{grid-column:1/-1;grid-row:2;justify-self:center;justify-content:center;flex-wrap:wrap}
+ html body .line-pagination .line-pager-pages .page-btn{width:44px;min-width:44px;height:44px;min-height:44px;border-radius:13px!important}
+ html body .line-pagination .line-pager-jump input,
+ html body.v2-layout .line-pagination #page-jump-inline{height:44px;min-height:44px}
+}
